@@ -106,7 +106,7 @@ func (c *ctx) Reset(w http.ResponseWriter, r *http.Request) {
 	c.response.reset(w)
 	c.params = c.params[0:0]
 	c.store = nil
-	c.index = 0
+	c.index = -1
 	c.handlers = nil
 }
 
@@ -132,6 +132,8 @@ func (c *ctx) Get(key string) (value interface{}, exists bool) {
 // It executes the pending handlers in the chain inside the calling handler.
 // See example in github.
 func (c *ctx) Next() {
+
+	c.index++
 
 	if c.index < len(c.handlers) {
 		c.handlers[c.index](c)

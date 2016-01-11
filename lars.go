@@ -178,7 +178,9 @@ func (l *LARS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Reset(w, r)
 
 	// handle requests here passing in c.UnderlyingContext() aka *ctx
-	// and everything can be set on the object without a return value
+	// and everything can be set on the object without a return value and
+
+	c.Next()
 
 	l.pool.Put(c)
 }
