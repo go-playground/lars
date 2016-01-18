@@ -29,8 +29,9 @@ type RouteGroup struct {
 
 var _ IRouteGroup = &RouteGroup{}
 
-func (g *RouteGroup) add(method string, path string, h ...Handler) {
+func (g *RouteGroup) handle(method string, path string, h ...Handler) {
 
+	g.lars.add(method, path, g, h)
 	// Add route to the tree passing in g.middleware as it will need to be stored in the tree
 	// and also pass in h the ...Handler as this will also need to be stored on the tree by adding these to the middleware from g.middleware
 	//
@@ -46,47 +47,47 @@ func (g *RouteGroup) Use(m ...Handler) {
 
 // Connect adds a CONNECT route & handler to the router.
 func (g *RouteGroup) Connect(path string, h ...Handler) {
-	g.add(CONNECT, path, h)
+	g.handle(CONNECT, path, h)
 }
 
 // Delete adds a DELETE route & handler to the router.
 func (g *RouteGroup) Delete(path string, h ...Handler) {
-	g.add(DELETE, path, h)
+	g.handle(DELETE, path, h)
 }
 
 // Get adds a GET route & handler to the router.
 func (g *RouteGroup) Get(path string, h ...Handler) {
-	g.add(GET, path, h)
+	g.handle(GET, path, h)
 }
 
 // Head adds a HEAD route & handler to the router.
 func (g *RouteGroup) Head(path string, h ...Handler) {
-	g.add(HEAD, path, h)
+	g.handle(HEAD, path, h)
 }
 
 // Options adds an OPTIONS route & handler to the router.
 func (g *RouteGroup) Options(path string, h ...Handler) {
-	g.add(OPTIONS, path, h)
+	g.handle(OPTIONS, path, h)
 }
 
 // Patch adds a PATCH route & handler to the router.
 func (g *RouteGroup) Patch(path string, h ...Handler) {
-	g.add(PATCH, path, h)
+	g.handle(PATCH, path, h)
 }
 
 // Post adds a POST route & handler to the router.
 func (g *RouteGroup) Post(path string, h ...Handler) {
-	g.add(POST, path, h)
+	g.handle(POST, path, h)
 }
 
 // Put adds a PUT route & handler to the router.
 func (g *RouteGroup) Put(path string, h ...Handler) {
-	g.add(PUT, path, h)
+	g.handle(PUT, path, h)
 }
 
 // Trace adds a TRACE route & handler to the router.
 func (g *RouteGroup) Trace(path string, h ...Handler) {
-	g.add(TRACE, path, h)
+	g.handle(TRACE, path, h)
 }
 
 // Any adds a route & handler to the router for all HTTP methods.
@@ -105,7 +106,7 @@ func (g *RouteGroup) Any(path string, h ...Handler) {
 // Match adds a route & handler to the router for multiple HTTP methods provided.
 func (g *RouteGroup) Match(methods []string, path string, h ...Handler) {
 	for _, m := range methods {
-		g.add(m, path, h)
+		g.handle(m, path, h)
 	}
 }
 
