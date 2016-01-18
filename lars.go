@@ -144,7 +144,12 @@ func New() *LARS {
 		RouteGroup: RouteGroup{
 			middleware: make(HandlersChain, 0),
 		},
-		router:                 router{},
+		router: router{
+			tree: &node{
+				path:   "/",
+				static: []*node{},
+			},
+		},
 		mostParams:             0,
 		http404:                default404Handler,
 		httpNotAllowed:         methodNotAllowedHandler,
