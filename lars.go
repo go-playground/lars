@@ -95,6 +95,8 @@ type ContextFunc func() Context
 type LARS struct {
 	RouteGroup
 
+	router
+
 	// mostParams used to keep track of the most amount of
 	// params in any URL and this will set the default capacity
 	// of each context Params
@@ -142,6 +144,12 @@ func New() *LARS {
 		RouteGroup: RouteGroup{
 			middleware: make(HandlersChain, 0),
 		},
+		router: router{
+			tree: &node{
+				path:   "/",
+				static: []*node{},
+			},
+		},
 		mostParams:             0,
 		http404:                default404Handler,
 		httpNotAllowed:         methodNotAllowedHandler,
@@ -150,6 +158,7 @@ func New() *LARS {
 	}
 
 	l.RouteGroup.lars = l
+	l.router.lars = l
 	l.newContext = func() Context {
 		return NewContext(l)
 	}
