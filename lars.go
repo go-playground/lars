@@ -186,7 +186,15 @@ func (l *LARS) Register404(notFound Handler) {
 }
 
 // Conforms to the http.Handler interface.
-func (l *LARS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (l *LARS) Serve() http.Handler {
+
+	// sort etc here
+
+	return http.HandlerFunc(l.serveHTTP)
+}
+
+// Conforms to the http.Handler interface.
+func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(Context)
 	c.Reset(w, r)
 
