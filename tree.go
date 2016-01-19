@@ -1,6 +1,9 @@
 package lars
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 // node
 type node struct {
@@ -20,6 +23,9 @@ type node struct {
 
 	// handler func of the last node
 	chain HandlersChain
+
+	// set only on params node
+	param string
 }
 
 type router struct {
@@ -55,7 +61,7 @@ func (r *router) add(path string, n *node) *node {
 	var c int32
 	for end, c = range path {
 
-		if c == 47 {
+		if c == slash {
 			// Static Path here
 			// Extract the string
 			chunk := path[0 : end+1]
@@ -79,9 +85,40 @@ func (r *router) add(path string, n *node) *node {
 			return r.add(path[end+1:], nn)
 		}
 
-		// Check for Wildcard
-
 		// Check for Parameters
+		if c == colon {
+
+			start := end + 1
+			// fmt.Println("LEFT:", path[start:])
+			for end, c = range path[start:] {
+				if c == slash {
+
+					param := path[start : end+1]
+
+					fmt.Println("Param:", param)
+
+					if n.params != nil {
+						if n.params.param != param {
+							panic("Different Param names defined")
+						}
+
+						r.add(path[end+2:], n.params)
+					}
+
+					nn := &node{
+						path:  ":",
+						param: param,
+					}
+
+					n.params = nn
+
+					fmt.Println("PATHH:", path[end+2:])
+					return r.add(path[end+2:], nn)
+				}
+			}
+		}
+
+		// Check for Wildcard
 	}
 	log.Println(path)
 	for _, charNode := range n.static {

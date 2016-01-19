@@ -24,13 +24,13 @@ func TestMain(m *testing.M) {
 
 func TestRouter(t *testing.T) {
 	l := New()
-	l.Get("/github.com/go-experimental/lars3/blob/master历日本語/⌘/à/", func(Context) {})
+	l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/", func(Context) {})
 }
 
-func TestParamRouter(t *testing.T) {
-	l := New()
-	l.router.add("path", n)
-}
+// func TestParamRouter(t *testing.T) {
+// 	// l := New()
+// 	// l.router.add("path", n)
+// }
 
 func BenchmarkRouter(b *testing.B) {
 
