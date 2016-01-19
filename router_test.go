@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 
 func TestRouter(t *testing.T) {
 	l := New()
-	l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/", func(Context) {})
+	l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
 // func TestParamRouter(t *testing.T) {

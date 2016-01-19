@@ -116,11 +116,47 @@ func (r *router) add(path string, n *node) *node {
 					return r.add(path[end+2:], nn)
 				}
 			}
+
+			param := path[start:]
+
+			if n.params != nil {
+				if n.params.param != param {
+					panic("Different Param names defined")
+				}
+
+				return n
+			}
+
+			nn := &node{
+				path:  ":",
+				param: param,
+			}
+
+			return nn
+
 		}
 
 		// Check for Wildcard
+		if c == star {
+			if path[end+1:] != "" {
+				panic("Charaecter after the * symbol is not acceptable")
+			}
+
+			//Check the node for existing star then throw a panic information
+			//if any
+			if n.wild != nil {
+				panic("Wildcard character already exists")
+			}
+
+			nn := &node{
+				path: "*",
+			}
+
+			return nn
+
+		}
 	}
-	log.Println(path)
+
 	for _, charNode := range n.static {
 		if path == charNode.path {
 			return n
