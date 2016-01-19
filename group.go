@@ -23,6 +23,7 @@ type IRoutes interface {
 
 // RouteGroup struct containing all fields and methods for use.
 type RouteGroup struct {
+	prefix     string
 	middleware HandlersChain
 	lars       *LARS
 }
@@ -46,7 +47,7 @@ func (g *RouteGroup) handle(method string, path string, handlers []Handler) {
 		chain[i] = wrapHandler(h)
 	}
 
-	g.lars.addPath(method, path, g, chain)
+	g.lars.addPath(method, g.prefix+path, g, chain)
 
 	// Add route to the tree passing in g.middleware as it will need to be stored in the tree
 	// and also pass in h the ...Handler as this will also need to be stored on the tree by adding these to the middleware from g.middleware
@@ -131,7 +132,8 @@ func (g *RouteGroup) Match(methods []string, path string, h ...Handler) {
 func (g *RouteGroup) Group(prefix string, middleware ...Handler) IRouteGroup {
 
 	rg := &RouteGroup{
-		lars: g.lars,
+		prefix: prefix,
+		lars:   g.lars,
 	}
 
 	if len(middleware) == 0 {
