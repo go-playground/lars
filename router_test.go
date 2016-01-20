@@ -2,6 +2,7 @@ package lars
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -24,7 +25,20 @@ func TestMain(m *testing.M) {
 
 func TestRouter(t *testing.T) {
 	l := New()
-	l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
+	l.Get("/test/two", func(Context) {})
+	l.Get("/test/two/three", func(Context) {})
+	l.Get("/test/too/three/four", func(Context) {})
+
+	// fmt.Println(l.router.tree.static[0].param.path)
+	// fmt.Println(l.router.tree.static[0].params.priority, l.router.tree.static[0].params.static.path)
+
+	l.router.sort()
+
+	for idx, n := range l.router.tree.static[0].static {
+		fmt.Println(idx, n.priority, n.path)
+	}
+
+	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
 // func TestParamRouter(t *testing.T) {

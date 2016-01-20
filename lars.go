@@ -185,10 +185,10 @@ func (l *LARS) Register404(notFound Handler) {
 	l.http404 = wrapHandler(notFound)
 }
 
-// Conforms to the http.Handler interface.
+// Serve returns an http.Handler to be used.
 func (l *LARS) Serve() http.Handler {
 
-	// sort etc here
+	l.router.sort()
 
 	return http.HandlerFunc(l.serveHTTP)
 }

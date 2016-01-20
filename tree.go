@@ -1,9 +1,23 @@
 package lars
 
 import (
-	"fmt"
-	"log"
+	"sort"
+	"strings"
 )
+
+type nodes []*node
+
+func (n nodes) Len() int {
+	return len(n)
+}
+
+func (n nodes) Less(i, j int) bool {
+	return n[i].priority > n[j].priority
+}
+
+func (n nodes) Swap(i, j int) {
+	n[i], n[j] = n[j], n[i]
+}
 
 // node
 type node struct {
@@ -13,7 +27,7 @@ type node struct {
 	priority int
 
 	// Static Children
-	static []*node
+	static nodes
 
 	// Params Children
 	params *node
@@ -44,12 +58,17 @@ func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersC
 		return
 	}
 
-	n := r.add(path[1:], r.tree)
-	if n != nil {
-
+	j := strings.Count(path, "/")
+	if j > r.tree.priority {
+		r.tree.priority = j
 	}
 
-	// Set Node from here
+	n := r.add(path[1:], r.tree)
+	if n == nil {
+		panic("node not added!")
+	}
+
+	n.chain = append(rg.middleware, h...)
 }
 
 func (r *router) add(path string, n *node) *node {
@@ -65,20 +84,23 @@ func (r *router) add(path string, n *node) *node {
 			// Static Path here
 			// Extract the string
 			chunk := path[0 : end+1]
-			log.Println(chunk)
+			// log.Println("chunk:", chunk)
 
+			// check for existing node
 			for _, charNode := range n.static {
 				if chunk == charNode.path {
+					charNode.priority = n.priority
 					return r.add(path[end+1:], charNode)
 				}
 			}
 
 			nn := &node{
-				path: chunk,
+				path:     chunk,
+				priority: n.priority,
 			}
 
 			if n.static == nil {
-				n.static = []*node{}
+				n.static = nodes{}
 			}
 
 			n.static = append(n.static, nn)
@@ -95,24 +117,26 @@ func (r *router) add(path string, n *node) *node {
 
 					param := path[start : end+1]
 
-					fmt.Println("Param:", param)
+					// fmt.Println("Param:", param)
 
 					if n.params != nil {
 						if n.params.param != param {
 							panic("Different Param names defined")
 						}
 
+						n.params.priority = n.priority
 						r.add(path[end+2:], n.params)
 					}
 
 					nn := &node{
-						path:  ":",
-						param: param,
+						path:     ":",
+						param:    param,
+						priority: n.priority,
 					}
 
 					n.params = nn
 
-					fmt.Println("PATHH:", path[end+2:])
+					// fmt.Println("PATHH:", path[end+2:])
 					return r.add(path[end+2:], nn)
 				}
 			}
@@ -128,8 +152,9 @@ func (r *router) add(path string, n *node) *node {
 			}
 
 			nn := &node{
-				path:  ":",
-				param: param,
+				path:     ":",
+				param:    param,
+				priority: n.priority,
 			}
 
 			return nn
@@ -139,7 +164,7 @@ func (r *router) add(path string, n *node) *node {
 		// Check for Wildcard
 		if c == star {
 			if path[end+1:] != "" {
-				panic("Charaecter after the * symbol is not acceptable")
+				panic("Character after the * symbol is not acceptable")
 			}
 
 			//Check the node for existing star then throw a panic information
@@ -149,13 +174,16 @@ func (r *router) add(path string, n *node) *node {
 			}
 
 			nn := &node{
-				path: "*",
+				path:     "*",
+				priority: n.priority,
 			}
 
 			return nn
 
 		}
 	}
+
+	// fmt.Println("end chunk:", path)
 
 	for _, charNode := range n.static {
 		if path == charNode.path {
@@ -164,11 +192,12 @@ func (r *router) add(path string, n *node) *node {
 	}
 
 	nn := &node{
-		path: path,
+		path:     path,
+		priority: n.priority,
 	}
 
 	if n.static == nil {
-		n.static = []*node{}
+		n.static = nodes{}
 	}
 
 	n.static = append(n.static, nn)
@@ -176,6 +205,27 @@ func (r *router) add(path string, n *node) *node {
 	return n
 }
 
-func (r *router) get() {}
+func (r *router) sort() {
+	r.sortNodes(r.tree)
+}
 
-func (r *router) sortNode() {}
+func (r *router) sortNodes(n *node) {
+
+	sort.Sort(n.static)
+
+	for _, node := range n.static {
+		r.sortNodes(node)
+	}
+
+	if n.params != nil {
+		r.sortNodes(n.params)
+	}
+
+	if n.wild != nil {
+		r.sortNodes(n.wild)
+	}
+}
+
+func (r *router) find() {
+
+}
