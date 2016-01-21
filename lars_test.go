@@ -3,8 +3,9 @@ package lars
 import (
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
-	// . "gopkg.in/go-playground/assert.v1"
+	. "gopkg.in/go-playground/assert.v1"
 )
 
 // NOTES:
@@ -23,37 +24,37 @@ import (
 // 	os.Exit(m.Run())
 // }
 
-// func TestFind(t *testing.T) {
-// 	l := New()
-// 	l.Get("/test/:two/three/", func(c Context) { c.Response().Write([]byte("in three")) })
-// 	// l.Get("/test/two/three/", func(c Context) { c.Response().Write([]byte("in three")) })
-// 	// l.Get("/test/two/three", func(Context) {})
-// 	// l.Get("/test/too%2fthree/four", func(Context) {})
+func TestFind(t *testing.T) {
+	l := New()
+	l.Get("/test/two/*", func(c Context) { c.Response().Write([]byte("in three")) })
+	// l.Get("/test/two/three/", func(c Context) { c.Response().Write([]byte("in three")) })
+	// l.Get("/test/two/three", func(Context) {})
+	// l.Get("/test/too%2fthree/four", func(Context) {})
 
-// 	var body string
+	// var body string
 
-// 	code, _ := request(GET, "", l)
-// 	Equal(t, code, http.StatusNotFound)
+	// code, _ := request(GET, "", l)
+	// Equal(t, code, http.StatusNotFound)
 
-// 	code, body = request(GET, "/test/two/three/", l)
-// 	Equal(t, code, http.StatusOK)
-// 	Equal(t, body, "in three")
+	code, body := request(GET, "/test/two/myparam", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "in three")
 
-// 	// r, _ := http.NewRequest("GET", "", nil)
-// 	// w := httptest.NewRecorder()
-// 	// l.serveHTTP(w, r)
+	// r, _ := http.NewRequest("GET", "", nil)
+	// w := httptest.NewRecorder()
+	// l.serveHTTP(w, r)
 
-// 	// fmt.Println(l.router.tree.static[0].param.path)
-// 	// fmt.Println(l.router.tree.static[0].params.priority, l.router.tree.static[0].params.static.path)
+	// fmt.Println(l.router.tree.static[0].param.path)
+	// fmt.Println(l.router.tree.static[0].params.priority, l.router.tree.static[0].params.static.path)
 
-// 	// l.router.sort()
+	// l.router.sort()
 
-// 	// for idx, n := range l.router.tree.static[0].static {
-// 	// 	fmt.Println(idx, n.priority, n.path)
-// 	// }
+	// for idx, n := range l.router.tree.static[0].static {
+	// 	fmt.Println(idx, n.priority, n.path)
+	// }
 
-// 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
-// }
+	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
+}
 
 func request(method, path string, l *LARS) (int, string) {
 	r, _ := http.NewRequest(method, path, nil)
