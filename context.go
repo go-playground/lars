@@ -24,7 +24,7 @@ type Context interface {
 	context.Context
 	Request() *http.Request
 	Response() *Response
-	P(i int) (string, bool)
+	// P(i int) (string, bool)
 	Param(name string) (string, bool)
 	Params() Params
 	Get(key string) (value interface{}, exists bool)
@@ -72,17 +72,18 @@ func (c *ctx) Response() *Response {
 	return c.response
 }
 
-// P returns path parameter by index.
-func (c *ctx) P(i int) (string, bool) {
+// params are in reverse order, could add this back but have to do some jiggery pokey
+// // P returns path parameter by index.
+// func (c *ctx) P(i int) (string, bool) {
 
-	l := len(c.params)
+// 	l := len(c.params)
 
-	if i < l {
-		return c.params[i].Value, true
-	}
+// 	if i < l {
+// 		return c.params[i].Value, true
+// 	}
 
-	return blank, false
-}
+// 	return blank, false
+// }
 
 // Param returns the value of the first Param which key matches the given name.
 // If no matching Param is found, an empty string is returned and false is returned.
