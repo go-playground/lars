@@ -46,8 +46,8 @@ func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersC
 		panic("Query Unescape Error:" + err.Error())
 	}
 
-	if path == "" {
-		path = "/"
+	if path == blank {
+		path = basePath
 	}
 
 	pCount := new(uint8)
@@ -69,7 +69,7 @@ func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersC
 func add(path string, pCount *uint8, n *node) *node {
 
 	// if blank we're done move on
-	if path == "" {
+	if path == blank {
 		return n
 	}
 
@@ -164,7 +164,7 @@ func add(path string, pCount *uint8, n *node) *node {
 		// Check for Wildcard
 		if c == star {
 
-			if path[end+1:] != "" {
+			if path[end+1:] != blank {
 				panic("Character after the * symbol is not acceptable")
 			}
 
@@ -202,12 +202,12 @@ func add(path string, pCount *uint8, n *node) *node {
 func (r *router) find(context *ctx, method string, path string) {
 
 	// homepage, no slash equal to r.tree node
-	if path == "" || path == "/" {
+	if path == basePath {
 
 		chain := r.tree.chains[method]
 
 		if chain == nil {
-			context.handlers = r.lars.http404
+			context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
 			return
 		}
 
@@ -219,7 +219,7 @@ func (r *router) find(context *ctx, method string, path string) {
 
 	if context.handlers == nil {
 		context.params = context.params[0:0]
-		context.handlers = r.lars.http404
+		context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
 	}
 }
 
@@ -231,6 +231,7 @@ func findRoute(context *ctx, n *node, method string, path string) {
 	var ok bool
 
 START:
+
 	// start parsing URL
 	for end, c = range path {
 
@@ -246,7 +247,7 @@ START:
 
 			path = path[end+1:]
 
-			if path == "" {
+			if path == blank {
 				context.handlers = node.chains[method]
 				return
 			}
@@ -268,7 +269,7 @@ START:
 
 			path = path[end+1:]
 
-			if path == "" {
+			if path == blank {
 				context.handlers = n.params.chains[method]
 				return
 			}
