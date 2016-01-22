@@ -202,18 +202,18 @@ func add(path string, pCount *uint8, n *node) *node {
 func (r *router) find(context *ctx, method string, path string) {
 
 	// homepage, no slash equal to r.tree node
-	if path == basePath {
+	// if path == basePath {
 
-		chain := r.tree.chains[method]
+	// 	chain := r.tree.chains[method]
 
-		if chain == nil {
-			context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
-			return
-		}
+	// 	if chain == nil {
+	// 		context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
+	// 		return
+	// 	}
 
-		context.handlers = chain
-		return
-	}
+	// 	context.handlers = chain
+	// 	return
+	// }
 
 	findRoute(context, r.tree, method, path[1:])
 
@@ -226,32 +226,29 @@ func (r *router) find(context *ctx, method string, path string) {
 func findRoute(context *ctx, n *node, method string, path string) {
 
 	var end int
-	var c int32
+	var c byte
 	var node *node
 	var ok bool
+	var chunk string
 
 START:
 
 	// start parsing URL
-	for end, c = range path {
+	for end = 0; end < len(path); end++ {
 
-		if c != slash {
+		c = path[end]
+
+		if c != slashByte {
 			continue
 		}
 
 		// found chunk ending in slash
 
-		chunk := path[0 : end+1]
+		chunk = path[0 : end+1]
 
 		if node, ok = n.static[chunk]; ok {
 
 			path = path[end+1:]
-
-			if path == blank {
-				context.handlers = node.chains[method]
-				return
-			}
-
 			n = node
 
 			goto START
@@ -268,12 +265,6 @@ START:
 			context.params[i].Value = path[0:end]
 
 			path = path[end+1:]
-
-			if path == blank {
-				context.handlers = n.params.chains[method]
-				return
-			}
-
 			n = n.params
 
 			goto START
@@ -287,7 +278,7 @@ START:
 	}
 
 	// no slash encountered, end of path...
-	if node, ok := n.static[path]; ok {
+	if node, ok = n.static[path]; ok {
 		context.handlers = node.chains[method]
 		return
 	}
@@ -304,6 +295,11 @@ START:
 	// no matching chunk nor param check if wild
 	if n.wild != nil {
 		context.handlers = n.wild.chains[method]
+		return
+	}
+
+	if path == blank {
+		context.handlers = n.chains[method]
 		return
 	}
 }
