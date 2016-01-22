@@ -112,8 +112,8 @@ type LARS struct {
 
 	newContext ContextFunc
 
-	http404        HandlerFunc
-	httpNotAllowed HandlerFunc
+	http404        HandlersChain
+	httpNotAllowed HandlersChain
 
 	// Enables automatic redirection if the current route can't be matched but a
 	// handler for the path with (without) the trailing slash exists.
@@ -150,13 +150,13 @@ func New() *LARS {
 		},
 		router: router{
 			tree: &node{
-				path:   "/",
-				static: []*node{},
+				// path:   "/",
+				static: nodes{},
 			},
 		},
 		mostParams:             0,
-		http404:                default404Handler,
-		httpNotAllowed:         methodNotAllowedHandler,
+		http404:                []HandlerFunc{default404Handler},
+		httpNotAllowed:         []HandlerFunc{methodNotAllowedHandler},
 		RedirectTrailingSlash:  true,
 		HandleMethodNotAllowed: false,
 	}
@@ -181,15 +181,34 @@ func (l *LARS) RegisterContext(fn ContextFunc) {
 
 // Register404 alows for overriding of the not found handler function.
 // NOTE: this is run after not finding a route even after redirecting with the trailing slash
-func (l *LARS) Register404(notFound Handler) {
-	l.http404 = wrapHandler(notFound)
+func (l *LARS) Register404(notFound ...Handler) {
+
+	chain := make(HandlersChain, len(notFound))
+
+	for i, h := range notFound {
+		chain[i] = wrapHandler(h)
+	}
+
+	l.http404 = chain
+}
+
+// Serve returns an http.Handler to be used.
+func (l *LARS) Serve() http.Handler {
+
+	// l.router.sort()
+
+	return http.HandlerFunc(l.serveHTTP)
 }
 
 // Conforms to the http.Handler interface.
-func (l *LARS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(Context)
 	c.Reset(w, r)
 
+	// USE PATH as elements are query escaped
+	// fmt.Println("PATH:", r.URL.Path)
+
+	l.router.find(c.UnderlyingContext(), r.Method, r.URL.Path)
 	// handle requests here passing in c.UnderlyingContext() aka *ctx
 	// and everything can be set on the object without a return value and
 
