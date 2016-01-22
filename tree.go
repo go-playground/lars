@@ -218,6 +218,7 @@ func (r *router) find(context *ctx, method string, path string) {
 	findRoute(context, r.tree, method, path[1:])
 
 	if context.handlers == nil {
+		context.params = context.params[0:0]
 		context.handlers = r.lars.http404
 	}
 }
@@ -226,56 +227,61 @@ func findRoute(context *ctx, n *node, method string, path string) {
 
 	var end int
 	var c int32
+	var node *node
+	var ok bool
 
+START:
 	// start parsing URL
 	for end, c = range path {
 
+		if c != slash {
+			continue
+		}
+
 		// found chunk ending in slash
-		if c == slash {
 
-			chunk := path[0 : end+1]
+		chunk := path[0 : end+1]
 
-			if node, ok := n.static[chunk]; ok {
-				newPath := path[end+1:]
-				// fmt.Println("NEW PATH:", newPath)
+		if node, ok = n.static[chunk]; ok {
 
-				if newPath == "" {
-					context.handlers = node.chains[method]
-					return
-				}
+			path = path[end+1:]
 
-				findRoute(context, node, method, newPath)
-				if context.handlers != nil {
-					return
-				}
-			}
-
-			// no matching static chunk look at params if available
-			if n.params != nil {
-
-				// extract param, then continue recursing over nodes.
-				newPath := path[end+1:]
-
-				if newPath == "" {
-					context.handlers = n.params.chains[method]
-				} else {
-					findRoute(context, n.params, method, newPath)
-				}
-
-				if context.handlers != nil {
-					i := len(context.params)
-					context.params = context.params[:i+1]
-					context.params[i].Key = n.params.param
-					context.params[i].Value = path[0:end]
-					return
-				}
-			}
-
-			// no matching static or param chunk look at wild if available
-			if n.wild != nil {
-				context.handlers = n.chains[method]
+			if path == "" {
+				context.handlers = node.chains[method]
 				return
 			}
+
+			n = node
+
+			goto START
+		}
+
+		// no matching static chunk look at params if available
+		if n.params != nil {
+
+			// extract param, then continue recursing over nodes.
+
+			i := len(context.params)
+			context.params = context.params[:i+1]
+			context.params[i].Key = n.params.param
+			context.params[i].Value = path[0:end]
+
+			path = path[end+1:]
+
+			if path == "" {
+				context.handlers = n.params.chains[method]
+				return
+			}
+
+			n = n.params
+
+			goto START
+		}
+
+		// no matching static or param chunk look at wild if available
+		if n.wild != nil {
+			context.handlers = n.chains[method]
+			return
 		}
 	}
 
