@@ -150,8 +150,8 @@ func New() *LARS {
 		},
 		router: router{
 			tree: &node{
-				path:   "/",
-				static: []*node{},
+				// path:   "/",
+				static: nodes{},
 			},
 		},
 		mostParams:             0,
