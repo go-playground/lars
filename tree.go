@@ -226,7 +226,7 @@ func (r *router) find(context *ctx, method string, path string) {
 func findRoute(context *ctx, n *node, method string, path string) {
 
 	var end int
-	var c int32
+	var c byte
 	var node *node
 	var ok bool
 	var chunk string
@@ -234,9 +234,11 @@ func findRoute(context *ctx, n *node, method string, path string) {
 START:
 
 	// start parsing URL
-	for end, c = range path {
+	for end = 0; end < len(path); end++ {
 
-		if c != slash {
+		c = path[end]
+
+		if c != slashByte {
 			continue
 		}
 
