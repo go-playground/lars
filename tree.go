@@ -4,6 +4,18 @@ import "net/url"
 
 type nodes []*node
 
+type chainMethods struct {
+	connect HandlersChain
+	delete  HandlersChain
+	get     HandlersChain
+	head    HandlersChain
+	options HandlersChain
+	patch   HandlersChain
+	post    HandlersChain
+	put     HandlersChain
+	trace   HandlersChain
+}
+
 // func (n nodes) Len() int {
 // 	return len(n)
 // }
@@ -33,8 +45,9 @@ type node struct {
 	wild *node
 
 	// handler func of the last node
-	chain HandlersChain
+	// chain HandlersChain
 
+	chains chainMethods
 	// set only on params node
 	param string
 }
@@ -42,6 +55,60 @@ type node struct {
 type router struct {
 	lars *LARS
 	tree *node
+}
+
+func (n *node) addChain(method string, chain HandlersChain) {
+
+	// if n.chains == nil {
+	// 	n.chains = new(chainMethods)
+	// }
+
+	switch method {
+	case GET:
+		n.chains.get = chain
+	case POST:
+		n.chains.post = chain
+	case PUT:
+		n.chains.put = chain
+	case DELETE:
+		n.chains.delete = chain
+	case PATCH:
+		n.chains.patch = chain
+	case OPTIONS:
+		n.chains.options = chain
+	case HEAD:
+		n.chains.head = chain
+	case CONNECT:
+		n.chains.connect = chain
+	case TRACE:
+		n.chains.trace = chain
+	}
+}
+
+func (n *node) getChain(method string) HandlersChain {
+
+	switch method {
+	case GET:
+		return n.chains.get
+	case POST:
+		return n.chains.post
+	case PUT:
+		return n.chains.put
+	case DELETE:
+		return n.chains.delete
+	case PATCH:
+		return n.chains.patch
+	case OPTIONS:
+		return n.chains.options
+	case HEAD:
+		return n.chains.head
+	case CONNECT:
+		return n.chains.connect
+	case TRACE:
+		return n.chains.trace
+	default:
+		return nil
+	}
 }
 
 func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersChain) {
@@ -58,20 +125,20 @@ func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersC
 
 	pCount := new(uint8)
 
-	n := r.add(path[1:], pCount, r.tree)
+	n := add(path[1:], pCount, r.tree)
 	if n == nil {
 		panic("node not added!")
 	}
 
-	if *pCount > r.lars.mostParams {
-		r.lars.mostParams = *pCount
+	if *pCount+1 > r.lars.mostParams {
+		r.lars.mostParams = *pCount + 1
 	}
 
-	n.chain = append(rg.middleware, h...)
+	n.addChain(method, append(rg.middleware, h...))
 }
 
 // TODO: Add Warning when a wild is add to the same node as a param or vise-versa
-func (r *router) add(path string, pCount *uint8, n *node) *node {
+func add(path string, pCount *uint8, n *node) *node {
 
 	// if blank we're done move on
 	if path == "" {
@@ -92,8 +159,7 @@ func (r *router) add(path string, pCount *uint8, n *node) *node {
 			// check for existing node
 			for _, charNode := range n.static {
 				if chunk == charNode.path {
-
-					return r.add(path[end+1:], pCount, charNode)
+					return add(path[end+1:], pCount, charNode)
 				}
 			}
 
@@ -107,7 +173,7 @@ func (r *router) add(path string, pCount *uint8, n *node) *node {
 			}
 
 			n.static = append(n.static, nn)
-			return r.add(path[end+1:], pCount, nn)
+			return add(path[end+1:], pCount, nn)
 		}
 
 		// found url parameter?
@@ -136,7 +202,7 @@ func (r *router) add(path string, pCount *uint8, n *node) *node {
 
 					*pCount++
 
-					return r.add(path[end+2:], pCount, n.params)
+					return add(path[end+2:], pCount, n.params)
 				}
 
 				nn := &node{
@@ -148,7 +214,7 @@ func (r *router) add(path string, pCount *uint8, n *node) *node {
 
 				*pCount++
 
-				return r.add(path[end+2:], pCount, nn)
+				return add(path[end+2:], pCount, nn)
 			}
 
 			// param name did not end in slash, extract as last element of path
@@ -161,7 +227,7 @@ func (r *router) add(path string, pCount *uint8, n *node) *node {
 					panic("Different Param names defined")
 				}
 
-				return n
+				return n.params
 			}
 
 			nn := &node{
@@ -243,21 +309,23 @@ func (r *router) add(path string, pCount *uint8, n *node) *node {
 // 	}
 // }
 
-func (r *router) find(context *ctx, path string) {
+func (r *router) find(context *ctx, method string, path string) {
 
 	// homepage, no slash equal to r.tree node
 	if path == "" || path == "/" {
 
-		if r.tree.chain == nil {
+		chain := r.tree.getChain(method)
+
+		if chain == nil {
 			context.handlers = r.lars.http404
 			return
 		}
 
-		context.handlers = r.tree.chain
+		context.handlers = chain
 		return
 	}
 
-	findRoute(context, r.tree, path[1:])
+	findRoute(context, r.tree, method, path[1:])
 
 	// fmt.Println("Handlers Nil?", context.handlers == nil)
 	if context.handlers == nil {
@@ -265,7 +333,7 @@ func (r *router) find(context *ctx, path string) {
 	}
 }
 
-func findRoute(context *ctx, n *node, path string) {
+func findRoute(context *ctx, n *node, method string, path string) {
 
 	var end int
 	var c int32
@@ -289,11 +357,11 @@ func findRoute(context *ctx, n *node, path string) {
 					// fmt.Println("NEW PATH:", newPath)
 
 					if newPath == "" {
-						context.handlers = node.chain
+						context.handlers = n.getChain(method)
 						return
 					}
 
-					findRoute(context, node, newPath)
+					findRoute(context, node, method, newPath)
 					if context.handlers != nil {
 						return
 					}
@@ -308,9 +376,9 @@ func findRoute(context *ctx, n *node, path string) {
 				newPath := path[end+1:]
 
 				if newPath == "" {
-					context.handlers = n.params.chain
+					context.handlers = n.params.getChain(method)
 				} else {
-					findRoute(context, n.params, newPath)
+					findRoute(context, n.params, method, newPath)
 				}
 
 				if context.handlers != nil {
@@ -324,7 +392,7 @@ func findRoute(context *ctx, n *node, path string) {
 
 			// no matching static or param chunk look at wild if available
 			if n.wild != nil {
-				context.handlers = n.chain
+				context.handlers = n.getChain(method)
 				return
 			}
 		}
@@ -333,14 +401,15 @@ func findRoute(context *ctx, n *node, path string) {
 	// no slash encountered, end of path...
 	for _, node := range n.static {
 		if path == node.path {
-			context.handlers = node.chain
+			context.handlers = node.getChain(method)
 			return
 		}
 	}
 
 	if n.params != nil {
-		context.handlers = n.params.chain
+		context.handlers = n.params.getChain(method)
 		i := len(context.params)
+		// fmt.Println(i)
 		context.params = context.params[:i+1]
 		context.params[i].Key = n.params.param
 		context.params[i].Value = path
@@ -349,7 +418,7 @@ func findRoute(context *ctx, n *node, path string) {
 
 	// no matching chunk nor param check if wild
 	if n.wild != nil {
-		context.handlers = n.wild.chain
+		context.handlers = n.wild.getChain(method)
 		return
 	}
 }

@@ -51,6 +51,8 @@ var _ Context = &ctx{}
 // Particularily useful when creating a custom Context
 // but still wanting the default Context behavior
 func NewContext(l *LARS) Context {
+
+	// fmt.Println(l.mostParams)
 	return &ctx{
 		params:   make(Params, l.mostParams),
 		response: &Response{},

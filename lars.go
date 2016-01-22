@@ -208,7 +208,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	// USE PATH as elements are query escaped
 	// fmt.Println("PATH:", r.URL.Path)
 
-	l.router.find(c.UnderlyingContext(), r.URL.Path)
+	l.router.find(c.UnderlyingContext(), r.Method, r.URL.Path)
 	// handle requests here passing in c.UnderlyingContext() aka *ctx
 	// and everything can be set on the object without a return value and
 
