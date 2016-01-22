@@ -51,14 +51,15 @@ func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersC
 	}
 
 	pCount := new(uint8)
+	*pCount++
 
 	n := add(path[1:], pCount, r.tree)
 	if n == nil {
 		panic("node not added!")
 	}
 
-	if *pCount+1 > r.lars.mostParams {
-		r.lars.mostParams = *pCount + 1
+	if *pCount > r.lars.mostParams {
+		r.lars.mostParams = *pCount
 	}
 
 	n.addChain(method, append(rg.middleware, h...))
