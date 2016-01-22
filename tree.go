@@ -1,39 +1,27 @@
 package lars
 
-import (
-	"fmt"
-	"log"
-	"net/url"
-	"sort"
-	"strings"
-)
-
-const (
-	baseStatic = 3
-	baseParam  = 2
-	baseWild   = 1
-)
+import "net/url"
 
 type nodes []*node
 
-func (n nodes) Len() int {
-	return len(n)
-}
+// func (n nodes) Len() int {
+// 	return len(n)
+// }
 
-func (n nodes) Less(i, j int) bool {
-	return n[i].priority > n[j].priority
-}
+// func (n nodes) Less(i, j int) bool {
+// 	return n[i].priority > n[j].priority
+// }
 
-func (n nodes) Swap(i, j int) {
-	n[i], n[j] = n[j], n[i]
-}
+// func (n nodes) Swap(i, j int) {
+// 	n[i], n[j] = n[j], n[i]
+// }
 
 // node
 type node struct {
 	path string
 
 	// Priority is the top number of slashes "/"
-	priority float64
+	// priority float64
 
 	// Static Children
 	static nodes
@@ -64,41 +52,13 @@ func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersC
 		panic("Query Unescape Error:" + err.Error())
 	}
 
-	// need to rethink the initial node, could be "/" or ""
-
-	// if r.tree == nil {
-	// 	var p string
-	// 	if p
-	// 	r.tree = &node{
-	// 			path:   "/",
-	// 			static: []*node{},
-	// 		}
-	// }
-
-	// if path[0:1] != "" || path[0:1] != "/" {
-	// 	panic("Path does not start with SLASH")
-	// }
-
-	// if path == "/" || path == "" {
-	// 	r.tree.chain = append(rg.middleware, h...)
-	// 	return
-	// }
-
-	j := float64(strings.Count(path, "/"))
-	if j > r.tree.priority {
-		r.tree.priority = j
-	}
-
 	if path == "" {
 		path = "/"
 	}
 
 	pCount := new(uint8)
-	idx := new(float64)
-	priority := new(float64)
-	// *idx +=1
 
-	n := r.add(path[1:], idx, priority, pCount, r.tree)
+	n := r.add(path[1:], pCount, r.tree)
 	if n == nil {
 		panic("node not added!")
 	}
@@ -110,46 +70,36 @@ func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersC
 	n.chain = append(rg.middleware, h...)
 }
 
-func (r *router) add(path string, idx *float64, priority *float64, pCount *uint8, n *node) *node {
+// TODO: Add Warning when a wild is add to the same node as a param or vise-versa
+func (r *router) add(path string, pCount *uint8, n *node) *node {
 
+	// if blank we're done move on
 	if path == "" {
 		return n
 	}
-
-	*idx++
 
 	var end int
 	var c int32
 
 	for end, c = range path {
 
+		// found chunk ending in slash?
 		if c == slash {
 
-			*priority += baseStatic / *idx
-
-			// Static Path here
-			// Extract the string
 			chunk := path[0 : end+1]
-			log.Println("chunk:", chunk)
+			// log.Println("chunk:", chunk)
 
 			// check for existing node
 			for _, charNode := range n.static {
 				if chunk == charNode.path {
 
-					// charNode.priority = n.priority
-					nd := r.add(path[end+1:], idx, priority, pCount, charNode)
-
-					if *priority > charNode.priority {
-						charNode.priority = *priority
-					}
-
-					return nd
+					return r.add(path[end+1:], pCount, charNode)
 				}
 			}
 
+			// no existing node, adding new one
 			nn := &node{
 				path: chunk,
-				// priority: n.priority,
 			}
 
 			if n.static == nil {
@@ -157,22 +107,15 @@ func (r *router) add(path string, idx *float64, priority *float64, pCount *uint8
 			}
 
 			n.static = append(n.static, nn)
-			nd := r.add(path[end+1:], idx, priority, pCount, nn)
-
-			if *priority > nn.priority {
-				nn.priority = *priority
-			}
-
-			return nd
+			return r.add(path[end+1:], pCount, nn)
 		}
 
-		// Check for Parameters
+		// found url parameter?
 		if c == colon {
 
-			*priority += baseParam / *idx
-
 			start := end + 1
-			// fmt.Println("LEFT:", path[start:])
+
+			// extract param name
 			for end, c = range path[start:] {
 				if c != slash {
 					continue
@@ -180,44 +123,35 @@ func (r *router) add(path string, idx *float64, priority *float64, pCount *uint8
 
 				param := path[start : end+1]
 
-				// fmt.Println("Param:", param)
-
+				// existing param node?
 				if n.params != nil {
+
+					// can't have same prefix paths with different param names example:
+					// /users/:id/profile
+					// /users/:user_id/profile/settings
+					// both params above must be either :id or :user_id, no mix & match
 					if n.params.param != param {
 						panic("Different Param names defined")
 					}
 
-					// n.params.priority = n.priority
 					*pCount++
-					*idx *= 2
-					nd := r.add(path[end+2:], idx, priority, pCount, n.params)
-					if *priority > n.params.priority {
-						n.params.priority = *priority
-					}
 
-					return nd
+					return r.add(path[end+2:], pCount, n.params)
 				}
 
 				nn := &node{
 					path:  ":",
 					param: param,
-					// priority: n.priority,
 				}
 
 				n.params = nn
 
 				*pCount++
-				*idx *= 2
-				// *idx << 1
-				// fmt.Println("PATHH:", path[end+2:])
-				nd := r.add(path[end+2:], idx, priority, pCount, nn)
 
-				if *priority > nn.priority {
-					nn.priority = *priority
-				}
-
-				return nd
+				return r.add(path[end+2:], pCount, nn)
 			}
+
+			// param name did not end in slash, extract as last element of path
 
 			*pCount++
 			param := path[start:]
@@ -231,21 +165,17 @@ func (r *router) add(path string, idx *float64, priority *float64, pCount *uint8
 			}
 
 			nn := &node{
-				path:     ":",
-				param:    param,
-				priority: *priority,
+				path:  ":",
+				param: param,
 			}
 
 			n.params = nn
 
 			return nn
-
 		}
 
 		// Check for Wildcard
 		if c == star {
-
-			*priority += baseWild / *idx
 
 			if path[end+1:] != "" {
 				panic("Character after the * symbol is not acceptable")
@@ -258,8 +188,7 @@ func (r *router) add(path string, idx *float64, priority *float64, pCount *uint8
 			}
 
 			nn := &node{
-				path:     "*",
-				priority: *priority,
+				path: "*",
 			}
 
 			n.wild = nn
@@ -269,23 +198,17 @@ func (r *router) add(path string, idx *float64, priority *float64, pCount *uint8
 		}
 	}
 
-	*priority += baseStatic / *idx
+	// no slash encountered, url musn't end in one so use remaining path
 	// fmt.Println("end chunk:", path)
 
 	for _, charNode := range n.static {
 		if path == charNode.path {
-
-			if *priority > charNode.priority {
-				charNode.priority = *priority
-			}
-
 			return charNode
 		}
 	}
 
 	nn := &node{
-		path:     path,
-		priority: *priority,
+		path: path,
 	}
 
 	if n.static == nil {
@@ -299,30 +222,28 @@ func (r *router) add(path string, idx *float64, priority *float64, pCount *uint8
 
 // NOTE: may need to sort not just by number or "/" but also by least # of ":" to allow :one/:b and :two/aaa to cooexist
 
-func (r *router) sort() {
-	sortNodes(r.tree)
-}
+// func (r *router) sort() {
+// 	sortNodes(r.tree)
+// }
 
-func sortNodes(n *node) {
+// func sortNodes(n *node) {
 
-	sort.Sort(n.static)
+// 	sort.Sort(n.static)
 
-	for _, node := range n.static {
-		sortNodes(node)
-	}
+// 	for _, node := range n.static {
+// 		sortNodes(node)
+// 	}
 
-	if n.params != nil {
-		sortNodes(n.params)
-	}
+// 	if n.params != nil {
+// 		sortNodes(n.params)
+// 	}
 
-	if n.wild != nil {
-		sortNodes(n.wild)
-	}
-}
+// 	if n.wild != nil {
+// 		sortNodes(n.wild)
+// 	}
+// }
 
 func (r *router) find(context *ctx, path string) {
-
-	// context.handlers = r.lars.http404
 
 	// homepage, no slash equal to r.tree node
 	if path == "" || path == "/" {
@@ -338,7 +259,7 @@ func (r *router) find(context *ctx, path string) {
 
 	findRoute(context, r.tree, path[1:])
 
-	fmt.Println("Handlers Nil?", context.handlers == nil)
+	// fmt.Println("Handlers Nil?", context.handlers == nil)
 	if context.handlers == nil {
 		context.handlers = r.lars.http404
 	}
@@ -346,21 +267,27 @@ func (r *router) find(context *ctx, path string) {
 
 func findRoute(context *ctx, n *node, path string) {
 
-	fmt.Println("PATH:", path)
 	var end int
 	var c int32
 
+	// start parsing URL
 	for end, c = range path {
+
+		// found chunk ending in slash
 		if c == slash {
 
 			chunk := path[0 : end+1]
 
+			// find matching static node
 			for _, node := range n.static {
-				fmt.Println("NODEPATH:", node.path)
+
+				// fmt.Println("NODEPATH:", node.path)
 				if chunk == node.path {
-					fmt.Println("MATCHED:", chunk)
+
+					// fmt.Println("MATCHED:", chunk)
 					newPath := path[end+1:]
-					fmt.Println("NEW PATH:", newPath)
+					// fmt.Println("NEW PATH:", newPath)
+
 					if newPath == "" {
 						context.handlers = node.chain
 						return
@@ -373,35 +300,10 @@ func findRoute(context *ctx, n *node, path string) {
 				}
 			}
 
-			// no matching chunk look at params then wild
+			// no matching static chunk look at params if available
 			if n.params != nil {
 
 				// extract param, then continue recursing over nodes.
-				// start := end + 1
-				// p := path[start:]
-
-				fmt.Println("PARAM START:", path[0:end])
-				// for end2, c2 = range p {
-				// 	if c2 != slash {
-				// 		continue
-				// 	}
-
-				// 	newPath := path[end2+1:]
-
-				// 	if newPath == "" {
-				// 		context.handlers = n.params.chain
-				// 	} else {
-				// 		findRoute(context, n, path[end2+1:])
-				// 	}
-
-				// 	if context.handlers != nil {
-				// 		i := len(context.params)
-				// 		context.params = context.params[:i+1]
-				// 		context.params[i].Key = n.param
-				// 		context.params[i].Value = path[start:end2]
-				// 		return
-				// 	}
-				// }
 
 				newPath := path[end+1:]
 
@@ -412,84 +314,42 @@ func findRoute(context *ctx, n *node, path string) {
 				}
 
 				if context.handlers != nil {
-					// no slash encountered, param is last value is param
-					// context.handlers = n.params.chain
 					i := len(context.params)
 					context.params = context.params[:i+1]
 					context.params[i].Key = n.params.param
 					context.params[i].Value = path[0:end]
 					return
 				}
-				// if n.params.chain != nil {
-
-				// }
-				// findRoute(context, n.params, path[end+1:])
-				// 	if context.handlers != nil {
-				// 		return
-				// 	}
 			}
 
-			// no matching chunk nor param check if wild
-			// if n.wild != nil {
-			// 	context.handlers = n.chain
-			// 	return
-			// }
-
-			// fmt.Println("Chunk:", chunk)
+			// no matching static or param chunk look at wild if available
+			if n.wild != nil {
+				context.handlers = n.chain
+				return
+			}
 		}
 	}
-
-	fmt.Println("NO SLASH AT END....", path)
 
 	// no slash encountered, end of path...
 	for _, node := range n.static {
 		if path == node.path {
-
-			fmt.Println("MATCHED:", path, len(node.chain))
-
 			context.handlers = node.chain
 			return
-			// fmt.Println("MATCHED:", chunk)
-			// findRoute(context, node, path[end+1:])
-			// if context.handlers != nil {
-			// 	return
-			// }
 		}
 	}
 
-	fmt.Println("PARAMS NIL?", n.params == nil, n.path)
 	if n.params != nil {
-
-		fmt.Println("PARAM START NO SLASH:", path, len(context.params), cap(context.params))
-
-		// newPath := path[end+1:]
-
-		// if newPath == "" {
 		context.handlers = n.params.chain
-		// } else {
-		// 	findRoute(context, n.params, newPath)
-		// }
-
-		// no slash encountered, param is last value is param
-		// context.handlers = n.params.chain
 		i := len(context.params)
 		context.params = context.params[:i+1]
 		context.params[i].Key = n.params.param
 		context.params[i].Value = path
 		return
-		// if n.params.chain != nil {
-
-		// }
-		// findRoute(context, n.params, path[end+1:])
-		// 	if context.handlers != nil {
-		// 		return
-		// 	}
 	}
 
-	fmt.Println("WILD NIL?", n.wild == nil, n.path)
 	// no matching chunk nor param check if wild
 	if n.wild != nil {
-		context.handlers = n.chain
+		context.handlers = n.wild.chain
 		return
 	}
 }
