@@ -79,6 +79,8 @@ const (
 	slash int32 = 47
 	colon int32 = 58
 	star  int32 = 42
+
+	slashByte = '/'
 )
 
 // Handler is the type used in registering handlers.
