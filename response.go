@@ -17,6 +17,11 @@ type Response struct {
 	committed bool
 }
 
+// NewResponse creates a new Response for testing purposes
+func NewResponse(w http.ResponseWriter, l *LARS) *Response {
+	return &Response{ResponseWriter: w}
+}
+
 // SetWriter sets the provided writer as the new *Response http.ResponseWriter
 func (r *Response) SetWriter(w http.ResponseWriter) {
 	r.ResponseWriter = w
