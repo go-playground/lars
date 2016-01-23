@@ -152,7 +152,6 @@ func New() *LARS {
 		},
 		router: router{
 			tree: &node{
-				// path:   "/",
 				static: nodes{},
 			},
 		},
@@ -197,7 +196,9 @@ func (l *LARS) Register404(notFound ...Handler) {
 // Serve returns an http.Handler to be used.
 func (l *LARS) Serve() http.Handler {
 
-	// l.router.sort()
+	// reserved for any logic that needs to happen before serving starts.
+	// i.e. although this router does not use priority to determine route order
+	// could add sorting of tree nodes here....
 
 	return http.HandlerFunc(l.serveHTTP)
 }
@@ -208,11 +209,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Reset(w, r)
 
 	// USE PATH as elements are query escaped
-	// fmt.Println("PATH:", r.URL.Path)
-
 	l.router.find(c.UnderlyingContext(), r.Method, r.URL.Path)
-	// handle requests here passing in c.UnderlyingContext() aka *ctx
-	// and everything can be set on the object without a return value and
 
 	c.Next()
 

@@ -1,7 +1,5 @@
 package lars
 
-import "net/url"
-
 type nodes map[string]*node
 
 type chainMethods map[string]HandlersChain
@@ -24,11 +22,6 @@ type node struct {
 	param string
 }
 
-type router struct {
-	lars *LARS
-	tree *node
-}
-
 func (n *node) addChain(method string, chain HandlersChain) {
 
 	if n.chains == nil {
@@ -36,33 +29,6 @@ func (n *node) addChain(method string, chain HandlersChain) {
 	}
 
 	n.chains[method] = chain
-}
-
-func (r *router) addPath(method string, path string, rg *RouteGroup, h HandlersChain) {
-
-	var err error
-
-	if path, err = url.QueryUnescape(path); err != nil {
-		panic("Query Unescape Error:" + err.Error())
-	}
-
-	if path == blank {
-		path = basePath
-	}
-
-	pCount := new(uint8)
-	*pCount++
-
-	n := add(path[1:], pCount, r.tree)
-	if n == nil {
-		panic("node not added!")
-	}
-
-	if *pCount > r.lars.mostParams {
-		r.lars.mostParams = *pCount
-	}
-
-	n.addChain(method, append(rg.middleware, h...))
 }
 
 // TODO: Add Warning when a wild is add to the same node as a param or vise-versa
@@ -197,30 +163,6 @@ func add(path string, pCount *uint8, n *node) *node {
 	n.static[path] = nn
 
 	return nn
-}
-
-func (r *router) find(context *ctx, method string, path string) {
-
-	// homepage, no slash equal to r.tree node
-	// if path == basePath {
-
-	// 	chain := r.tree.chains[method]
-
-	// 	if chain == nil {
-	// 		context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
-	// 		return
-	// 	}
-
-	// 	context.handlers = chain
-	// 	return
-	// }
-
-	findRoute(context, r.tree, method, path[1:])
-
-	if context.handlers == nil {
-		context.params = context.params[0:0]
-		context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
-	}
 }
 
 func findRoute(context *ctx, n *node, method string, path string) {

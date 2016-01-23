@@ -135,8 +135,5 @@ func (c *ctx) Get(key string) (value interface{}, exists bool) {
 func (c *ctx) Next() {
 
 	c.index++
-
-	if c.index < len(c.handlers) {
-		c.handlers[c.index](c)
-	}
+	c.handlers[c.index](c)
 }
