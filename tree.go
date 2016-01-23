@@ -230,6 +230,7 @@ func findRoute(context *ctx, n *node, method string, path string) {
 	var node *node
 	var ok bool
 	var chunk string
+	var i int
 
 START:
 
@@ -259,7 +260,7 @@ START:
 
 			// extract param, then continue recursing over nodes.
 
-			i := len(context.params)
+			i = len(context.params)
 			context.params = context.params[:i+1]
 			context.params[i].Key = n.params.param
 			context.params[i].Value = path[0:end]
@@ -285,7 +286,7 @@ START:
 
 	if n.params != nil {
 		context.handlers = n.params.chains[method]
-		i := len(context.params)
+		i = len(context.params)
 		context.params = context.params[:i+1]
 		context.params[i].Key = n.params.param
 		context.params[i].Value = path
