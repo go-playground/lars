@@ -89,7 +89,7 @@ func TestFind(t *testing.T) {
 	// Equal(t, code, http.StatusOK)
 	// Equal(t, body, "11")
 
-	l.Get("/authorizations/*", func(c Context) {
+	l.Get("/authorizations/:id/test", func(c Context) {
 		// p, _ := c.Param("id")
 		// c.Response().Write([]byte(p))
 	})

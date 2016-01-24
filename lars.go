@@ -122,7 +122,7 @@ type LARS struct {
 	// For example if /foo/ is requested but a route only exists for /foo, the
 	// client is redirected to /foo with http status code 301 for GET requests
 	// and 307 for all other request methods.
-	RedirectTrailingSlash bool
+	FixTrailingSlash bool
 
 	// If enabled, the router checks if another method is allowed for the
 	// current route, if the current request can not be routed.
@@ -158,7 +158,7 @@ func New() *LARS {
 		mostParams:             0,
 		http404:                []HandlerFunc{default404Handler},
 		httpNotAllowed:         []HandlerFunc{methodNotAllowedHandler},
-		RedirectTrailingSlash:  true,
+		FixTrailingSlash:       true,
 		HandleMethodNotAllowed: false,
 	}
 
