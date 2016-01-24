@@ -186,11 +186,9 @@ START:
 		}
 
 		// found chunk ending in slash
-
 		chunk = path[0 : end+1]
 
 		if node, ok = n.static[chunk]; ok {
-
 			path = path[end+1:]
 			n = node
 
@@ -201,7 +199,6 @@ START:
 		if n.params != nil {
 
 			// extract param, then continue recursing over nodes.
-
 			i = len(context.params)
 			context.params = context.params[:i+1]
 			context.params[i].Key = n.params.param
@@ -215,9 +212,11 @@ START:
 
 		// no matching static or param chunk look at wild if available
 		if n.wild != nil {
-			context.handlers = n.chains[method]
+			context.handlers = n.wild.chains[method]
 			return
 		}
+
+		return
 	}
 
 	// no slash encountered, end of path...
