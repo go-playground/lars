@@ -94,6 +94,11 @@ func add(path string, pCount *uint8, n *node) *node {
 					return add(path[end+2:], pCount, n.params)
 				}
 
+				// wild already exists! then will conflict
+				if n.wild != nil {
+					panic("Cannot add url param " + param + ", wildcard already exists on this path")
+				}
+
 				nn := &node{
 					param: param,
 				}
@@ -118,6 +123,11 @@ func add(path string, pCount *uint8, n *node) *node {
 				return n.params
 			}
 
+			// wild already exists! then will conflict
+			if n.wild != nil {
+				panic("Cannot add url param " + param + ", wildcard already exists on this path")
+			}
+
 			nn := &node{
 				param: param,
 			}
@@ -138,6 +148,11 @@ func add(path string, pCount *uint8, n *node) *node {
 			//if any
 			if n.wild != nil {
 				panic("Wildcard character already exists")
+			}
+
+			// param already exists! then will conflict
+			if n.params != nil {
+				panic("Cannot add url wildcard, param already exists on this path")
 			}
 
 			nn := &node{}

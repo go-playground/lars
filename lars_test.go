@@ -94,6 +94,11 @@ func TestFind(t *testing.T) {
 		// c.Response().Write([]byte(p))
 	})
 
+	l.Get("/authorizations/:id", func(c Context) {
+		// p, _ := c.Param("id")
+		// c.Response().Write([]byte(p))
+	})
+
 	code, _ := request(GET, "/authorizations/11/test", l)
 	Equal(t, code, http.StatusOK)
 	// Equal(t, body, "11")
