@@ -425,7 +425,7 @@ func (r *router) findRoute(context *ctx, method string, path string) {
 
 	var start int
 	var end int
-	var c byte
+	// var c byte
 	var node *node
 	var ok bool
 	// var chunk string
@@ -439,9 +439,9 @@ func (r *router) findRoute(context *ctx, method string, path string) {
 	for ; end < len(path); end++ {
 
 		// START:
-		c = path[end]
+		// c = path[end]
 
-		if c != slashByte {
+		if path[end] != slashByte {
 			continue
 		}
 
@@ -554,3 +554,237 @@ func (r *router) findRoute(context *ctx, method string, path string) {
 		return
 	}
 }
+
+// func (r *router) findRoute(context *ctx, method string, path string) {
+
+// 	cn := r.tree
+
+// 	var (
+// 		end    int
+// 		i      int
+// 		node   *node
+// 		ok     bool
+// 		search string
+// 	)
+
+// NEXT:
+// 	for ; end < len(path) && path[end] != '/'; end++ {
+// 		if path[end] != slashByte {
+// 			continue
+// 		}
+
+// 		end++
+// 		goto STATIC
+// 	}
+
+// 	// end++
+
+// 	if end >= len(path) {
+// 		goto END
+// 	}
+
+// STATIC:
+// 	if node, ok = cn.static[path[:end]]; ok {
+
+// 		search = path[end:]
+
+// 		if search == blank {
+// 			if context.handlers, ok = node.chains[method]; !ok {
+// 				goto PARAMS
+// 			}
+
+// 			return
+// 		}
+
+// 		// fmt.Println("STATIC 1")
+// 		path = search
+// 		cn = node
+
+// 		// start = j
+// 		goto NEXT
+// 		// goto START
+// 	}
+
+// PARAMS:
+// 	// no matching static chunk look at params if available
+// 	if cn.params != nil {
+
+// 		// fmt.Println("PARAMS 1")
+
+// 		search = path[end:]
+
+// 		if search == blank {
+// 			if context.handlers, ok = cn.params.chains[method]; !ok {
+// 				goto WILD
+// 			}
+
+// 			i = len(context.params)
+// 			context.params = context.params[:i+1]
+// 			context.params[i].Key = cn.params.param
+// 			context.params[i].Value = path[0 : end-1]
+
+// 			return
+// 		}
+
+// 		// extract param, then continue recursing over nodes.
+// 		i = len(context.params)
+// 		context.params = context.params[:i+1]
+// 		context.params[i].Key = cn.params.param
+// 		context.params[i].Value = path[0 : end-1]
+
+// 		path = search
+// 		cn = cn.params
+
+// 		// start = j
+// 		goto NEXT
+// 		// goto START
+// 	}
+
+// WILD:
+// 	// no matching static or param chunk look at wild if available
+// 	if cn.wild != nil {
+
+// 		// fmt.Println("WILD 1")
+// 		context.handlers = cn.wild.chains[method]
+// 		return
+// 	}
+
+// END:
+// 	if path == blank {
+
+// 		// fmt.Println("BLANK")
+// 		context.handlers = cn.chains[method]
+// 		return
+// 	}
+
+// 	// // var start int
+// 	// // var end int
+// 	// // var c byte
+// 	// // var node *node
+// 	// // var ok bool
+// 	// // // var chunk string
+// 	// // var i int
+// 	// // var j int
+// 	// // var search string
+
+// 	// // START:
+
+// 	// // start parsing URL
+// 	// for ; end < len(path); end++ {
+
+// 	// 	// START:
+// 	// 	c = path[end]
+
+// 	// 	if c != slashByte {
+// 	// 		continue
+// 	// 	}
+
+// 	// 	// found chunk ending in slash
+// 	// 	// chunk = path[start : end+1]
+
+// 	// 	// fmt.Println("CHUNK:", chunk)
+// 	// 	j = end + 1
+
+// 	// 	if node, ok = cn.static[path[start:j]]; ok {
+
+// 	// 		// search = path[end+1:]
+
+// 	// 		if path[j:] == blank {
+// 	// 			if context.handlers, ok = node.chains[method]; !ok {
+// 	// 				goto PARAMS
+// 	// 			}
+
+// 	// 			return
+// 	// 		}
+
+// 	// 		// fmt.Println("STATIC 1")
+// 	// 		// path = search
+// 	// 		cn = node
+
+// 	// 		start = j
+// 	// 		continue
+// 	// 		// goto START
+// 	// 	}
+
+// 	// PARAMS:
+// 	// 	// no matching static chunk look at params if available
+// 	// 	if cn.params != nil {
+
+// 	// 		// fmt.Println("PARAMS 1")
+
+// 	// 		// search = path[end+1:]
+
+// 	// 		if path[j:] == blank {
+// 	// 			if context.handlers, ok = cn.params.chains[method]; !ok {
+// 	// 				goto WILD
+// 	// 			}
+
+// 	// 			i = len(context.params)
+// 	// 			context.params = context.params[:i+1]
+// 	// 			context.params[i].Key = cn.params.param
+// 	// 			context.params[i].Value = path[0:end]
+
+// 	// 			return
+// 	// 		}
+
+// 	// 		// extract param, then continue recursing over nodes.
+// 	// 		i = len(context.params)
+// 	// 		context.params = context.params[:i+1]
+// 	// 		context.params[i].Key = cn.params.param
+// 	// 		context.params[i].Value = path[0:end]
+
+// 	// 		// path = search
+// 	// 		cn = cn.params
+
+// 	// 		start = j
+// 	// 		continue
+// 	// 		// goto START
+// 	// 	}
+
+// 	// WILD:
+// 	// 	// no matching static or param chunk look at wild if available
+// 	// 	if cn.wild != nil {
+
+// 	// 		// fmt.Println("WILD 1")
+// 	// 		context.handlers = cn.wild.chains[method]
+// 	// 		return
+// 	// 	}
+
+// 	// 	return
+// 	// }
+
+// 	// // fmt.Println("PATH:", path)
+
+// 	// // no slash encountered, end of path...
+// 	// if node, ok = cn.static[path[start:]]; ok {
+// 	// 	// fmt.Println("STATIC 2")
+// 	// 	context.handlers = node.chains[method]
+// 	// 	return
+// 	// }
+
+// 	// if cn.params != nil {
+// 	// 	// fmt.Println("PARAMS 2")
+
+// 	// 	context.handlers = cn.params.chains[method]
+// 	// 	i = len(context.params)
+// 	// 	context.params = context.params[:i+1]
+// 	// 	context.params[i].Key = cn.params.param
+// 	// 	context.params[i].Value = path[start:]
+// 	// 	return
+// 	// }
+
+// 	// // no matching chunk nor param check if wild
+// 	// if cn.wild != nil {
+
+// 	// 	// fmt.Println("WILD 2")
+// 	// 	context.handlers = cn.wild.chains[method]
+// 	// 	return
+// 	// }
+
+// 	// if path == blank {
+
+// 	// 	// fmt.Println("BLANK")
+// 	// 	context.handlers = cn.chains[method]
+// 	// 	return
+// 	// }
+// }
