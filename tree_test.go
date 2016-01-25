@@ -23,8 +23,8 @@ import (
 // }
 
 func TestRouterStatic(t *testing.T) {
-	l := New()
-	path := "/github.com/go-experimental/lars/blob/master/lars_test.go"
+	// l := New()
+	// path := "/github.com/go-experimental/lars/blob/master/lars_test.go"
 
 }
 
