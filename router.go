@@ -43,7 +43,7 @@ func (r *router) find(context *ctx, method string, path string) {
 	// 	context.handlers = r.tree.chains[method]
 	// } else {
 
-	findRoute(context, r.tree, method, path[1:])
+	r.findRoute(context, method, path[1:])
 	// r.findRoute(context, method, path[1:])
 	// }
 
