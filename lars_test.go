@@ -2,7 +2,6 @@ package lars
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	. "gopkg.in/go-playground/assert.v1"
@@ -146,19 +145,7 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
-func request(method, path string, l *LARS) (int, string) {
-	r, _ := http.NewRequest(method, path, nil)
-	w := httptest.NewRecorder()
-	l.serveHTTP(w, r)
-	return w.Code, w.Body.String()
-}
-
-type route struct {
-	method string
-	path   string
-}
-
-var githubAPI = []route{
+var githubAPITest = []route{
 	// OAuth Authorizations
 	{"GET", "/authorizations"},
 	{"GET", "/authorizations/:id"},
