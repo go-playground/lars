@@ -89,19 +89,23 @@ func TestFind(t *testing.T) {
 	// Equal(t, code, http.StatusOK)
 	// Equal(t, body, "11")
 
-	l.Get("/authorizations/:id/test", func(c Context) {
+	l.Get("/authorizations/user/test/", func(c Context) {
 		// p, _ := c.Param("id")
-		// c.Response().Write([]byte(p))
+		c.Response().Write([]byte("1"))
 	})
 
-	l.Get("/authorizations/:id", func(c Context) {
+	l.Get("/authorizations/:id/", func(c Context) {
 		// p, _ := c.Param("id")
-		// c.Response().Write([]byte(p))
+		c.Response().Write([]byte("2"))
 	})
 
-	code, _ := request(GET, "/authorizations/11/test", l)
+	code, body := request(GET, "/authorizations/user/", l)
 	Equal(t, code, http.StatusOK)
-	// Equal(t, body, "11")
+	Equal(t, body, "2")
+
+	code, body = request(GET, "/authorizations/user/test/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "1")
 
 	// code, body := request(GET, "/authorizations/11", l)
 	// Equal(t, code, http.StatusOK)

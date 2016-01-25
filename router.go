@@ -40,7 +40,12 @@ func (r *router) add(method string, path string, rg *RouteGroup, h HandlersChain
 
 func (r *router) find(context *ctx, method string, path string) {
 
-	findRoute(context, r.tree, method, path[1:])
+	if path == "/" {
+		context.handlers = r.tree.chains[method]
+	} else {
+
+		findRoute(context, r.tree, method, path[1:])
+	}
 
 	if context.handlers == nil {
 		context.params = context.params[0:0]
