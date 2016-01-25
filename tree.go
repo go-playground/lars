@@ -1,5 +1,13 @@
 package lars
 
+const (
+	static kind = iota
+	param
+	wild
+)
+
+type kind uint8
+
 type nodes map[string]*node
 
 type chainMethods map[string]HandlersChain
@@ -180,32 +188,30 @@ func add(path string, pCount *uint8, n *node) *node {
 	return nn
 }
 
-// func findRoute(context *ctx, n *node, method string, path string) {
+// find with goto's & recursion
 
-// 	var end int
-// 	var c byte
-// 	var node *node
-// 	var ok bool
-// 	var chunk string
-// 	var i int
+// func (r *router) findRoute(context *ctx, method string, path string) {
 
-// START:
+// 	cn := r.tree
 
-// 	// start parsing URL
-// 	for end = 0; end < len(path); end++ {
+// 	var (
+// 		i    int // parameter counter ( saves checking current length on params array )
+// 		nk   kind
+// 		nn   *node
+// 		next string
+// 		l    int
+// 	)
 
-// 		c = path[end]
-
-// 		if c != slashByte {
-// 			continue
+// 	for {
+// 		if path == blank {
+// 			goto END
 // 		}
 
-// 		// found chunk ending in slash
-// 		chunk = path[0 : end+1]
+// 		for ; l < len(path) && path[l] != slashByte; l++ {
+// 		}
+// 		// i++ // to get past the lash
 
-// 		// fmt.Println("CHUNK:", chunk)
-
-// 		if node, ok = n.static[chunk]; ok {
+// 		if node, ok = n.static[path[0:l+1]]; ok {
 
 // 			// fmt.Println("STATIC 1")
 // 			path = path[end+1:]
@@ -214,128 +220,104 @@ func add(path string, pCount *uint8, n *node) *node {
 // 			goto START
 // 		}
 
-// 		// no matching static chunk look at params if available
-// 		if n.params != nil {
-
-// 			// fmt.Println("PARAMS 1")
-
-// 			// extract param, then continue recursing over nodes.
-// 			i = len(context.params)
-// 			context.params = context.params[:i+1]
-// 			context.params[i].Key = n.params.param
-// 			context.params[i].Value = path[0:end]
-
-// 			path = path[end+1:]
-// 			n = n.params
-
-// 			goto START
-// 		}
-
-// 		// no matching static or param chunk look at wild if available
-// 		if n.wild != nil {
-
-// 			// fmt.Println("WILD 1")
-// 			context.handlers = n.wild.chains[method]
-// 			return
-// 		}
-
-// 		return
+// 		goto END
 // 	}
 
-// 	// fmt.Println("PATH:", path)
-
-// 	// no slash encountered, end of path...
-// 	if node, ok = n.static[path]; ok {
-// 		// fmt.Println("STATIC 2")
-// 		context.handlers = node.chains[method]
-// 		return
-// 	}
-
-// 	if n.params != nil {
-// 		// fmt.Println("PARAMS 2")
-
-// 		context.handlers = n.params.chains[method]
-// 		i = len(context.params)
-// 		context.params = context.params[:i+1]
-// 		context.params[i].Key = n.params.param
-// 		context.params[i].Value = path
-// 		return
-// 	}
-
-// 	// no matching chunk nor param check if wild
-// 	if n.wild != nil {
-
-// 		// fmt.Println("WILD 2")
-// 		context.handlers = n.wild.chains[method]
-// 		return
-// 	}
-
-// 	if path == blank {
-
-// 		// fmt.Println("BLANK")
-// 		context.handlers = n.chains[method]
-// 		return
-// 	}
+// END:
+// 	context.handlers = cn.chains[method]
+// 	// return
 // }
+
+// find with goto's
 
 func findRoute(context *ctx, n *node, method string, path string) {
 
 	var end int
+	var c byte
 	var node *node
 	var ok bool
+	var chunk string
+	var i int
+	var search string
+
+START:
 
 	// start parsing URL
 	for end = 0; end < len(path); end++ {
 
-		if path[end] != slashByte {
+		c = path[end]
+
+		if c != slashByte {
 			continue
 		}
 
 		// found chunk ending in slash
+		chunk = path[0 : end+1]
 
-		if node, ok = n.static[path[0:end+1]]; ok {
+		// fmt.Println("CHUNK:", chunk)
 
-			findRoute(context, node, method, path[end+1:])
-			if context.handlers != nil {
+		if node, ok = n.static[chunk]; ok {
+
+			search = path[end+1:]
+
+			if search == blank {
+				if context.handlers, ok = node.chains[method]; !ok {
+					goto PARAMS
+				}
+
 				return
 			}
+
+			// fmt.Println("STATIC 1")
+			path = search
+			n = node
+
+			goto START
 		}
 
+	PARAMS:
 		// no matching static chunk look at params if available
 		if n.params != nil {
 
 			// fmt.Println("PARAMS 1")
 
+			search = path[end+1:]
+
+			if search == blank {
+				if context.handlers, ok = n.params.chains[method]; !ok {
+					goto WILD
+				}
+
+				i = len(context.params)
+				context.params = context.params[:i+1]
+				context.params[i].Key = n.params.param
+				context.params[i].Value = path[0:end]
+
+				return
+			}
+
 			// extract param, then continue recursing over nodes.
-			newPath := path[end+1:]
+			i = len(context.params)
+			context.params = context.params[:i+1]
+			context.params[i].Key = n.params.param
+			context.params[i].Value = path[0:end]
 
-			if newPath == "" {
+			path = search
+			n = n.params
 
-				i := len(context.params)
-				context.params = context.params[:i+1]
-				context.params[i].Key = n.params.param
-				context.params[i].Value = path[0:end]
-				context.handlers = n.params.chains[method]
-				return
-			}
-
-			findRoute(context, n.params, method, newPath)
-			if context.handlers != nil {
-				i := len(context.params)
-				context.params = context.params[:i+1]
-				context.params[i].Key = n.params.param
-				context.params[i].Value = path[0:end]
-				return
-			}
+			goto START
 		}
 
+	WILD:
 		// no matching static or param chunk look at wild if available
 		if n.wild != nil {
-			// fmt.Println("WILD 1")
 
-			context.handlers = n.chains[method]
+			// fmt.Println("WILD 1")
+			context.handlers = n.wild.chains[method]
 			return
 		}
+
+		return
 	}
 
 	// fmt.Println("PATH:", path)
@@ -349,8 +331,9 @@ func findRoute(context *ctx, n *node, method string, path string) {
 
 	if n.params != nil {
 		// fmt.Println("PARAMS 2")
+
 		context.handlers = n.params.chains[method]
-		i := len(context.params)
+		i = len(context.params)
 		context.params = context.params[:i+1]
 		context.params[i].Key = n.params.param
 		context.params[i].Value = path
@@ -359,8 +342,105 @@ func findRoute(context *ctx, n *node, method string, path string) {
 
 	// no matching chunk nor param check if wild
 	if n.wild != nil {
+
 		// fmt.Println("WILD 2")
 		context.handlers = n.wild.chains[method]
 		return
 	}
+
+	if path == blank {
+
+		// fmt.Println("BLANK")
+		context.handlers = n.chains[method]
+		return
+	}
 }
+
+// find with recursion
+
+// func findRoute(context *ctx, n *node, method string, path string) {
+
+// 	var end int
+// 	var node *node
+// 	var ok bool
+
+// 	// start parsing URL
+// 	for end = 0; end < len(path); end++ {
+
+// 		if path[end] != slashByte {
+// 			continue
+// 		}
+
+// 		// found chunk ending in slash
+
+// 		if node, ok = n.static[path[0:end+1]]; ok {
+
+// 			findRoute(context, node, method, path[end+1:])
+// 			if context.handlers != nil {
+// 				return
+// 			}
+// 		}
+
+// 		// no matching static chunk look at params if available
+// 		if n.params != nil {
+
+// 			// fmt.Println("PARAMS 1")
+
+// 			// extract param, then continue recursing over nodes.
+// 			newPath := path[end+1:]
+
+// 			if newPath == "" {
+
+// 				i := len(context.params)
+// 				context.params = context.params[:i+1]
+// 				context.params[i].Key = n.params.param
+// 				context.params[i].Value = path[0:end]
+// 				context.handlers = n.params.chains[method]
+// 				return
+// 			}
+
+// 			findRoute(context, n.params, method, newPath)
+// 			if context.handlers != nil {
+// 				i := len(context.params)
+// 				context.params = context.params[:i+1]
+// 				context.params[i].Key = n.params.param
+// 				context.params[i].Value = path[0:end]
+// 				return
+// 			}
+// 		}
+
+// 		// no matching static or param chunk look at wild if available
+// 		if n.wild != nil {
+// 			// fmt.Println("WILD 1")
+
+// 			context.handlers = n.chains[method]
+// 			return
+// 		}
+// 	}
+
+// 	// fmt.Println("PATH:", path)
+
+// 	// no slash encountered, end of path...
+// 	if node, ok = n.static[path]; ok {
+// 		// fmt.Println("STATIC 2")
+// 		context.handlers = node.chains[method]
+// 		return
+// 	}
+
+// 	if n.params != nil {
+// 		// fmt.Println("PARAMS 2")
+// 		context.handlers = n.params.chains[method]
+// 		i := len(context.params)
+// 		context.params = context.params[:i+1]
+// 		context.params[i].Key = n.params.param
+// 		context.params[i].Value = path
+// 		return
+// 	}
+
+// 	// no matching chunk nor param check if wild
+// 	if n.wild != nil {
+// 		// fmt.Println("WILD 2")
+// 		context.handlers = n.wild.chains[method]
+// 		return
+// 	}
+// }
