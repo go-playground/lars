@@ -32,6 +32,9 @@ func (n *node) addChain(method string, chain HandlersChain) {
 		n.chains = map[string]HandlersChain{}
 	}
 
+	if n.chains[method] != nil {
+		panic("Duplicate Handler for method " + method)
+	}
 	// TODO: add check to ensure not overriding a currently set method!
 	n.chains[method] = chain
 }
