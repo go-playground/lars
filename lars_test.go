@@ -18,6 +18,4 @@ import "testing"
 func TestLars(t *testing.T) {
 	// l := New()
 	// r, _ := http.NewRequest("GET", "/", nil)
-	// w := httptest.NewRecorder()
-	// defaultContext := NewContext(l)
 }

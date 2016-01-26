@@ -97,7 +97,7 @@ type ContextFunc func() Context
 
 // LARS is the main routing instance
 type LARS struct {
-	RouteGroup
+	routeGroup
 
 	head *node
 
@@ -110,15 +110,15 @@ type LARS struct {
 
 	newContext ContextFunc
 
-	http404        HandlersChain
-	httpNotAllowed HandlersChain
+	http404 HandlersChain // 404 Not Found
+	http405 HandlersChain // 405 Method Not Allowed
 
 	// Enables automatic redirection if the current route can't be matched but a
 	// handler for the path with (without) the trailing slash exists.
 	// For example if /foo/ is requested but a route only exists for /foo, the
 	// client is redirected to /foo with http status code 301 for GET requests
 	// and 307 for all other request methods.
-	FixTrailingSlash bool
+	redirectTrailingSlash bool
 
 	// If enabled, the router checks if another method is allowed for the
 	// current route, if the current request can not be routed.
@@ -126,7 +126,7 @@ type LARS struct {
 	// and HTTP status code 405.
 	// If no other Method is allowed, the request is delegated to the NotFound
 	// handler.
-	HandleMethodNotAllowed bool
+	handleMethodNotAllowed bool
 }
 
 var (
@@ -135,7 +135,21 @@ var (
 	}
 
 	methodNotAllowedHandler = func(c Context) {
-		http.Error(c.Response(), default405Body, http.StatusMethodNotAllowed)
+
+		m, ok := c.Get("methods")
+		if !ok {
+			return
+		}
+
+		methods := m.(chainMethods)
+
+		res := c.Response()
+
+		for k := range methods {
+			res.Header().Add("Allow", k)
+		}
+
+		res.WriteHeader(http.StatusMethodNotAllowed)
 	}
 )
 
@@ -143,7 +157,7 @@ var (
 func New() *LARS {
 
 	l := &LARS{
-		RouteGroup: RouteGroup{
+		routeGroup: routeGroup{
 			middleware: make(HandlersChain, 0),
 		},
 		head: &node{
@@ -151,12 +165,12 @@ func New() *LARS {
 		},
 		mostParams:             0,
 		http404:                []HandlerFunc{default404Handler},
-		httpNotAllowed:         []HandlerFunc{methodNotAllowedHandler},
-		FixTrailingSlash:       true,
-		HandleMethodNotAllowed: false,
+		http405:                []HandlerFunc{methodNotAllowedHandler},
+		redirectTrailingSlash:  true,
+		handleMethodNotAllowed: false,
 	}
 
-	l.RouteGroup.lars = l
+	l.routeGroup.lars = l
 	l.newContext = func() Context {
 		return NewContext(l)
 	}
@@ -186,6 +200,19 @@ func (l *LARS) Register404(notFound ...Handler) {
 	l.http404 = chain
 }
 
+// SetRedirectTrailingSlash tells LARS whether to try
+// and fix a URL by trying to find it
+// lowercase -> with or without slash -> 404
+func (l *LARS) SetRedirectTrailingSlash(set bool) {
+	l.redirectTrailingSlash = set
+}
+
+// SetHandle405MethodNotAllowed tells LARS whether to
+// handle the http 405 Method Not Allowed status code
+func (l *LARS) SetHandle405MethodNotAllowed(set bool) {
+	l.handleMethodNotAllowed = set
+}
+
 // Serve returns an http.Handler to be used.
 func (l *LARS) Serve() http.Handler {
 
@@ -202,15 +229,17 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Reset(w, r)
 
 	// USE PATH as elements are query escaped
-	l.find(c.UnderlyingContext(), r.Method, r.URL.Path[1:])
+	// l.find(c.UnderlyingContext(), r.Method, r.URL.Path[1:])
+	l.find(c.UnderlyingContext(), true)
 
 	c.Next()
 
 	l.pool.Put(c)
 }
 
-func (l *LARS) add(method string, path string, rg *RouteGroup, h HandlersChain) {
+func (l *LARS) add(method string, path string, rg *routeGroup, h HandlersChain) {
 
+	origPath := path
 	cn := l.head
 
 	var (
@@ -226,7 +255,7 @@ func (l *LARS) add(method string, path string, rg *RouteGroup, h HandlersChain) 
 	)
 
 	if path, err = url.QueryUnescape(path); err != nil {
-		panic("Query Unescape Error:" + err.Error())
+		panic("Query Unescape Error on path '" + origPath + "': " + err.Error())
 	}
 
 	if path == blank {
@@ -286,7 +315,7 @@ MAIN:
 					// /users/:user_id/profile/settings
 					// both params above must be either :id or :user_id, no mix & match
 					if cn.params.param != chunk {
-						panic("Different Param names defined")
+						panic("Different param names defined for path '" + origPath + "', param '" + chunk + "'' should be '" + cn.params.param + "'")
 					}
 
 					pCount++
@@ -298,7 +327,7 @@ MAIN:
 
 				// wild already exists! then will conflict
 				if cn.wild != nil {
-					panic("Cannot add url param " + chunk + ", wildcard already exists on this path")
+					panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 				}
 
 				nn := &node{
@@ -320,7 +349,7 @@ MAIN:
 
 			if cn.params != nil {
 				if cn.params.param != chunk {
-					panic("Different Param names defined")
+					panic("Different param names defined for path '" + origPath + "', param '" + chunk + "'' should be '" + cn.params.param + "'")
 				}
 
 				cn = cn.params
@@ -330,7 +359,7 @@ MAIN:
 
 			// wild already exists! then will conflict
 			if cn.wild != nil {
-				panic("Cannot add url param " + chunk + ", wildcard already exists on this path")
+				panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 			}
 
 			cn.params = &node{
@@ -344,18 +373,18 @@ MAIN:
 		if c == startByte {
 
 			if path[end+1:] != blank {
-				panic("Character after the * symbol is not acceptable")
+				panic("Character after the * symbol is not permitted, path '" + origPath + "'")
 			}
 
 			//Check the node for existing star then throw a panic information
 			//if any
 			if cn.wild != nil {
-				panic("Wildcard character already exists")
+				panic("Wildcard already set by another path, current path '" + origPath + "' conflicts")
 			}
 
 			// param already exists! then will conflict
 			if cn.params != nil {
-				panic("Cannot add url wildcard, param already exists on this path")
+				panic("Cannot add wildcard for path '" + origPath + "', a conflicting param path exists with param '" + cn.params.param + "'")
 			}
 
 			cn.wild = &node{}
@@ -385,25 +414,23 @@ MAIN:
 	cn = cn.static[chunk]
 
 END:
-	if cn == nil {
-		panic("node not added!")
-	}
 
 	if pCount > l.mostParams {
 		l.mostParams = pCount
 	}
 
-	cn.addChain(method, append(rg.middleware, h...))
+	cn.addChain(origPath, method, append(rg.middleware, h...))
 }
 
-func (l *LARS) find(context *DefaultContext, method string, path string) {
+func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 
 	cn := l.head
+	path := ctx.request.URL.Path[1:]
 
 	var (
 		start int
 		end   int
-		node  *node
+		nn    *node
 		ok    bool
 		i     int
 		j     int
@@ -418,17 +445,19 @@ func (l *LARS) find(context *DefaultContext, method string, path string) {
 
 		j = end + 1
 
-		if node, ok = cn.static[path[start:j]]; ok {
+		if nn, ok = cn.static[path[start:j]]; ok {
 
 			if path[j:] == blank {
-				if context.handlers, ok = node.chains[method]; !ok {
+				if ctx.handlers, ok = nn.chains[ctx.request.Method]; !ok {
 					goto PARAMS
 				}
+
+				cn = nn
 
 				goto END
 			}
 
-			cn = node
+			cn = nn
 			start = j
 
 			continue
@@ -439,23 +468,24 @@ func (l *LARS) find(context *DefaultContext, method string, path string) {
 		if cn.params != nil {
 
 			if path[j:] == blank {
-				if context.handlers, ok = cn.params.chains[method]; !ok {
+				if ctx.handlers, ok = cn.params.chains[ctx.request.Method]; !ok {
 					goto WILD
 				}
 
-				i = len(context.params)
-				context.params = context.params[:i+1]
-				context.params[i].Key = cn.params.param
-				context.params[i].Value = path[0:end]
+				i = len(ctx.params)
+				ctx.params = ctx.params[:i+1]
+				ctx.params[i].Key = cn.params.param
+				ctx.params[i].Value = path[0:end]
+				cn = cn.params
 
 				goto END
 			}
 
 			// extract param, then continue recursing over nodes.
-			i = len(context.params)
-			context.params = context.params[:i+1]
-			context.params[i].Key = cn.params.param
-			context.params[i].Value = path[0:end]
+			i = len(ctx.params)
+			ctx.params = ctx.params[:i+1]
+			ctx.params[i].Key = cn.params.param
+			ctx.params[i].Value = path[0:end]
 			cn = cn.params
 			start = j
 
@@ -465,88 +495,108 @@ func (l *LARS) find(context *DefaultContext, method string, path string) {
 	WILD:
 		// no matching static or param chunk look at wild if available
 		if cn.wild != nil {
-			context.handlers = cn.wild.chains[method]
+			ctx.handlers = cn.wild.chains[ctx.request.Method]
+			cn = cn.wild
+			goto END
 		}
+
+		cn = nn
 
 		goto END
 	}
 
 	// no slash encountered, end of path...
-	if node, ok = cn.static[path[start:]]; ok {
-		context.handlers = node.chains[method]
+	if nn, ok = cn.static[path[start:]]; ok {
+		ctx.handlers = nn.chains[ctx.request.Method]
+		cn = nn
 
 		goto END
 	}
 
 	if cn.params != nil {
-		context.handlers = cn.params.chains[method]
-		i = len(context.params)
-		context.params = context.params[:i+1]
-		context.params[i].Key = cn.params.param
-		context.params[i].Value = path[start:]
+		ctx.handlers = cn.params.chains[ctx.request.Method]
+		i = len(ctx.params)
+		ctx.params = ctx.params[:i+1]
+		ctx.params[i].Key = cn.params.param
+		ctx.params[i].Value = path[start:]
+		cn = cn.params
 
 		goto END
 	}
 
 	// no matching chunk nor param check if wild
 	if cn.wild != nil {
-		context.handlers = cn.wild.chains[method]
+		ctx.handlers = cn.wild.chains[ctx.request.Method]
+		cn = cn.wild
 
 		goto END
 	}
 
 	if path == blank {
-		context.handlers = cn.chains[method]
+		ctx.handlers = cn.chains[ctx.request.Method]
 	}
 
-END:
-	if context.handlers == nil {
-		context.params = context.params[0:0]
+	cn = nil
 
-		if l.FixTrailingSlash {
+END:
+	if ctx.handlers == nil && processEnd {
+		ctx.params = ctx.params[0:0]
+
+		if l.handleMethodNotAllowed && cn != nil && len(cn.chains) > 0 {
+			ctx.Set("methods", cn.chains)
+			ctx.handlers = l.http405
+			return
+		}
+
+		if l.redirectTrailingSlash {
 
 			// find again all lowercase
-			lc := strings.ToLower(path)
-			if lc != path {
-				l.find(context, method, lc[1:])
-				if context.handlers != nil {
-					l.redirect(context, method, lc)
+			lc := strings.ToLower(ctx.request.URL.Path)
+
+			if lc != ctx.request.URL.Path {
+
+				ctx.request.URL.Path = lc
+				l.find(ctx, false)
+
+				if ctx.handlers != nil {
+					l.redirect(ctx)
 					return
 				}
 			}
 
-			context.params = context.params[0:0]
+			ctx.params = ctx.params[0:0]
 
-			if lc[len(lc)-1:] == basePath {
-				lc = lc[:len(lc)-1]
+			if ctx.request.URL.Path[len(ctx.request.URL.Path)-1:] == basePath {
+				ctx.request.URL.Path = ctx.request.URL.Path[:len(ctx.request.URL.Path)-1]
 			} else {
-				lc = lc + basePath
+				ctx.request.URL.Path = ctx.request.URL.Path + basePath
 			}
 
 			// find with lowercase + or - sash
-			l.find(context, method, lc[1:])
-			if context.handlers != nil {
-				l.redirect(context, method, lc)
+			l.find(ctx, false)
+			if ctx.handlers != nil {
+				l.redirect(ctx)
 				return
 			}
 		}
 
-		context.params = context.params[0:0]
-		context.handlers = append(l.RouteGroup.middleware, l.http404...)
+		ctx.params = ctx.params[0:0]
+		ctx.handlers = append(l.routeGroup.middleware, l.http404...)
 	}
 }
 
-func (l *LARS) redirect(context *DefaultContext, method, url string) {
+func (l *LARS) redirect(ctx *DefaultContext) {
 
 	code := http.StatusMovedPermanently
 
-	if method != GET {
+	if ctx.request.Method != GET {
 		code = http.StatusTemporaryRedirect
 	}
 
 	fn := func(c Context) {
-		http.Redirect(c.Response(), c.Request(), url, code)
+		req := c.Request()
+		http.Redirect(c.Response(), req, req.URL.Path, code)
 	}
 
-	context.handlers = append(l.RouteGroup.middleware, fn)
+	ctx.handlers = append(l.routeGroup.middleware, fn)
 }
