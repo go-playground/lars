@@ -318,7 +318,9 @@ MAIN:
 
 				// wild already exists! then will conflict
 				if cn.wild != nil {
-					panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
+					if _, ok := cn.wild.chains[method]; ok {
+						panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
+					}
 				}
 
 				nn := &node{
@@ -350,7 +352,9 @@ MAIN:
 
 			// wild already exists! then will conflict
 			if cn.wild != nil {
-				panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
+				if _, ok := cn.wild.chains[method]; ok {
+					panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
+				}
 			}
 
 			cn.params = &node{
@@ -375,7 +379,9 @@ MAIN:
 
 			// param already exists! then will conflict
 			if cn.params != nil {
-				panic("Cannot add wildcard for path '" + origPath + "', a conflicting param path exists with param '" + cn.params.param + "'")
+				if _, ok := cn.params.chains[method]; ok {
+					panic("Cannot add wildcard for path '" + origPath + "', a conflicting param path exists with param '" + cn.params.param + "'")
+				}
 			}
 
 			cn.wild = &node{}
@@ -505,7 +511,10 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 	}
 
 	if cn.params != nil {
-		ctx.handlers = cn.params.chains[ctx.request.Method]
+		if ctx.handlers, ok = cn.params.chains[ctx.request.Method]; !ok {
+			goto WILDNOSLASH
+		}
+
 		i = len(ctx.params)
 		ctx.params = ctx.params[:i+1]
 		ctx.params[i].Key = cn.params.param
@@ -515,6 +524,7 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 		goto END
 	}
 
+WILDNOSLASH:
 	// no matching chunk nor param check if wild
 	if cn.wild != nil {
 		ctx.handlers = cn.wild.chains[ctx.request.Method]
@@ -530,6 +540,7 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 	cn = nil
 
 END:
+	// fmt.Println("END:", ctx.handlers)
 	if ctx.handlers == nil && processEnd {
 		ctx.params = ctx.params[0:0]
 

@@ -21,7 +21,35 @@ import (
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
 
-var basicHandler = func(Context) {
+var basicHandler = func(Context) {}
+
+func TestFindOneOffs(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+	l.Get("/users/:id", fn)
+	l.Post("/users/*", fn)
+
+	code, body := request(GET, "/users/1", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/users/1", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
+
+	l.Get("/admins/:id/", fn)
+	l.Post("/admins/*", fn)
+
+	code, body = request(GET, "/admins/1/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/admins/1/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
 }
 
 func TestLARS(t *testing.T) {
@@ -132,6 +160,10 @@ func TestRouterMicroParam(t *testing.T) {
 	value, exists = context.P(2)
 	Equal(t, "3", value)
 	Equal(t, true, exists)
+
+	value, exists = context.P(4)
+	Equal(t, exists, false)
+	Equal(t, value, "")
 
 	value, exists = context.Param("a")
 
