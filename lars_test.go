@@ -1,8 +1,8 @@
 package lars
 
 import (
-	"log"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	. "gopkg.in/go-playground/assert.v1"
@@ -22,7 +22,6 @@ import (
 //
 
 var basicHandler = func(Context) {
-
 }
 
 func TestLARS(t *testing.T) {
@@ -55,6 +54,93 @@ func TestLARSParam(t *testing.T) {
 	})
 	code, body := request(GET, "/github.com/go-experimental/808w70/", l)
 
-	log.Println(code, body)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "808w70")
+}
 
+func TestLARSTwoParam(t *testing.T) {
+	var p Params
+
+	l := New()
+	path := "/github.com/user/:id/:age/"
+	l.Get(path, func(c Context) {
+		p = c.Params()
+	})
+
+	code, _ := request(GET, "/github.com/user/808w70/67/", l)
+
+	Equal(t, code, http.StatusOK)
+	Equal(t, p[0].Value, "808w70")
+	Equal(t, p[1].Value, "67")
+}
+
+func TestRouterMatchAny(t *testing.T) {
+
+	l := New()
+	path1 := "/github/"
+	path2 := "/github/*"
+	path3 := "/users/*"
+
+	l.Get(path1, func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
+	})
+
+	l.Get(path2, func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
+	})
+
+	l.Get(path3, func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
+	})
+
+	code, body := request(GET, "/github/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, path1)
+
+	code, body = request(GET, "/github/department", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/github/department")
+
+	code, body = request(GET, "/users/joe", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/users/joe")
+
+}
+
+func TestRouterMicroParam(t *testing.T) {
+	var p Params
+
+	l := New()
+	l.Get("/:a/:b/:c", func(c Context) {
+		p = c.Params()
+	})
+	code, _ := request(GET, "/1/2/3", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, "1", p[0].Value)
+	Equal(t, "2", p[1].Value)
+	Equal(t, "3", p[2].Value)
+
+}
+
+func TestRouterMixParamMatchAny(t *testing.T) {
+	var p Params
+
+	l := New()
+
+	//Route
+	l.Get("/users/:id/*", func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
+		p = c.Params()
+	})
+	code, body := request(GET, "/users/joe/comments", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, "joe", p[0].Value)
+	Equal(t, "/users/joe/comments", body)
+}
+
+func request(method, path string, l *LARS) (int, string) {
+	r, _ := http.NewRequest(method, path, nil)
+	w := httptest.NewRecorder()
+	l.serveHTTP(w, r)
+	return w.Code, w.Body.String()
 }
