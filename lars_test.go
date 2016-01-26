@@ -31,7 +31,7 @@ func TestFind(t *testing.T) {
 	// }}
 
 	// for _, r := range githubAPI {
-	// 	l.RouteGroup.handle(r.method, r.path, fn)
+	// 	l.routeGroup.handle(r.method, r.path, fn)
 	// }
 
 	// l.Delete("/authorizations/:id", func(c Context) {

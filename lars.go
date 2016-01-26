@@ -97,7 +97,7 @@ type ContextFunc func() Context
 
 // LARS is the main routing instance
 type LARS struct {
-	RouteGroup
+	routeGroup
 
 	head *node
 
@@ -118,7 +118,7 @@ type LARS struct {
 	// For example if /foo/ is requested but a route only exists for /foo, the
 	// client is redirected to /foo with http status code 301 for GET requests
 	// and 307 for all other request methods.
-	RedirectTrailingSlash bool
+	redirectTrailingSlash bool
 
 	// If enabled, the router checks if another method is allowed for the
 	// current route, if the current request can not be routed.
@@ -126,7 +126,7 @@ type LARS struct {
 	// and HTTP status code 405.
 	// If no other Method is allowed, the request is delegated to the NotFound
 	// handler.
-	HandleMethodNotAllowed bool
+	handleMethodNotAllowed bool
 }
 
 var (
@@ -157,7 +157,7 @@ var (
 func New() *LARS {
 
 	l := &LARS{
-		RouteGroup: RouteGroup{
+		routeGroup: routeGroup{
 			middleware: make(HandlersChain, 0),
 		},
 		head: &node{
@@ -166,11 +166,11 @@ func New() *LARS {
 		mostParams:             0,
 		http404:                []HandlerFunc{default404Handler},
 		http405:                []HandlerFunc{methodNotAllowedHandler},
-		RedirectTrailingSlash:  true,
-		HandleMethodNotAllowed: false,
+		redirectTrailingSlash:  true,
+		handleMethodNotAllowed: false,
 	}
 
-	l.RouteGroup.lars = l
+	l.routeGroup.lars = l
 	l.newContext = func() Context {
 		return NewContext(l)
 	}
@@ -200,6 +200,19 @@ func (l *LARS) Register404(notFound ...Handler) {
 	l.http404 = chain
 }
 
+// RedirectTrailingSlash tells LARS whether to try
+// and fix a URL by trying to find it
+// lowercase -> with or without slash -> 404
+func (l *LARS) SetRedirectTrailingSlash(set bool) {
+	l.redirectTrailingSlash = set
+}
+
+// SetHandle405MethodNotAllowed tells LARS whether to
+// handle the http 405 Method Not Allowed status code
+func (l *LARS) SetHandle405MethodNotAllowed(set bool) {
+	l.handleMethodNotAllowed = set
+}
+
 // Serve returns an http.Handler to be used.
 func (l *LARS) Serve() http.Handler {
 
@@ -224,7 +237,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	l.pool.Put(c)
 }
 
-func (l *LARS) add(method string, path string, rg *RouteGroup, h HandlersChain) {
+func (l *LARS) add(method string, path string, rg *routeGroup, h HandlersChain) {
 
 	cn := l.head
 
@@ -532,13 +545,13 @@ END:
 	if ctx.handlers == nil && processEnd {
 		ctx.params = ctx.params[0:0]
 
-		if l.HandleMethodNotAllowed && cn != nil && len(cn.chains) > 0 {
+		if l.handleMethodNotAllowed && cn != nil && len(cn.chains) > 0 {
 			ctx.Set("methods", cn.chains)
 			ctx.handlers = l.http405
 			return
 		}
 
-		if l.RedirectTrailingSlash {
+		if l.redirectTrailingSlash {
 
 			// find again all lowercase
 			lc := strings.ToLower(ctx.request.URL.Path)
@@ -571,7 +584,7 @@ END:
 		}
 
 		ctx.params = ctx.params[0:0]
-		ctx.handlers = append(l.RouteGroup.middleware, l.http404...)
+		ctx.handlers = append(l.routeGroup.middleware, l.http404...)
 	}
 }
 
@@ -588,5 +601,5 @@ func (l *LARS) redirect(ctx *DefaultContext) {
 		http.Redirect(c.Response(), req, req.URL.Path, code)
 	}
 
-	ctx.handlers = append(l.RouteGroup.middleware, fn)
+	ctx.handlers = append(l.routeGroup.middleware, fn)
 }
