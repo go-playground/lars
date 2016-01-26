@@ -225,11 +225,9 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(Context)
 	c.Reset(w, r)
 
-	// USE PATH as elements are query escaped
-	// l.find(c.UnderlyingContext(), r.Method, r.URL.Path[1:])
 	l.find(c.UnderlyingContext(), true)
 
-	c.Next()
+	c.Next(c)
 
 	l.pool.Put(c)
 }
