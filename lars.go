@@ -209,7 +209,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Reset(w, r)
 
 	// USE PATH as elements are query escaped
-	l.router.find(c.UnderlyingContext(), r.Method, r.URL.Path)
+	l.router.find(c.UnderlyingContext(), r.Method, r.URL.Path[1:])
 
 	c.Next()
 

@@ -3,7 +3,6 @@ package lars
 import (
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 type router struct {
@@ -38,51 +37,51 @@ func (r *router) add(method string, path string, rg *RouteGroup, h HandlersChain
 	n.addChain(method, append(rg.middleware, h...))
 }
 
-func (r *router) find(context *DefaultContext, method string, path string) {
+// func (r *router) find(context *DefaultContext, method string, path string) {
 
-	// if path == "/" {
-	// 	context.handlers = r.tree.chains[method]
-	// } else {
+// 	// if path == "/" {
+// 	// 	context.handlers = r.tree.chains[method]
+// 	// } else {
 
-	r.findRoute(context, method, path[1:])
-	// r.findRoute(context, method, path[1:])
-	// }
+// 	r.findRoute(context, method, path[1:])
+// 	// r.findRoute(context, method, path[1:])
+// 	// }
 
-	if context.handlers == nil {
-		context.params = context.params[0:0]
+// 	// if context.handlers == nil {
+// 	// 	context.params = context.params[0:0]
 
-		if r.lars.FixTrailingSlash {
+// 	// 	if r.lars.FixTrailingSlash {
 
-			// find again all lowercase
-			lc := strings.ToLower(path)
-			if lc != path {
-				r.findRoute(context, method, lc[1:])
-				if context.handlers != nil {
-					r.redirect(context, method, lc)
-					return
-				}
-			}
+// 	// 		// find again all lowercase
+// 	// 		lc := strings.ToLower(path)
+// 	// 		if lc != path {
+// 	// 			r.findRoute(context, method, lc[1:])
+// 	// 			if context.handlers != nil {
+// 	// 				r.redirect(context, method, lc)
+// 	// 				return
+// 	// 			}
+// 	// 		}
 
-			context.params = context.params[0:0]
+// 	// 		context.params = context.params[0:0]
 
-			if lc[len(lc)-1:] == basePath {
-				lc = lc[:len(lc)-1]
-			} else {
-				lc = lc + basePath
-			}
+// 	// 		if lc[len(lc)-1:] == basePath {
+// 	// 			lc = lc[:len(lc)-1]
+// 	// 		} else {
+// 	// 			lc = lc + basePath
+// 	// 		}
 
-			// find with lowercase + or - sash
-			r.findRoute(context, method, lc[1:])
-			if context.handlers != nil {
-				r.redirect(context, method, lc)
-				return
-			}
-		}
+// 	// 		// find with lowercase + or - sash
+// 	// 		r.findRoute(context, method, lc[1:])
+// 	// 		if context.handlers != nil {
+// 	// 			r.redirect(context, method, lc)
+// 	// 			return
+// 	// 		}
+// 	// 	}
 
-		context.params = context.params[0:0]
-		context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
-	}
-}
+// 	// 	context.params = context.params[0:0]
+// 	// 	context.handlers = append(r.lars.RouteGroup.middleware, r.lars.http404...)
+// 	// }
+// }
 
 func (r *router) redirect(context *DefaultContext, method, url string) {
 
