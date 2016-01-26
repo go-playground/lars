@@ -29,7 +29,7 @@ type Context interface {
 	Params() Params
 	Get(key string) (value interface{}, exists bool)
 	Set(key string, value interface{})
-	Next()
+	Next(Context)
 	Reset(w http.ResponseWriter, r *http.Request)
 	UnderlyingContext() *DefaultContext
 }
@@ -134,8 +134,7 @@ func (c *DefaultContext) Get(key string) (value interface{}, exists bool) {
 // Next should be used only inside middleware.
 // It executes the pending handlers in the chain inside the calling handler.
 // See example in github.
-func (c *DefaultContext) Next() {
-
+func (c *DefaultContext) Next(ctx Context) {
 	c.index++
-	c.handlers[c.index](c)
+	c.handlers[c.index](ctx)
 }

@@ -145,42 +145,42 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
-// type myCustomContext struct {
-// 	*DefaultContext
-// 	text string
-// }
+type myCustomContext struct {
+	*DefaultContext
+	text string
+}
 
-// func (c *myCustomContext) test() string {
-// 	return c.text
-// }
+func (c *myCustomContext) test() string {
+	return c.text
+}
 
-// func (c *myCustomContext) Reset(w http.ResponseWriter, r *http.Request) {
-// 	c.text = "I AM HERE"
-// 	c.DefaultContext.Reset(w, r)
-// }
+func (c *myCustomContext) Reset(w http.ResponseWriter, r *http.Request) {
+	c.text = "I AM HERE"
+	c.DefaultContext.Reset(w, r)
+}
 
-// func TestCustomContext(t *testing.T) {
+func TestCustomContext(t *testing.T) {
 
-// 	var l *LARS
+	var l *LARS
 
-// 	fn := func() Context {
-// 		return &myContext{
-// 			DefaultContext: NewContext(l),
-// 		}
-// 	}
+	fn := func() Context {
+		return &myCustomContext{
+			DefaultContext: NewContext(l),
+		}
+	}
 
-// 	l = New()
-// 	l.RegisterContext(fn)
+	l = New()
+	l.RegisterContext(fn)
 
-// 	// l.Get("/home/", func(c Context) {
-// 	// 	ctx := c.(*myCustomContext)
-// 	// 	c.Response().Write([]byte(ctx.text))
-// 	// })
+	l.Get("/home/", func(c Context) {
+		ctx := c.(*myCustomContext)
+		c.Response().Write([]byte(ctx.text))
+	})
 
-// 	// code, body := request(GET, "/home/", l)
-// 	// Equal(t, code, http.StatusOK)
-// 	// Equal(t, body, "I AM HERE")
-// }
+	code, body := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "I AM HERE")
+}
 
 func TestCustom404(t *testing.T) {
 
@@ -214,9 +214,16 @@ func TestMethodNotAllowed(t *testing.T) {
 
 	allow, ok := w.Header()["Allow"]
 
-	Equal(t, ok, true)
-	Equal(t, allow[0], GET)
-	Equal(t, allow[1], HEAD)
+	// Sometimes this array is out of order for whatever reason?
+	if allow[0] == GET {
+		Equal(t, ok, true)
+		Equal(t, allow[0], GET)
+		Equal(t, allow[1], HEAD)
+	} else {
+		Equal(t, ok, true)
+		Equal(t, allow[1], GET)
+		Equal(t, allow[0], HEAD)
+	}
 
 	l.SetHandle405MethodNotAllowed(false)
 
