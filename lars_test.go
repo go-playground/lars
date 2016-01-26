@@ -143,6 +143,25 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
+func TestRedirect(t *testing.T) {
+	l := New()
+
+	l.Get("/home/", func(Context) {})
+	l.Post("/home/", func(Context) {})
+
+	code, _ := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(GET, "/home", l)
+	Equal(t, code, http.StatusMovedPermanently)
+
+	code, _ = request(POST, "/home", l)
+	Equal(t, code, http.StatusTemporaryRedirect)
+}
+
 func request(method, path string, l *LARS) (int, string) {
 	r, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
