@@ -184,7 +184,7 @@ func add(path string, pCount *uint8, n *node) *node {
 
 // find with goto's
 
-// func (r *router) findRoute(context *ctx, method string, path string) {
+// func (r *router) findRoute(context *DefaultContext, method string, path string) {
 
 // 	cn := r.tree
 
@@ -312,7 +312,7 @@ func add(path string, pCount *uint8, n *node) *node {
 // 	}
 // }
 
-// func (r *router) findRoute(context *ctx, method string, path string) {
+// func (r *router) findRoute(context *DefaultContext, method string, path string) {
 
 // 	cn := r.tree
 // 	// l := len(path)
@@ -419,7 +419,7 @@ func add(path string, pCount *uint8, n *node) *node {
 // 	context.handlers = cn.chains[method]
 // 	}
 
-func (r *router) findRoute(context *ctx, method string, path string) {
+func (r *router) findRoute(context *DefaultContext, method string, path string) {
 
 	cn := r.tree
 
@@ -555,7 +555,7 @@ func (r *router) findRoute(context *ctx, method string, path string) {
 	}
 }
 
-// func (r *router) findRoute(context *ctx, method string, path string) {
+// func (r *router) findRoute(context *DefaultContext, method string, path string) {
 
 // 	cn := r.tree
 

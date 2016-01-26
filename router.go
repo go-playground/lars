@@ -38,7 +38,7 @@ func (r *router) add(method string, path string, rg *RouteGroup, h HandlersChain
 	n.addChain(method, append(rg.middleware, h...))
 }
 
-func (r *router) find(context *ctx, method string, path string) {
+func (r *router) find(context *DefaultContext, method string, path string) {
 
 	// if path == "/" {
 	// 	context.handlers = r.tree.chains[method]
@@ -84,7 +84,7 @@ func (r *router) find(context *ctx, method string, path string) {
 	}
 }
 
-func (r *router) redirect(context *ctx, method, url string) {
+func (r *router) redirect(context *DefaultContext, method, url string) {
 
 	code := http.StatusMovedPermanently
 

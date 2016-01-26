@@ -11,9 +11,9 @@ func wrapHandler(h Handler) HandlerFunc {
 		return h
 	case http.Handler, http.HandlerFunc:
 		return func(c Context) {
-			res := c.Response()
+			dc := c.UnderlyingContext()
 
-			if h.(http.Handler).ServeHTTP(res, c.Request()); res.Status() != http.StatusOK || res.Committed() {
+			if h.(http.Handler).ServeHTTP(dc.response, dc.request); dc.response.status != http.StatusOK || dc.response.committed {
 				return
 			}
 
@@ -21,10 +21,9 @@ func wrapHandler(h Handler) HandlerFunc {
 		}
 	case func(http.ResponseWriter, *http.Request):
 		return func(c Context) {
+			dc := c.UnderlyingContext()
 
-			res := c.Response()
-
-			if h(res, c.Request()); res.Status() != http.StatusOK || res.Committed() {
+			if h(dc.response, dc.request); dc.response.status != http.StatusOK || dc.response.committed {
 				return
 			}
 

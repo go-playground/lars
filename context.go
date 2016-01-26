@@ -31,10 +31,10 @@ type Context interface {
 	Set(key string, value interface{})
 	Next()
 	Reset(w http.ResponseWriter, r *http.Request)
-	UnderlyingContext() *ctx
+	UnderlyingContext() *DefaultContext
 }
 
-type ctx struct {
+type DefaultContext struct {
 	context.Context
 	request  *http.Request
 	response *Response
@@ -44,37 +44,37 @@ type ctx struct {
 	index    int
 }
 
-var _ context.Context = &ctx{}
-var _ Context = &ctx{}
+var _ context.Context = &DefaultContext{}
+var _ Context = &DefaultContext{}
 
 // NewContext returns a new default lars Context object.
 // Particularily useful when creating a custom Context
 // but still wanting the default Context behavior
-func NewContext(l *LARS) Context {
+func NewContext(l *LARS) *DefaultContext {
 
-	return &ctx{
+	return &DefaultContext{
 		params:   make(Params, l.mostParams),
 		response: &Response{},
 	}
 }
 
 // Request returns context assotiated *http.Request.
-func (c *ctx) UnderlyingContext() *ctx {
+func (c *DefaultContext) UnderlyingContext() *DefaultContext {
 	return c
 }
 
 // Request returns context assotiated *http.Request.
-func (c *ctx) Request() *http.Request {
+func (c *DefaultContext) Request() *http.Request {
 	return c.request
 }
 
 // Response returns http.ResponseWriter.
-func (c *ctx) Response() *Response {
+func (c *DefaultContext) Response() *Response {
 	return c.response
 }
 
 // P returns path parameter by index.
-func (c *ctx) P(i int) (string, bool) {
+func (c *DefaultContext) P(i int) (string, bool) {
 
 	l := len(c.params)
 
@@ -87,7 +87,7 @@ func (c *ctx) P(i int) (string, bool) {
 
 // Param returns the value of the first Param which key matches the given name.
 // If no matching Param is found, an empty string is returned and false is returned.
-func (c *ctx) Param(name string) (string, bool) {
+func (c *DefaultContext) Param(name string) (string, bool) {
 
 	for _, entry := range c.params {
 		if entry.Key == name {
@@ -98,11 +98,11 @@ func (c *ctx) Param(name string) (string, bool) {
 }
 
 // Params returns the array of parameters within the context
-func (c *ctx) Params() Params {
+func (c *DefaultContext) Params() Params {
 	return c.params
 }
 
-func (c *ctx) Reset(w http.ResponseWriter, r *http.Request) {
+func (c *DefaultContext) Reset(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
 	c.params = c.params[0:0]
@@ -113,7 +113,7 @@ func (c *ctx) Reset(w http.ResponseWriter, r *http.Request) {
 
 // Set is used to store a new key/value pair exclusivelly for this context.
 // It also lazy initializes  c.Keys if it was not used previously.
-func (c *ctx) Set(key string, value interface{}) {
+func (c *DefaultContext) Set(key string, value interface{}) {
 	if c.store == nil {
 		c.store = make(store)
 	}
@@ -122,7 +122,7 @@ func (c *ctx) Set(key string, value interface{}) {
 
 // Get returns the value for the given key, ie: (value, true).
 // If the value does not exists it returns (nil, false)
-func (c *ctx) Get(key string) (value interface{}, exists bool) {
+func (c *DefaultContext) Get(key string) (value interface{}, exists bool) {
 	if c.store != nil {
 		value, exists = c.store[key]
 	}
@@ -132,7 +132,7 @@ func (c *ctx) Get(key string) (value interface{}, exists bool) {
 // Next should be used only inside middleware.
 // It executes the pending handlers in the chain inside the calling handler.
 // See example in github.
-func (c *ctx) Next() {
+func (c *DefaultContext) Next() {
 
 	c.index++
 	c.handlers[c.index](c)
