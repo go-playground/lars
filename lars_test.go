@@ -293,6 +293,36 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
+func TestBadAdd(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+	PanicMatches(t, func() { l.Get("/%%%2frs#@$/", fn) }, "Query Unescape Error on path '/%%%2frs#@$/': invalid URL escape \"%%%\"")
+
+	// bad existing params
+
+	l.Get("/user/:id", fn)
+	PanicMatches(t, func() { l.Get("/user/:user_id/profile", fn) }, "Different param names defined for path '/user/:user_id/profile', param 'user_id'' should be 'id'")
+	l.Get("/user/:id/profile", fn)
+
+	l.Get("/admin/:id/profile", fn)
+	PanicMatches(t, func() { l.Get("/admin/:admin_id", fn) }, "Different param names defined for path '/admin/:admin_id', param 'admin_id'' should be 'id'")
+
+	PanicMatches(t, func() { l.Get("/assets/*/test", fn) }, "Character after the * symbol is not permitted, path '/assets/*/test'")
+
+	l.Get("/superhero/*", fn)
+	PanicMatches(t, func() { l.Get("/superhero/:id", fn) }, "Cannot add url param 'id' for path '/superhero/:id', a conflicting wildcard path exists")
+	PanicMatches(t, func() { l.Get("/superhero/*", fn) }, "Wildcard already set by another path, current path '/superhero/*' conflicts")
+	PanicMatches(t, func() { l.Get("/superhero/:id/", fn) }, "Cannot add url param 'id' for path '/superhero/:id/', a conflicting wildcard path exists")
+
+	l.Get("/supervillain/:id", fn)
+	PanicMatches(t, func() { l.Get("/supervillain/*", fn) }, "Cannot add wildcard for path '/supervillain/*', a conflicting param path exists with param 'id'")
+	PanicMatches(t, func() { l.Get("/supervillain/:id", fn) }, "Duplicate Handler for method 'GET' with path '/supervillain/:id'")
+	// PanicMatches(t, func() { l.Get("/supervillain/:id/", fn) }, "Cannot add url param 'id' for path '/superhero/:id/', a conflicting wildcard path exists")
+}
+
 func TestAddAllMethods(t *testing.T) {
 	fn := func(c Context) {
 		c.Response().Write([]byte(c.Request().Method))
@@ -300,6 +330,7 @@ func TestAddAllMethods(t *testing.T) {
 
 	l := New()
 
+	l.Get("", fn)
 	l.Get("/home/", fn)
 	l.Post("/home/", fn)
 	l.Put("/home/", fn)
@@ -310,7 +341,11 @@ func TestAddAllMethods(t *testing.T) {
 	l.Options("/home/", fn)
 	l.Connect("/home/", fn)
 
-	code, body := request(GET, "/home/", l)
+	code, body := request(GET, "/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(GET, "/home/", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, GET)
 
