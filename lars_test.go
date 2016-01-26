@@ -34,6 +34,8 @@ func TestLARS(t *testing.T) {
 	code, body := request(GET, "/", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "home")
+
+	l.Serve()
 }
 
 func TestLARSStatic(t *testing.T) {
@@ -260,6 +262,60 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
+func TestAddAllMethods(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+
+	l.Get("/home/", fn)
+	l.Post("/home/", fn)
+	l.Put("/home/", fn)
+	l.Delete("/home/", fn)
+	l.Head("/home/", fn)
+	l.Trace("/home/", fn)
+	l.Patch("/home/", fn)
+	l.Options("/home/", fn)
+	l.Connect("/home/", fn)
+
+	code, body := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
+
+	code, body = request(PUT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PUT)
+
+	code, body = request(DELETE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, DELETE)
+
+	code, body = request(HEAD, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, HEAD)
+
+	code, body = request(TRACE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, TRACE)
+
+	code, body = request(PATCH, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PATCH)
+
+	code, body = request(OPTIONS, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, OPTIONS)
+
+	code, body = request(CONNECT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, CONNECT)
+}
+
 func TestHandlerWrapping(t *testing.T) {
 	l := New()
 
@@ -466,6 +522,23 @@ func TestRedirect(t *testing.T) {
 
 	code, _ = request(POST, "/home", l)
 	Equal(t, code, http.StatusTemporaryRedirect)
+
+	l.SetRedirectTrailingSlash(false)
+
+	code, _ = request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(GET, "/home", l)
+	Equal(t, code, http.StatusNotFound)
+
+	code, _ = request(GET, "/Home/", l)
+	Equal(t, code, http.StatusNotFound)
+
+	code, _ = request(POST, "/home", l)
+	Equal(t, code, http.StatusNotFound)
 }
 
 func request(method, path string, l *LARS) (int, string) {
