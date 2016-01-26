@@ -140,6 +140,37 @@ func TestRouterMixParamMatchAny(t *testing.T) {
 	Equal(t, "/users/joe/comments", body)
 }
 
+func TestRouterMultiRoute(t *testing.T) {
+	var p string
+	var parameters Params
+
+	l := New()
+	//Route
+	l.Get("/users", func(c Context) {
+		c.Set("path", "/users")
+		value, ok := c.Get("path")
+		if ok {
+			p = value.(string)
+		}
+	})
+
+	l.Get("/users/:id", func(c Context) {
+		parameters = c.Params()
+	})
+	// Route > /users
+	code, _ := request(GET, "/users", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, "/users", p)
+	// Route > /users/:id
+	code, _ = request(GET, "/users/1", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, "1", parameters[0].Value)
+
+	// Route > /user/1
+	code, _ = request(GET, "/user/1", l)
+	Equal(t, http.StatusNotFound, code)
+}
+
 func TestFind(t *testing.T) {
 	l := New()
 
