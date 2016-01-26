@@ -1,8 +1,6 @@
 package lars
 
 import (
-	"html/template"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,16 +18,6 @@ import (
 // -- may be a good idea to change to output path to somewherelike /tmp
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
-
-type (
-	Template struct {
-		templates *template.Template
-	}
-)
-
-func (t *Template) Render(w io.Writer, name string, data interface{}) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
 
 func TestContext(t *testing.T) {
 
