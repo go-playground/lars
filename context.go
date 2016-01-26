@@ -34,6 +34,7 @@ type Context interface {
 	UnderlyingContext() *DefaultContext
 }
 
+// DefaultContext is the default underlying context
 type DefaultContext struct {
 	context.Context
 	request  *http.Request
@@ -58,7 +59,7 @@ func NewContext(l *LARS) *DefaultContext {
 	}
 }
 
-// Request returns context assotiated *http.Request.
+// UnderlyingContext returns the underlying default context
 func (c *DefaultContext) UnderlyingContext() *DefaultContext {
 	return c
 }
@@ -102,6 +103,7 @@ func (c *DefaultContext) Params() Params {
 	return c.params
 }
 
+// Reset resets the DefaultContext to it's default request state
 func (c *DefaultContext) Reset(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
