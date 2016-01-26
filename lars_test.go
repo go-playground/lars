@@ -143,6 +143,34 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
+func TestMethodNotAllowed(t *testing.T) {
+	l := New()
+	l.SetHandle405MethodNotAllowed(true)
+
+	l.Get("/home/", func(Context) {})
+	l.Head("/home/", func(Context) {})
+
+	code, _ := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+
+	r, _ := http.NewRequest(POST, "/home/", nil)
+	w := httptest.NewRecorder()
+	l.serveHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusMethodNotAllowed)
+
+	allow, ok := w.Header()["Allow"]
+
+	Equal(t, ok, true)
+	Equal(t, allow[0], GET)
+	Equal(t, allow[1], HEAD)
+
+	l.SetHandle405MethodNotAllowed(false)
+
+	code, _ = request(POST, "/home/", l)
+	Equal(t, code, http.StatusNotFound)
+}
+
 func TestRedirect(t *testing.T) {
 	l := New()
 
