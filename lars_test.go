@@ -1,6 +1,12 @@
 package lars
 
-import "testing"
+import (
+	"log"
+	"net/http"
+	"testing"
+
+	. "gopkg.in/go-playground/assert.v1"
+)
 
 // . "gopkg.in/go-playground/assert.v1"
 
@@ -15,7 +21,40 @@ import "testing"
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
 
-func TestLars(t *testing.T) {
-	// l := New()
-	// r, _ := http.NewRequest("GET", "/", nil)
+var basicHandler = func(Context) {
+
+}
+
+func TestLARS(t *testing.T) {
+	l := New()
+
+	l.Get("/", func(c Context) {
+		c.Response().Write([]byte("home"))
+	})
+
+	code, body := request(GET, "/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "home")
+}
+
+func TestLARSStatic(t *testing.T) {
+	l := New()
+	path := "/github.com/go-experimental/:id"
+	l.Get(path, basicHandler)
+	code, body := request(GET, "/github.com/go-experimental/808w70", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "")
+}
+
+func TestLARSParam(t *testing.T) {
+	l := New()
+	path := "/github.com/go-experimental/:id/"
+	l.Get(path, func(c Context) {
+		p, _ := c.Param("id")
+		c.Response().Write([]byte(p))
+	})
+	code, body := request(GET, "/github.com/go-experimental/808w70/", l)
+
+	log.Println(code, body)
+
 }
