@@ -70,9 +70,6 @@ const (
 	XForwardedFor      = "X-Forwarded-For"
 	XRealIP            = "X-Real-IP"
 
-	default404Body = "404 page not found"
-	default405Body = "405 method not allowed"
-
 	basePath = "/"
 	blank    = ""
 
@@ -131,7 +128,7 @@ type LARS struct {
 
 var (
 	default404Handler = func(c Context) {
-		http.Error(c.Response(), default404Body, http.StatusNotFound)
+		http.Error(c.Response(), http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
 
 	methodNotAllowedHandler = func(c Context) {

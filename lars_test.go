@@ -21,6 +21,8 @@ import (
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
 
+var basicHandler = func(Context) {}
+
 func TestFind(t *testing.T) {
 	l := New()
 
@@ -143,12 +145,26 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
+func TestCustom404(t *testing.T) {
+
+	fn := func(c Context) {
+		http.Error(c.Response(), "My Custom 404 Handler", http.StatusNotFound)
+	}
+
+	l := New()
+	l.Register404(fn)
+
+	code, body := request(GET, "/nonexistantpath", l)
+	Equal(t, code, http.StatusNotFound)
+	Equal(t, body, "My Custom 404 Handler\n")
+}
+
 func TestMethodNotAllowed(t *testing.T) {
 	l := New()
 	l.SetHandle405MethodNotAllowed(true)
 
-	l.Get("/home/", func(Context) {})
-	l.Head("/home/", func(Context) {})
+	l.Get("/home/", basicHandler)
+	l.Head("/home/", basicHandler)
 
 	code, _ := request(GET, "/home/", l)
 	Equal(t, code, http.StatusOK)
@@ -174,8 +190,8 @@ func TestMethodNotAllowed(t *testing.T) {
 func TestRedirect(t *testing.T) {
 	l := New()
 
-	l.Get("/home/", func(Context) {})
-	l.Post("/home/", func(Context) {})
+	l.Get("/home/", basicHandler)
+	l.Post("/home/", basicHandler)
 
 	code, _ := request(GET, "/home/", l)
 	Equal(t, code, http.StatusOK)
