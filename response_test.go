@@ -59,6 +59,12 @@ func TestResponse(t *testing.T) {
 	// Size
 	IsEqual(len(info), r.Size())
 
+	// WriteString
+	s := "lars"
+	n, err := r.WriteString(s)
+	Equal(t, err, nil)
+	Equal(t, n, 4)
+
 	//committed
 	Equal(t, true, r.Committed())
 

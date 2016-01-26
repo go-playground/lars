@@ -34,6 +34,8 @@ func TestLARS(t *testing.T) {
 	code, body := request(GET, "/", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "home")
+
+	l.Serve()
 }
 
 func TestLARSStatic(t *testing.T) {
@@ -255,6 +257,271 @@ func TestRouterAPI(t *testing.T) {
 	}
 }
 
+func TestUseAndGroup(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	var log string
+
+	logger := func(c Context) {
+		log = c.Request().URL.Path
+		c.Next(c)
+	}
+
+	l := New()
+	l.Use(logger)
+	l.Get("/", fn)
+
+	code, body := request(GET, "/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/")
+
+	g := l.Group("/users")
+	g.Get("/", fn)
+	g.Get("/list/", fn)
+
+	code, body = request(GET, "/users/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/users/")
+
+	code, body = request(GET, "/users/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/users/list/")
+
+	logger2 := func(c Context) {
+		log = c.Request().URL.Path + "2"
+		c.Next(c)
+	}
+
+	sh := l.Group("/superheros", logger2)
+	sh.Get("/", fn)
+	sh.Get("/list/", fn)
+
+	code, body = request(GET, "/superheros/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/2")
+
+	code, body = request(GET, "/superheros/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/list/2")
+
+	sc := sh.Group("/children")
+	sc.Get("/", fn)
+	sc.Get("/list/", fn)
+
+	code, body = request(GET, "/superheros/children/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/children/2")
+
+	code, body = request(GET, "/superheros/children/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/children/list/2")
+
+	log = ""
+
+	g2 := l.Group("/admins", nil)
+	g2.Get("/", fn)
+	g2.Get("/list/", fn)
+
+	code, body = request(GET, "/admins/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "")
+
+	code, body = request(GET, "/admins/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "")
+}
+
+func TestBadAdd(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+	PanicMatches(t, func() { l.Get("/%%%2frs#@$/", fn) }, "Query Unescape Error on path '/%%%2frs#@$/': invalid URL escape \"%%%\"")
+
+	// bad existing params
+
+	l.Get("/user/:id", fn)
+	PanicMatches(t, func() { l.Get("/user/:user_id/profile", fn) }, "Different param names defined for path '/user/:user_id/profile', param 'user_id'' should be 'id'")
+	l.Get("/user/:id/profile", fn)
+
+	l.Get("/admin/:id/profile", fn)
+	PanicMatches(t, func() { l.Get("/admin/:admin_id", fn) }, "Different param names defined for path '/admin/:admin_id', param 'admin_id'' should be 'id'")
+
+	PanicMatches(t, func() { l.Get("/assets/*/test", fn) }, "Character after the * symbol is not permitted, path '/assets/*/test'")
+
+	l.Get("/superhero/*", fn)
+	PanicMatches(t, func() { l.Get("/superhero/:id", fn) }, "Cannot add url param 'id' for path '/superhero/:id', a conflicting wildcard path exists")
+	PanicMatches(t, func() { l.Get("/superhero/*", fn) }, "Wildcard already set by another path, current path '/superhero/*' conflicts")
+	PanicMatches(t, func() { l.Get("/superhero/:id/", fn) }, "Cannot add url param 'id' for path '/superhero/:id/', a conflicting wildcard path exists")
+
+	l.Get("/supervillain/:id", fn)
+	PanicMatches(t, func() { l.Get("/supervillain/*", fn) }, "Cannot add wildcard for path '/supervillain/*', a conflicting param path exists with param 'id'")
+	PanicMatches(t, func() { l.Get("/supervillain/:id", fn) }, "Duplicate Handler for method 'GET' with path '/supervillain/:id'")
+}
+
+func TestAddAllMethods(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+
+	l.Get("", fn)
+	l.Get("/home/", fn)
+	l.Post("/home/", fn)
+	l.Put("/home/", fn)
+	l.Delete("/home/", fn)
+	l.Head("/home/", fn)
+	l.Trace("/home/", fn)
+	l.Patch("/home/", fn)
+	l.Options("/home/", fn)
+	l.Connect("/home/", fn)
+
+	code, body := request(GET, "/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
+
+	code, body = request(PUT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PUT)
+
+	code, body = request(DELETE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, DELETE)
+
+	code, body = request(HEAD, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, HEAD)
+
+	code, body = request(TRACE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, TRACE)
+
+	code, body = request(PATCH, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PATCH)
+
+	code, body = request(OPTIONS, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, OPTIONS)
+
+	code, body = request(CONNECT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, CONNECT)
+}
+
+func TestAddAllMethodsMatch(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+
+	l.Match([]string{GET, POST, PUT, DELETE, HEAD, TRACE, PATCH, OPTIONS, CONNECT}, "/home/", fn)
+
+	code, body := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
+
+	code, body = request(PUT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PUT)
+
+	code, body = request(DELETE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, DELETE)
+
+	code, body = request(HEAD, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, HEAD)
+
+	code, body = request(TRACE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, TRACE)
+
+	code, body = request(PATCH, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PATCH)
+
+	code, body = request(OPTIONS, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, OPTIONS)
+
+	code, body = request(CONNECT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, CONNECT)
+}
+
+func TestAddAllMethodsAny(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+
+	l.Any("/home/", fn)
+
+	code, body := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
+
+	code, body = request(PUT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PUT)
+
+	code, body = request(DELETE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, DELETE)
+
+	code, body = request(HEAD, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, HEAD)
+
+	code, body = request(TRACE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, TRACE)
+
+	code, body = request(PATCH, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PATCH)
+
+	code, body = request(OPTIONS, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, OPTIONS)
+
+	code, body = request(CONNECT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, CONNECT)
+}
+
 func TestHandlerWrapping(t *testing.T) {
 	l := New()
 
@@ -461,6 +728,23 @@ func TestRedirect(t *testing.T) {
 
 	code, _ = request(POST, "/home", l)
 	Equal(t, code, http.StatusTemporaryRedirect)
+
+	l.SetRedirectTrailingSlash(false)
+
+	code, _ = request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(GET, "/home", l)
+	Equal(t, code, http.StatusNotFound)
+
+	code, _ = request(GET, "/Home/", l)
+	Equal(t, code, http.StatusNotFound)
+
+	code, _ = request(POST, "/home", l)
+	Equal(t, code, http.StatusNotFound)
 }
 
 func request(method, path string, l *LARS) (int, string) {

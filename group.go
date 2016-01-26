@@ -95,15 +95,15 @@ func (g *routeGroup) Trace(path string, h ...Handler) {
 
 // Any adds a route & handler to the router for all HTTP methods.
 func (g *routeGroup) Any(path string, h ...Handler) {
-	g.Connect(path, h)
-	g.Delete(path, h)
-	g.Get(path, h)
-	g.Head(path, h)
-	g.Options(path, h)
-	g.Patch(path, h)
-	g.Post(path, h)
-	g.Put(path, h)
-	g.Trace(path, h)
+	g.Connect(path, h...)
+	g.Delete(path, h...)
+	g.Get(path, h...)
+	g.Head(path, h...)
+	g.Options(path, h...)
+	g.Patch(path, h...)
+	g.Post(path, h...)
+	g.Put(path, h...)
+	g.Trace(path, h...)
 }
 
 // Match adds a route & handler to the router for multiple HTTP methods provided.
@@ -118,7 +118,7 @@ func (g *routeGroup) Match(methods []string, path string, h ...Handler) {
 func (g *routeGroup) Group(prefix string, middleware ...Handler) IrouteGroup {
 
 	rg := &routeGroup{
-		prefix: prefix,
+		prefix: g.prefix + prefix,
 		lars:   g.lars,
 	}
 
@@ -126,6 +126,11 @@ func (g *routeGroup) Group(prefix string, middleware ...Handler) IrouteGroup {
 		rg.middleware = make(HandlersChain, len(g.middleware)+len(middleware))
 		copy(rg.middleware, g.middleware)
 
+		return rg
+	}
+
+	if middleware[0] == nil {
+		rg.middleware = make(HandlersChain, 0)
 		return rg
 	}
 

@@ -133,11 +133,7 @@ var (
 
 	methodNotAllowedHandler = func(c Context) {
 
-		m, ok := c.Get("methods")
-		if !ok {
-			return
-		}
-
+		m, _ := c.Get("methods")
 		methods := m.(chainMethods)
 
 		res := c.Response()
