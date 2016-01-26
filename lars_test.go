@@ -103,13 +103,13 @@ func TestFind(t *testing.T) {
 	})
 
 	l.Get("/authorizations/:id/", func(c Context) {
-		// p, _ := c.Param("id")
-		c.Response().Write([]byte("2"))
+		p, _ := c.Param("id")
+		c.Response().Write([]byte(p))
 	})
 
 	code, body = request(GET, "/authorizations/user/", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, body, "2")
+	Equal(t, body, "user")
 
 	code, body = request(GET, "/authorizations/user/test/", l)
 	Equal(t, code, http.StatusOK)
@@ -144,6 +144,43 @@ func TestFind(t *testing.T) {
 
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
+
+// type myCustomContext struct {
+// 	*DefaultContext
+// 	text string
+// }
+
+// func (c *myCustomContext) test() string {
+// 	return c.text
+// }
+
+// func (c *myCustomContext) Reset(w http.ResponseWriter, r *http.Request) {
+// 	c.text = "I AM HERE"
+// 	c.DefaultContext.Reset(w, r)
+// }
+
+// func TestCustomContext(t *testing.T) {
+
+// 	var l *LARS
+
+// 	fn := func() Context {
+// 		return &myContext{
+// 			DefaultContext: NewContext(l),
+// 		}
+// 	}
+
+// 	l = New()
+// 	l.RegisterContext(fn)
+
+// 	// l.Get("/home/", func(c Context) {
+// 	// 	ctx := c.(*myCustomContext)
+// 	// 	c.Response().Write([]byte(ctx.text))
+// 	// })
+
+// 	// code, body := request(GET, "/home/", l)
+// 	// Equal(t, code, http.StatusOK)
+// 	// Equal(t, body, "I AM HERE")
+// }
 
 func TestCustom404(t *testing.T) {
 

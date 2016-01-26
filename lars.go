@@ -472,7 +472,7 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 				i = len(ctx.params)
 				ctx.params = ctx.params[:i+1]
 				ctx.params[i].Key = cn.params.param
-				ctx.params[i].Value = path[0:end]
+				ctx.params[i].Value = path[start:end]
 				cn = cn.params
 
 				goto END
@@ -482,7 +482,7 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 			i = len(ctx.params)
 			ctx.params = ctx.params[:i+1]
 			ctx.params[i].Key = cn.params.param
-			ctx.params[i].Value = path[0:end]
+			ctx.params[i].Value = path[start:end]
 			cn = cn.params
 			start = j
 
