@@ -30,15 +30,6 @@ type RouteGroup struct {
 
 var _ IRouteGroup = &RouteGroup{}
 
-// func (g *RouteGroup) handle(method string, path string, h ...Handler) {
-
-// 	g.lars.addPath(method, path, g, h)
-// 	// Add route to the tree passing in g.middleware as it will need to be stored in the tree
-// 	// and also pass in h the ...Handler as this will also need to be stored on the tree by adding these to the middleware from g.middleware
-// 	//
-// 	// so in short middleware and h will be combined and stored in a single slice
-// }
-
 func (g *RouteGroup) handle(method string, path string, handlers []Handler) {
 
 	chain := make(HandlersChain, len(handlers))
@@ -47,12 +38,7 @@ func (g *RouteGroup) handle(method string, path string, handlers []Handler) {
 		chain[i] = wrapHandler(h)
 	}
 
-	g.lars.addPath(method, g.prefix+path, g, chain)
-
-	// Add route to the tree passing in g.middleware as it will need to be stored in the tree
-	// and also pass in h the ...Handler as this will also need to be stored on the tree by adding these to the middleware from g.middleware
-	//
-	// so in short middleware and h will be combined and stored in a single slice
+	g.lars.add(method, g.prefix+path, g, chain)
 }
 
 // Use adds a middleware handler to the group middleware chain.

@@ -49,25 +49,25 @@ func TestFind(t *testing.T) {
 	// Equal(t, code, http.StatusNotFound)
 	//
 
-	l.Get("/authorizations", func(c Context) {
-		// p, _ := c.Param("id")
-		// c.Response().Write([]byte(p))
-	})
+	// l.Get("/authorizations", func(c Context) {
+	// 	// p, _ := c.Param("id")
+	// 	// c.Response().Write([]byte(p))
+	// })
 
-	l.Post("/authorizations", func(c Context) {
-		// p, _ := c.Param("id")
-		// c.Response().Write([]byte(p))
-	})
+	// l.Post("/authorizations", func(c Context) {
+	// 	// p, _ := c.Param("id")
+	// 	// c.Response().Write([]byte(p))
+	// })
 
-	l.Get("/authorizations/:id", func(c Context) {
-		p, _ := c.Param("id")
-		c.Response().Write([]byte(p))
-	})
+	// l.Get("/authorizations/:id", func(c Context) {
+	// 	p, _ := c.Param("id")
+	// 	c.Response().Write([]byte(p))
+	// })
 
-	l.Delete("/authorizations/:id", func(c Context) {
-		p, _ := c.Param("id")
-		c.Response().Write([]byte(p))
-	})
+	// l.Delete("/authorizations/:id", func(c Context) {
+	// 	p, _ := c.Param("id")
+	// 	c.Response().Write([]byte(p))
+	// })
 
 	// for idx, n := range l.router.tree.static {
 	// 	fmt.Println(idx, n.path, n.params == nil, n.chains, n.params.chains)
@@ -79,19 +79,55 @@ func TestFind(t *testing.T) {
 	// //{"PATCH", "/authorizations/:id"},
 	// {"DELETE", "/authorizations/:id"},
 
-	code, body := request(GET, "/authorizations/11", l)
-	Equal(t, code, http.StatusOK)
-	Equal(t, body, "11")
+	// l.Get("/authorizations/:id/test", func(c Context) {
+	// 	p, _ := c.Param("id")
+	// 	c.Response().Write([]byte(p))
+	// })
 
-	code, _ = request(GET, "/authorizations", l)
-	Equal(t, code, http.StatusOK)
+	// code, body := request(GET, "/authorizations/11/test", l)
+	// Equal(t, code, http.StatusOK)
+	// Equal(t, body, "11")
 
-	code, _ = request(POST, "/authorizations", l)
-	Equal(t, code, http.StatusOK)
+	l.Get("/", func(c Context) {
+		// p, _ := c.Param("id")
+		c.Response().Write([]byte("home"))
+	})
 
-	code, body = request(DELETE, "/authorizations/13", l)
+	code, body := request(GET, "/", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, body, "13")
+	Equal(t, body, "home")
+
+	l.Get("/authorizations/user/test/", func(c Context) {
+		// p, _ := c.Param("id")
+		c.Response().Write([]byte("1"))
+	})
+
+	l.Get("/authorizations/:id/", func(c Context) {
+		// p, _ := c.Param("id")
+		c.Response().Write([]byte("2"))
+	})
+
+	code, body = request(GET, "/authorizations/user/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "2")
+
+	code, body = request(GET, "/authorizations/user/test/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "1")
+
+	// code, body := request(GET, "/authorizations/11", l)
+	// Equal(t, code, http.StatusOK)
+	// Equal(t, body, "11")
+
+	// code, _ = request(GET, "/authorizations", l)
+	// Equal(t, code, http.StatusOK)
+
+	// code, _ = request(POST, "/authorizations", l)
+	// Equal(t, code, http.StatusOK)
+
+	// code, body = request(DELETE, "/authorizations/13", l)
+	// Equal(t, code, http.StatusOK)
+	// Equal(t, body, "13")
 
 	// r, _ := http.NewRequest("GET", "", nil)
 	// w := httptest.NewRecorder()
