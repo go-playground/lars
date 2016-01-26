@@ -239,6 +239,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (l *LARS) add(method string, path string, rg *routeGroup, h HandlersChain) {
 
+	origPath := path
 	cn := l.head
 
 	var (
@@ -254,7 +255,7 @@ func (l *LARS) add(method string, path string, rg *routeGroup, h HandlersChain) 
 	)
 
 	if path, err = url.QueryUnescape(path); err != nil {
-		panic("Query Unescape Error:" + err.Error())
+		panic("Query Unescape Error on path '" + origPath + "': " + err.Error())
 	}
 
 	if path == blank {
@@ -314,7 +315,7 @@ MAIN:
 					// /users/:user_id/profile/settings
 					// both params above must be either :id or :user_id, no mix & match
 					if cn.params.param != chunk {
-						panic("Different Param names defined")
+						panic("Different param names defined for path '" + origPath + "', param '" + chunk + "'' should be '" + cn.params.param + "'")
 					}
 
 					pCount++
@@ -326,7 +327,7 @@ MAIN:
 
 				// wild already exists! then will conflict
 				if cn.wild != nil {
-					panic("Cannot add url param " + chunk + ", wildcard already exists on this path")
+					panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 				}
 
 				nn := &node{
@@ -348,7 +349,7 @@ MAIN:
 
 			if cn.params != nil {
 				if cn.params.param != chunk {
-					panic("Different Param names defined")
+					panic("Different param names defined for path '" + origPath + "', param '" + chunk + "'' should be '" + cn.params.param + "'")
 				}
 
 				cn = cn.params
@@ -358,7 +359,7 @@ MAIN:
 
 			// wild already exists! then will conflict
 			if cn.wild != nil {
-				panic("Cannot add url param " + chunk + ", wildcard already exists on this path")
+				panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 			}
 
 			cn.params = &node{
@@ -372,18 +373,18 @@ MAIN:
 		if c == startByte {
 
 			if path[end+1:] != blank {
-				panic("Character after the * symbol is not acceptable")
+				panic("Character after the * symbol is not permitted, path '" + origPath + "'")
 			}
 
 			//Check the node for existing star then throw a panic information
 			//if any
 			if cn.wild != nil {
-				panic("Wildcard character already exists")
+				panic("Wildcard already set by another path, current path '" + origPath + "' conflicts")
 			}
 
 			// param already exists! then will conflict
 			if cn.params != nil {
-				panic("Cannot add url wildcard, param already exists on this path")
+				panic("Cannot add wildcard for path '" + origPath + "', a conflicting param path exists with param '" + cn.params.param + "'")
 			}
 
 			cn.wild = &node{}
@@ -413,15 +414,12 @@ MAIN:
 	cn = cn.static[chunk]
 
 END:
-	if cn == nil {
-		panic("node not added!")
-	}
 
 	if pCount > l.mostParams {
 		l.mostParams = pCount
 	}
 
-	cn.addChain(method, append(rg.middleware, h...))
+	cn.addChain(origPath, method, append(rg.middleware, h...))
 }
 
 func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
@@ -536,7 +534,6 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 
 	if path == blank {
 		ctx.handlers = cn.chains[ctx.request.Method]
-		cn = cn
 	}
 
 	cn = nil

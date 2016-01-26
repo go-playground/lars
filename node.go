@@ -22,14 +22,14 @@ type node struct {
 	param string
 }
 
-func (n *node) addChain(method string, chain HandlersChain) {
+func (n *node) addChain(origPath, method string, chain HandlersChain) {
 
 	if n.chains == nil {
 		n.chains = map[string]HandlersChain{}
 	}
 
 	if n.chains[method] != nil {
-		panic("Duplicate Handler for method " + method)
+		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
 	}
 
 	n.chains[method] = chain
