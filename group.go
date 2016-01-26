@@ -95,15 +95,15 @@ func (g *routeGroup) Trace(path string, h ...Handler) {
 
 // Any adds a route & handler to the router for all HTTP methods.
 func (g *routeGroup) Any(path string, h ...Handler) {
-	g.Connect(path, h)
-	g.Delete(path, h)
-	g.Get(path, h)
-	g.Head(path, h)
-	g.Options(path, h)
-	g.Patch(path, h)
-	g.Post(path, h)
-	g.Put(path, h)
-	g.Trace(path, h)
+	g.Connect(path, h...)
+	g.Delete(path, h...)
+	g.Get(path, h...)
+	g.Head(path, h...)
+	g.Options(path, h...)
+	g.Patch(path, h...)
+	g.Post(path, h...)
+	g.Put(path, h...)
+	g.Trace(path, h...)
 }
 
 // Match adds a route & handler to the router for multiple HTTP methods provided.

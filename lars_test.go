@@ -347,6 +347,98 @@ func TestAddAllMethods(t *testing.T) {
 	Equal(t, body, CONNECT)
 }
 
+func TestAddAllMethodsMatch(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+
+	l.Match([]string{GET, POST, PUT, DELETE, HEAD, TRACE, PATCH, OPTIONS, CONNECT}, "/home/", fn)
+
+	code, body := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
+
+	code, body = request(PUT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PUT)
+
+	code, body = request(DELETE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, DELETE)
+
+	code, body = request(HEAD, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, HEAD)
+
+	code, body = request(TRACE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, TRACE)
+
+	code, body = request(PATCH, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PATCH)
+
+	code, body = request(OPTIONS, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, OPTIONS)
+
+	code, body = request(CONNECT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, CONNECT)
+}
+
+func TestAddAllMethodsAny(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	l := New()
+
+	l.Any("/home/", fn)
+
+	code, body := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(POST, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, POST)
+
+	code, body = request(PUT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PUT)
+
+	code, body = request(DELETE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, DELETE)
+
+	code, body = request(HEAD, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, HEAD)
+
+	code, body = request(TRACE, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, TRACE)
+
+	code, body = request(PATCH, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, PATCH)
+
+	code, body = request(OPTIONS, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, OPTIONS)
+
+	code, body = request(CONNECT, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, CONNECT)
+}
+
 func TestHandlerWrapping(t *testing.T) {
 	l := New()
 
