@@ -17,7 +17,9 @@ func wrapHandler(h Handler) HandlerFunc {
 				return
 			}
 
-			c.Next(c)
+			if dc.index+1 < len(dc.handlers) {
+				c.Next(c)
+			}
 		}
 	case func(http.ResponseWriter, *http.Request):
 		return func(c Context) {
@@ -27,7 +29,9 @@ func wrapHandler(h Handler) HandlerFunc {
 				return
 			}
 
-			c.Next(c)
+			if dc.index+1 < len(dc.handlers) {
+				c.Next(c)
+			}
 		}
 	default:
 		panic("unknown handler")
