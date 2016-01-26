@@ -25,7 +25,7 @@ func (r *router) add(method string, path string, rg *RouteGroup, h HandlersChain
 	pCount := new(uint8)
 	*pCount++
 
-	n := add(path[1:], pCount, r.tree)
+	n := r.addRoute(path[1:], pCount)
 	if n == nil {
 		panic("node not added!")
 	}
