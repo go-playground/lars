@@ -200,7 +200,7 @@ func (l *LARS) Register404(notFound ...Handler) {
 	l.http404 = chain
 }
 
-// RedirectTrailingSlash tells LARS whether to try
+// SetRedirectTrailingSlash tells LARS whether to try
 // and fix a URL by trying to find it
 // lowercase -> with or without slash -> 404
 func (l *LARS) SetRedirectTrailingSlash(set bool) {
