@@ -293,6 +293,91 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
+func TestUseAndGroup(t *testing.T) {
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
+	}
+
+	var log string
+
+	logger := func(c Context) {
+		log = c.Request().URL.Path
+		c.Next(c)
+	}
+
+	l := New()
+	l.Use(logger)
+	l.Get("/", fn)
+
+	code, body := request(GET, "/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/")
+
+	g := l.Group("/users")
+	g.Get("/", fn)
+	g.Get("/list/", fn)
+
+	code, body = request(GET, "/users/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/users/")
+
+	code, body = request(GET, "/users/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/users/list/")
+
+	logger2 := func(c Context) {
+		log = c.Request().URL.Path + "2"
+		c.Next(c)
+	}
+
+	sh := l.Group("/superheros", logger2)
+	sh.Get("/", fn)
+	sh.Get("/list/", fn)
+
+	code, body = request(GET, "/superheros/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/2")
+
+	code, body = request(GET, "/superheros/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/list/2")
+
+	sc := sh.Group("/children")
+	sc.Get("/", fn)
+	sc.Get("/list/", fn)
+
+	code, body = request(GET, "/superheros/children/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/children/2")
+
+	code, body = request(GET, "/superheros/children/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "/superheros/children/list/2")
+
+	log = ""
+
+	g2 := l.Group("/admins", nil)
+	g2.Get("/", fn)
+	g2.Get("/list/", fn)
+
+	code, body = request(GET, "/admins/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "")
+
+	code, body = request(GET, "/admins/list/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+	Equal(t, log, "")
+}
+
 func TestBadAdd(t *testing.T) {
 	fn := func(c Context) {
 		c.Response().Write([]byte(c.Request().Method))
@@ -320,7 +405,6 @@ func TestBadAdd(t *testing.T) {
 	l.Get("/supervillain/:id", fn)
 	PanicMatches(t, func() { l.Get("/supervillain/*", fn) }, "Cannot add wildcard for path '/supervillain/*', a conflicting param path exists with param 'id'")
 	PanicMatches(t, func() { l.Get("/supervillain/:id", fn) }, "Duplicate Handler for method 'GET' with path '/supervillain/:id'")
-	// PanicMatches(t, func() { l.Get("/supervillain/:id/", fn) }, "Cannot add url param 'id' for path '/superhero/:id/', a conflicting wildcard path exists")
 }
 
 func TestAddAllMethods(t *testing.T) {

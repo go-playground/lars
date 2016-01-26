@@ -118,7 +118,7 @@ func (g *routeGroup) Match(methods []string, path string, h ...Handler) {
 func (g *routeGroup) Group(prefix string, middleware ...Handler) IrouteGroup {
 
 	rg := &routeGroup{
-		prefix: prefix,
+		prefix: g.prefix + prefix,
 		lars:   g.lars,
 	}
 
@@ -126,6 +126,11 @@ func (g *routeGroup) Group(prefix string, middleware ...Handler) IrouteGroup {
 		rg.middleware = make(HandlersChain, len(g.middleware)+len(middleware))
 		copy(rg.middleware, g.middleware)
 
+		return rg
+	}
+
+	if middleware[0] == nil {
+		rg.middleware = make(HandlersChain, 0)
 		return rg
 	}
 
