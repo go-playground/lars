@@ -70,9 +70,6 @@ const (
 	XForwardedFor      = "X-Forwarded-For"
 	XRealIP            = "X-Real-IP"
 
-	default404Body = "404 page not found"
-	default405Body = "405 method not allowed"
-
 	basePath = "/"
 	blank    = ""
 
@@ -131,7 +128,7 @@ type LARS struct {
 
 var (
 	default404Handler = func(c Context) {
-		http.Error(c.Response(), default404Body, http.StatusNotFound)
+		http.Error(c.Response(), http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
 
 	methodNotAllowedHandler = func(c Context) {
@@ -475,7 +472,7 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 				i = len(ctx.params)
 				ctx.params = ctx.params[:i+1]
 				ctx.params[i].Key = cn.params.param
-				ctx.params[i].Value = path[0:end]
+				ctx.params[i].Value = path[start:end]
 				cn = cn.params
 
 				goto END
@@ -485,7 +482,7 @@ func (l *LARS) find(ctx *DefaultContext, processEnd bool) {
 			i = len(ctx.params)
 			ctx.params = ctx.params[:i+1]
 			ctx.params[i].Key = cn.params.param
-			ctx.params[i].Value = path[0:end]
+			ctx.params[i].Value = path[start:end]
 			cn = cn.params
 			start = j
 
