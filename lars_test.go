@@ -291,6 +291,106 @@ func TestFind(t *testing.T) {
 	// l.Get("/github.com/go-experimental/lars3/:blob/master历日本語/⌘/à/:alice/*", func(Context) {})
 }
 
+func TestHandlerWrapping(t *testing.T) {
+	l := New()
+
+	stdlinHandlerFunc := func() http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(r.URL.Path))
+		}
+	}
+
+	stdLibRawHandlerFunc := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.URL.Path))
+	}
+
+	fn := func(c Context) { c.Response().Write([]byte(c.Request().URL.Path)) }
+
+	var hf HandlerFunc
+
+	hf = func(c Context) { c.Response().Write([]byte(c.Request().URL.Path)) }
+
+	l.Get("/built-in-context-handler-func/", hf)
+	l.Get("/built-in-context-func/", fn)
+	l.Get("/stdlib-context-func/", stdLibRawHandlerFunc)
+	l.Get("/stdlib-context-handlerfunc/", stdlinHandlerFunc())
+
+	code, body := request(GET, "/built-in-context-handler-func/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/built-in-context-handler-func/")
+
+	code, body = request(GET, "/built-in-context-func/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/built-in-context-func/")
+
+	code, body = request(GET, "/stdlib-context-func/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/stdlib-context-func/")
+
+	code, body = request(GET, "/stdlib-context-handlerfunc/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/stdlib-context-handlerfunc/")
+
+	// test same as above but already commited
+
+	stdlinHandlerFunc2 := func() http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(r.URL.Path))
+			w.WriteHeader(http.StatusOK)
+		}
+	}
+
+	stdLibRawHandlerFunc2 := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.URL.Path))
+		w.WriteHeader(http.StatusOK)
+	}
+
+	l.Get("/built-in-context-func2/", fn)
+	l.Get("/stdlib-context-func2/", stdLibRawHandlerFunc2)
+	l.Get("/stdlib-context-handlerfunc2/", stdlinHandlerFunc2())
+
+	code, body = request(GET, "/built-in-context-func2/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/built-in-context-func2/")
+
+	code, body = request(GET, "/stdlib-context-func2/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/stdlib-context-func2/")
+
+	code, body = request(GET, "/stdlib-context-handlerfunc2/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/stdlib-context-handlerfunc2/")
+
+	// test multiple handlers
+
+	stdlinHandlerFunc3 := func() http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			// w.Write([]byte(r.URL.Path))
+		}
+	}
+
+	stdLibRawHandlerFunc3 := func(w http.ResponseWriter, r *http.Request) {
+		// w.Write([]byte(r.URL.Path))
+	}
+
+	l.Get("/stdlib-context-func3/", stdLibRawHandlerFunc3, fn)
+	l.Get("/stdlib-context-handlerfunc3/", stdlinHandlerFunc3(), fn)
+
+	code, body = request(GET, "/stdlib-context-func3/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/stdlib-context-func3/")
+
+	code, body = request(GET, "/stdlib-context-handlerfunc3/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "/stdlib-context-handlerfunc3/")
+
+	// test bad/unknown handler
+
+	bad := func() string { return "" }
+
+	PanicMatches(t, func() { l.Get("/bad-handler/", bad) }, "unknown handler")
+}
+
 type myCustomContext struct {
 	*DefaultContext
 	text string
@@ -390,6 +490,9 @@ func TestRedirect(t *testing.T) {
 	Equal(t, code, http.StatusOK)
 
 	code, _ = request(GET, "/home", l)
+	Equal(t, code, http.StatusMovedPermanently)
+
+	code, _ = request(GET, "/Home/", l)
 	Equal(t, code, http.StatusMovedPermanently)
 
 	code, _ = request(POST, "/home", l)
