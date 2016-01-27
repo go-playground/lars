@@ -2,10 +2,18 @@ LARS
 ===========
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
-LARS - Library Access Retrieval System
+We present LARS (Library Access Retrieval System), a fast radix-tree based, HTTP router for Go.
 
-#### Unique Features 
+This package is inspired by the following 
+- Dimfeld/httpTreeMux
+- julienschmidt/httprouter
+- labstack/echo
 
+Unique Features 
+--------------
+LARS has the following features 
+
+- 
 
 Installation
 -----------
