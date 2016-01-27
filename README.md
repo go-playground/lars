@@ -7,7 +7,7 @@ LARS - Library Access Retrieval System
 #### Unique Features 
 
 
-Installtion
+Installation
 -----------
 
 Use go get 
