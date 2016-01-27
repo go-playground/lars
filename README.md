@@ -1,4 +1,4 @@
-# LARS
+LARS
 ===========
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
@@ -7,8 +7,8 @@ LARS - Library Access Retrieval System
 #### Unique Features 
 
 
-#### Usage
-===========
+Installtion
+-----------
 
 Use go get 
 
@@ -28,9 +28,11 @@ Then import LARS package into your code.
 import "github.com/go-experimental/lars"
 ``` 
 
+Usage and documentation
+-----------------------
 
-#### Benchmarks
-================
+Benchmarks
+-----------
 Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.5.3 darwin/amd64
 
 
@@ -67,8 +69,8 @@ BenchmarkLARS_ParseAll    	  300000	      3902 ns/op	       0 B/op	       0 allo
 BenchmarkLARS_StaticAll   	   50000	     24861 ns/op	       0 B/op	       0 allocs/op
 
 
-### License 
-===========
+License 
+--------
 This project is licensed unter MIT, for more information look into the LICENSE file.
 Copyright (c) 2016 Go Playground
 
