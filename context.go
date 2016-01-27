@@ -19,23 +19,16 @@ type Params []Param
 
 type store map[string]interface{}
 
-// Context is the context interface
-type Context interface {
-	context.Context
-	Request() *http.Request
-	Response() *Response
-	P(i int) (string, bool)
-	Param(name string) (string, bool)
-	Params() Params
-	Get(key string) (value interface{}, exists bool)
-	Set(key string, value interface{})
-	Next(Context)
-	Reset(w http.ResponseWriter, r *http.Request)
-	UnderlyingContext() *DefaultContext
+// IGlobals is an interface for a globals http request object that can be passed
+// around and allocated efficiently; and most importantly is not tied to the
+// context object and can be passed around separately if desired instead of Context
+// being the interface, which does not have a clear separation of http Context vs Globals
+type IGlobals interface {
+	Reset(*Context)
 }
 
-// DefaultContext is the default underlying context
-type DefaultContext struct {
+// Context encapsulates the http request, response context
+type Context struct {
 	context.Context
 	request  *http.Request
 	response *Response
@@ -43,39 +36,33 @@ type DefaultContext struct {
 	handlers HandlersChain
 	store    store
 	index    int
+	Globals  IGlobals
 }
 
-var _ context.Context = &DefaultContext{}
-var _ Context = &DefaultContext{}
+var _ context.Context = &Context{}
 
 // NewContext returns a new default lars Context object.
-// Particularily useful when creating a custom Context
-// but still wanting the default Context behavior
-func NewContext(l *LARS) *DefaultContext {
+func NewContext(l *LARS) *Context {
 
-	return &DefaultContext{
+	return &Context{
 		params:   make(Params, l.mostParams),
 		response: &Response{},
+		Globals:  l.newGlobals(),
 	}
 }
 
-// UnderlyingContext returns the underlying default context
-func (c *DefaultContext) UnderlyingContext() *DefaultContext {
-	return c
-}
-
-// Request returns context assotiated *http.Request.
-func (c *DefaultContext) Request() *http.Request {
+// Request returns *http.Request of the given context
+func (c *Context) Request() *http.Request {
 	return c.request
 }
 
-// Response returns http.ResponseWriter.
-func (c *DefaultContext) Response() *Response {
+// Response returns http.ResponseWriter of the given context
+func (c *Context) Response() *Response {
 	return c.response
 }
 
 // P returns path parameter by index.
-func (c *DefaultContext) P(i int) (string, bool) {
+func (c *Context) P(i int) (string, bool) {
 
 	l := len(c.params)
 
@@ -88,7 +75,7 @@ func (c *DefaultContext) P(i int) (string, bool) {
 
 // Param returns the value of the first Param which key matches the given name.
 // If no matching Param is found, an empty string is returned and false is returned.
-func (c *DefaultContext) Param(name string) (string, bool) {
+func (c *Context) Param(name string) (string, bool) {
 
 	for _, entry := range c.params {
 		if entry.Key == name {
@@ -98,24 +85,28 @@ func (c *DefaultContext) Param(name string) (string, bool) {
 	return blank, false
 }
 
-// Params returns the array of parameters within the context
-func (c *DefaultContext) Params() Params {
+// Params returns the array of parameters within the*Context
+func (c *Context) Params() Params {
 	return c.params
 }
 
-// Reset resets the DefaultContext to it's default request state
-func (c *DefaultContext) Reset(w http.ResponseWriter, r *http.Request) {
+// Reset resets the*Context to it's default request state
+func (c *Context) Reset(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
 	c.params = c.params[0:0]
 	c.store = nil
 	c.index = -1
 	c.handlers = nil
+
+	if c.Globals != nil {
+		c.Globals.Reset(c)
+	}
 }
 
-// Set is used to store a new key/value pair exclusivelly for this context.
+// Set is used to store a new key/value pair exclusivelly for this*Context.
 // It also lazy initializes  c.Keys if it was not used previously.
-func (c *DefaultContext) Set(key string, value interface{}) {
+func (c *Context) Set(key string, value interface{}) {
 	if c.store == nil {
 		c.store = make(store)
 	}
@@ -124,7 +115,7 @@ func (c *DefaultContext) Set(key string, value interface{}) {
 
 // Get returns the value for the given key, ie: (value, true).
 // If the value does not exists it returns (nil, false)
-func (c *DefaultContext) Get(key string) (value interface{}, exists bool) {
+func (c *Context) Get(key string) (value interface{}, exists bool) {
 	if c.store != nil {
 		value, exists = c.store[key]
 	}
@@ -134,7 +125,7 @@ func (c *DefaultContext) Get(key string) (value interface{}, exists bool) {
 // Next should be used only inside middleware.
 // It executes the pending handlers in the chain inside the calling handler.
 // See example in github.
-func (c *DefaultContext) Next(ctx Context) {
+func (c *Context) Next() {
 	c.index++
-	c.handlers[c.index](ctx)
+	c.handlers[c.index](c)
 }

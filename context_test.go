@@ -24,7 +24,7 @@ func TestContext(t *testing.T) {
 	l := New()
 	r, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	defaultContext := NewContext(l)
+	c := NewContext(l)
 
 	var varParams []Param
 
@@ -42,11 +42,9 @@ func TestContext(t *testing.T) {
 		"Information": []string{"Alice", "Bob", "40.712784", "-74.005941"},
 	}
 
-	defaultContext.params = varParams
-	defaultContext.store = storeMap
-	defaultContext.request = r
-
-	c := defaultContext.UnderlyingContext()
+	c.params = varParams
+	c.store = storeMap
+	c.request = r
 
 	//Request
 	NotEqual(t, c.Request(), nil)

@@ -2,35 +2,35 @@ package lars
 
 import "net/http"
 
-// wrapHandler wraps handler.
+// wrapHandler wraps Handler type
 func wrapHandler(h Handler) HandlerFunc {
 	switch h := h.(type) {
 	case HandlerFunc:
 		return h
-	case func(Context):
+	case func(*Context):
 		return h
 	case http.Handler, http.HandlerFunc:
-		return func(c Context) {
-			dc := c.UnderlyingContext()
+		return func(c *Context) {
+			res := c.Response()
 
-			if h.(http.Handler).ServeHTTP(dc.response, dc.request); dc.response.status != http.StatusOK || dc.response.committed {
+			if h.(http.Handler).ServeHTTP(res, c.Request()); res.status != http.StatusOK || res.committed {
 				return
 			}
 
-			if dc.index+1 < len(dc.handlers) {
-				c.Next(c)
+			if c.index+1 < len(c.handlers) {
+				c.Next()
 			}
 		}
 	case func(http.ResponseWriter, *http.Request):
-		return func(c Context) {
-			dc := c.UnderlyingContext()
+		return func(c *Context) {
+			res := c.Response()
 
-			if h(dc.response, dc.request); dc.response.status != http.StatusOK || dc.response.committed {
+			if h(res, c.Request()); res.status != http.StatusOK || res.committed {
 				return
 			}
 
-			if dc.index+1 < len(dc.handlers) {
-				c.Next(c)
+			if c.index+1 < len(c.handlers) {
+				c.Next()
 			}
 		}
 	default:
