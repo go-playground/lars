@@ -76,6 +76,7 @@ BenchmarkLARS_Parse2Params	10000000	       133 ns/op	       0 B/op	       0 allo
 BenchmarkLARS_ParseAll    	  300000	      3902 ns/op	       0 B/op	       0 allocs/op
 BenchmarkLARS_StaticAll   	   50000	     24861 ns/op	       0 B/op	       0 allocs/op
 
+```
 
 License 
 --------
