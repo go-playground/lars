@@ -63,8 +63,10 @@ BenchmarkLARS_ParseParam  	20000000	       123 ns/op	       0 B/op	       0 allo
 BenchmarkLARS_Parse2Params	10000000	       133 ns/op	       0 B/op	       0 allocs/op
 BenchmarkLARS_ParseAll    	  300000	      3902 ns/op	       0 B/op	       0 allocs/op
 BenchmarkLARS_StaticAll   	   50000	     24861 ns/op	       0 B/op	       0 allocs/op
-```
+
 
 ### License 
 This project is licensed unter MIT, for more information look into the LICENSE file.
 Copyright (c) 2016 Go Playground
+
+

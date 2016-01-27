@@ -38,7 +38,7 @@ func (g *routeGroup) handle(method string, path string, handlers []Handler) {
 		chain[i] = wrapHandler(h)
 	}
 
-	g.lars.add(method, g.prefix+path, g, chain)
+	g.lars.router.add(method, g.prefix+path, g, chain)
 }
 
 // Use adds a middleware handler to the group middleware chain.

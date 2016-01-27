@@ -8,8 +8,10 @@ import (
 	"net/http"
 )
 
-// Response struct contains a context *Response
-// object if a custom context is not defined.
+// Response struct contains methods and to capture
+// extra data about the http request and more efficiently
+// reset underlying writer object... it does comply with
+// the http.ResponseWriter interface
 type Response struct {
 	http.ResponseWriter
 	status    int
