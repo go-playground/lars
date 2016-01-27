@@ -50,6 +50,13 @@ func TestFindOneOffs(t *testing.T) {
 	code, body = request(POST, "/admins/1/", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, POST)
+
+	l.Post("/superheroes/thor", fn)
+	l.Get("/superheroes/:name", fn)
+
+	code, body = request(GET, "/superheroes/thor", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
 }
 
 func TestLARS(t *testing.T) {
@@ -627,14 +634,10 @@ func TestHandlerWrapping(t *testing.T) {
 	// test multiple handlers
 
 	stdlinHandlerFunc3 := func() http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			// w.Write([]byte(r.URL.Path))
-		}
+		return func(w http.ResponseWriter, r *http.Request) {}
 	}
 
-	stdLibRawHandlerFunc3 := func(w http.ResponseWriter, r *http.Request) {
-		// w.Write([]byte(r.URL.Path))
-	}
+	stdLibRawHandlerFunc3 := func(w http.ResponseWriter, r *http.Request) {}
 
 	l.Get("/stdlib-context-func3/", stdLibRawHandlerFunc3, fn)
 	l.Get("/stdlib-context-handlerfunc3/", stdlinHandlerFunc3(), fn)

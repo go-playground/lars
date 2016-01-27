@@ -398,12 +398,16 @@ func (g *routeGroup) Find(ctx *DefaultContext, processEnd bool) {
 
 	// no slash encountered, end of path...
 	if nn, ok = cn.static[path[start:]]; ok {
-		ctx.handlers = nn.chains[ctx.request.Method]
+		if ctx.handlers, ok = nn.chains[ctx.request.Method]; !ok {
+			goto PARAMSNOSLASH
+		}
+		// ctx.handlers = nn.chains[ctx.request.Method]
 		cn = nn
 
 		goto END
 	}
 
+PARAMSNOSLASH:
 	if cn.params != nil {
 		if ctx.handlers, ok = cn.params.chains[ctx.request.Method]; !ok {
 			goto WILDNOSLASH
