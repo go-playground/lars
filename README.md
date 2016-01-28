@@ -1,10 +1,44 @@
-# lars
-
+LARS
+===========
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
-lars - Library Access Retrieval System
+LARS (Library Access Retrieval System), a fast radix-tree based, HTTP router for Go.
 
-#### Benchmarks
+Unique Features 
+--------------
+LARS has the following features 
+
+- 
+
+Installation
+-----------
+
+Use go get 
+
+```go
+go get github.com/go-experimental/lars
+``` 
+
+or to update
+
+```go
+go get -u github.com/go-experimental/lars
+``` 
+
+Then import LARS package into your code.
+
+```go
+import "github.com/go-experimental/lars"
+``` 
+
+Getting Started
+----------------
+
+Usage
+------
+
+Benchmarks
+-----------
 Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.5.3 darwin/amd64
 
 
@@ -39,4 +73,17 @@ BenchmarkLARS_ParseParam  	20000000	       123 ns/op	       0 B/op	       0 allo
 BenchmarkLARS_Parse2Params	10000000	       133 ns/op	       0 B/op	       0 allocs/op
 BenchmarkLARS_ParseAll    	  300000	      3902 ns/op	       0 B/op	       0 allocs/op
 BenchmarkLARS_StaticAll   	   50000	     24861 ns/op	       0 B/op	       0 allocs/op
+
 ```
+
+This package is inspired by the following 
+- Dimfeld/httpTreeMux
+- julienschmidt/httprouter
+- labstack/echo
+
+License 
+--------
+This project is licensed unter MIT, for more information look into the LICENSE file.
+Copyright (c) 2016 Go Playground
+
+
