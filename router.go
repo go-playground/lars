@@ -1,4 +1,4 @@
-package lars
+package lcars
 
 import (
 	"net/http"
@@ -9,14 +9,14 @@ import (
 // Router contains the tree information and
 // methods to traverse it
 type Router struct {
-	lars *LARS
-	tree *node
+	lcars *LCARS
+	tree  *node
 }
 
 // NewRouter return a router instance for use
-func NewRouter(l *LARS) *Router {
+func NewRouter(l *LCARS) *Router {
 	return &Router{
-		lars: l,
+		lcars: l,
 		tree: &node{
 			static: nodes{},
 		},
@@ -208,8 +208,8 @@ MAIN:
 
 END:
 
-	if pCount > r.lars.mostParams {
-		r.lars.mostParams = pCount
+	if pCount > r.lcars.mostParams {
+		r.lcars.mostParams = pCount
 	}
 
 	cn.addChain(origPath, method, append(rg.middleware, h...))
@@ -346,13 +346,13 @@ END:
 	if ctx.handlers == nil && processEnd {
 		ctx.params = ctx.params[0:0]
 
-		if r.lars.handleMethodNotAllowed && cn != nil && len(cn.chains) > 0 {
+		if r.lcars.handleMethodNotAllowed && cn != nil && len(cn.chains) > 0 {
 			ctx.Set("methods", cn.chains)
-			ctx.handlers = r.lars.http405
+			ctx.handlers = r.lcars.http405
 			return
 		}
 
-		if r.lars.redirectTrailingSlash {
+		if r.lcars.redirectTrailingSlash {
 
 			// find again all lowercase
 			lc := strings.ToLower(ctx.request.URL.Path)
@@ -385,7 +385,7 @@ END:
 		}
 
 		ctx.params = ctx.params[0:0]
-		ctx.handlers = append(r.lars.routeGroup.middleware, r.lars.http404...)
+		ctx.handlers = append(r.lcars.routeGroup.middleware, r.lcars.http404...)
 	}
 }
 
@@ -403,5 +403,5 @@ func (r *Router) redirect(ctx *Context) {
 		http.Redirect(c.Response(), req, req.URL.Path, code)
 	}
 
-	ctx.handlers = append(r.lars.routeGroup.middleware, fn)
+	ctx.handlers = append(r.lcars.routeGroup.middleware, fn)
 }

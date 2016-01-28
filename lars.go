@@ -1,4 +1,4 @@
-package lars
+package lcars
 
 import (
 	"net/http"
@@ -90,8 +90,8 @@ type HandlersChain []HandlerFunc
 // GlobalsFunc is a function that creates a new Global object to be passed around the request
 type GlobalsFunc func() IGlobals
 
-// LARS is the main routing instance
-type LARS struct {
+// LCARS is the main routing instance
+type LCARS struct {
 	routeGroup
 	router *Router
 
@@ -143,10 +143,10 @@ var (
 	}
 )
 
-// New Creates and returns a new LARS instance
-func New() *LARS {
+// New Creates and returns a new LCARS instance
+func New() *LCARS {
 
-	l := &LARS{
+	l := &LCARS{
 		routeGroup: routeGroup{
 			middleware: make(HandlersChain, 0),
 		},
@@ -160,7 +160,7 @@ func New() *LARS {
 		handleMethodNotAllowed: false,
 	}
 
-	l.routeGroup.lars = l
+	l.routeGroup.lcars = l
 	l.router = NewRouter(l)
 	l.pool.New = func() interface{} {
 		return NewContext(l)
@@ -171,13 +171,13 @@ func New() *LARS {
 
 // RegisterGlobals registers a custom globals function for creation
 // and resetting of a global object passed per http request
-func (l *LARS) RegisterGlobals(fn GlobalsFunc) {
+func (l *LCARS) RegisterGlobals(fn GlobalsFunc) {
 	l.newGlobals = fn
 }
 
 // Register404 alows for overriding of the not found handler function.
 // NOTE: this is run after not finding a route even after redirecting with the trailing slash
-func (l *LARS) Register404(notFound ...Handler) {
+func (l *LCARS) Register404(notFound ...Handler) {
 
 	chain := make(HandlersChain, len(notFound))
 
@@ -188,21 +188,21 @@ func (l *LARS) Register404(notFound ...Handler) {
 	l.http404 = chain
 }
 
-// SetRedirectTrailingSlash tells LARS whether to try
+// SetRedirectTrailingSlash tells LCARS whether to try
 // and fix a URL by trying to find it
 // lowercase -> with or without slash -> 404
-func (l *LARS) SetRedirectTrailingSlash(set bool) {
+func (l *LCARS) SetRedirectTrailingSlash(set bool) {
 	l.redirectTrailingSlash = set
 }
 
-// SetHandle405MethodNotAllowed tells LARS whether to
+// SetHandle405MethodNotAllowed tells LCARS whether to
 // handle the http 405 Method Not Allowed status code
-func (l *LARS) SetHandle405MethodNotAllowed(set bool) {
+func (l *LCARS) SetHandle405MethodNotAllowed(set bool) {
 	l.handleMethodNotAllowed = set
 }
 
 // Serve returns an http.Handler to be used.
-func (l *LARS) Serve() http.Handler {
+func (l *LCARS) Serve() http.Handler {
 
 	// reserved for any logic that needs to happen before serving starts.
 	// i.e. although this router does not use priority to determine route order
@@ -212,7 +212,7 @@ func (l *LARS) Serve() http.Handler {
 }
 
 // Conforms to the http.Handler interface.
-func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
+func (l *LCARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Context)
 	c.Reset(w, r)
 

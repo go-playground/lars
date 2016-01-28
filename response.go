@@ -1,4 +1,4 @@
-package lars
+package lcars
 
 import (
 	"bufio"
@@ -20,7 +20,7 @@ type Response struct {
 }
 
 // NewResponse creates a new Response for testing purposes
-func NewResponse(w http.ResponseWriter, l *LARS) *Response {
+func NewResponse(w http.ResponseWriter, l *LCARS) *Response {
 	return &Response{ResponseWriter: w}
 }
 

@@ -1,4 +1,4 @@
-package lars
+package lcars
 
 type nodes map[string]*node
 
