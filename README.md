@@ -1,11 +1,13 @@
+#####LCARS (Library Computer Access/Retrieval System), a fast radix-tree based, HTTP router for Go.
+--------------------
+
 ![LCARS Logo](logo.png)
---------------
+
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
 ![test gif](examples/README/test.gif)
 
 
-LCARS (Library Computer Access/Retrieval System), a fast radix-tree based, HTTP router for Go.
 
 Why Another HTTP Router?
 ------------------------
