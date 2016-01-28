@@ -1,14 +1,26 @@
-LCARS
-===========
+![LCARS Logo](logo.png)
+
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
-LCARS (Library Access Retrieval System), a fast radix-tree based, HTTP router for Go.
+![test gif](examples/README/test.gif)
+
+
+LCARS (Library Computer Access/Retrieval System), a fast radix-tree based, HTTP router for Go.
+
+Why Another HTTP Router?
+------------------------
+I have noticed that most routers out there are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LCARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LCARS wraps the framework instead of the framework wrapping LCARS**.<add link to an example here>
 
 Unique Features 
 --------------
-LCARS has the following features 
+* Context allows the passing of framework/globals/application specific variables via it's Globals field.
+  * The Globals object is essentially all of the application specific variables and libraries needed by your handlers and functions, keeping a clear separation between your http and application contexts.
+* Handles mutiple url patterns not supported by many other routers.
+* Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
+  * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
+* Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
 
-- 
+
 
 Installation
 -----------
@@ -16,19 +28,19 @@ Installation
 Use go get 
 
 ```go
-go get github.com/go-experimental/LCARS
+go get github.com/go-playground/lcars
 ``` 
 
 or to update
 
 ```go
-go get -u github.com/go-experimental/LCARS
+go get -u github.com/go-playground/lcars
 ``` 
 
 Then import LCARS package into your code.
 
 ```go
-import "github.com/go-experimental/LCARS"
+import "github.com/go-playground/lcars"
 ``` 
 
 Getting Started
@@ -77,9 +89,9 @@ BenchmarkLCARS_StaticAll   	   50000	     24861 ns/op	       0 B/op	       0 all
 ```
 
 This package is inspired by the following 
-- Dimfeld/httpTreeMux
-- julienschmidt/httprouter
-- labstack/echo
+- [httptreemux](https://github.com/dimfeld/httptreemux)
+- [httprouter](https://github.com/julienschmidt/httprouter)
+- [echo](https://github.com/labstack/echo)
 
 License 
 --------
