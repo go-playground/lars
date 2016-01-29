@@ -1,4 +1,4 @@
-package lcars
+package lars
 
 // IRouteGroup interface for router group
 type IRouteGroup interface {
@@ -25,7 +25,7 @@ type IRoutes interface {
 type routeGroup struct {
 	prefix     string
 	middleware HandlersChain
-	lcars      *LCARS
+	lars       *LARS
 }
 
 var _ IRouteGroup = &routeGroup{}
@@ -38,7 +38,7 @@ func (g *routeGroup) handle(method string, path string, handlers []Handler) {
 		chain[i] = wrapHandler(h)
 	}
 
-	g.lcars.router.add(method, g.prefix+path, g, chain)
+	g.lars.router.add(method, g.prefix+path, g, chain)
 }
 
 // Use adds a middleware handler to the group middleware chain.
@@ -119,7 +119,7 @@ func (g *routeGroup) Group(prefix string, middleware ...Handler) IRouteGroup {
 
 	rg := &routeGroup{
 		prefix: g.prefix + prefix,
-		lcars:  g.lcars,
+		lars:   g.lars,
 	}
 
 	if len(middleware) == 0 {

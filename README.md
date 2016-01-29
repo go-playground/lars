@@ -1,8 +1,8 @@
-#LCARS HTTP Router
-<img align="right" src="https://raw.githubusercontent.com/go-experimental/lcars/master/logo.png">
+#lars HTTP Router
+<img align="right" src="https://raw.githubusercontent.com/go-experimental/lars/master/logo.png">
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
-LCARS (Library Computer Access/Retrieval System), is a fast radix-tree based, zero allocation, HTTP router for Go.
+lars (Library Access/Retrieval System), is a fast radix-tree based, zero allocation, HTTP router for Go.
 
 
 ![test gif](examples/README/test.gif)
@@ -10,7 +10,7 @@ LCARS (Library Computer Access/Retrieval System), is a fast radix-tree based, ze
 
 Why Another HTTP Router?
 ------------------------
-I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LCARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LCARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LCARS wraps the framework instead of the framework wrapping LCARS**.<add link to an example here>
+I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LARS wraps the framework instead of the framework wrapping LARS**.<add link to an example here>
 
 Unique Features 
 --------------
@@ -29,19 +29,19 @@ Installation
 Use go get 
 
 ```go
-go get github.com/go-playground/lcars
+go get github.com/go-playground/lars
 ``` 
 
 or to update
 
 ```go
-go get -u github.com/go-playground/lcars
+go get -u github.com/go-playground/lars
 ``` 
 
-Then import LCARS package into your code.
+Then import lars package into your code.
 
 ```go
-import "github.com/go-playground/lcars"
+import "github.com/go-playground/lars"
 ``` 
 
 Getting Started
@@ -58,34 +58,34 @@ Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600
 ```go
 go test -bench=. -benchmem=true
 #GithubAPI Routes: 203
-   lcars: 81016 Bytes
+   lars: 81016 Bytes
 
 #GPlusAPI Routes: 13
-   lcars: 6904 Bytes
+   lars: 6904 Bytes
 
 #ParseAPI Routes: 26
-   lcars: 7808 Bytes
+   lars: 7808 Bytes
 
 #Static Routes: 157
-   lcars: 79240 Bytes
+   lars: 79240 Bytes
 
 PASS
-BenchmarkLCARS_Param       	20000000	        87.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_Param5      	10000000	       144 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_Param20     	 5000000	       382 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_ParamWrite  	10000000	       168 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_GithubStatic	20000000	       109 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_GithubParam 	10000000	       151 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_GithubAll   	   50000	     38100 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_GPlusStatic 	20000000	        73.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_GPlusParam  	20000000	       100 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_GPlus2Params	10000000	       138 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_GPlusAll    	 1000000	      1838 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_ParseStatic 	20000000	        90.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_ParseParam  	20000000	       123 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_Parse2Params	10000000	       133 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_ParseAll    	  300000	      3902 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLCARS_StaticAll   	   50000	     24861 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_Param       	20000000	        87.4 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_Param5      	10000000	       144 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_Param20     	 5000000	       382 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_ParamWrite  	10000000	       168 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_GithubStatic	20000000	       109 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_GithubParam 	10000000	       151 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_GithubAll   	   50000	     38100 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_GPlusStatic 	20000000	        73.6 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_GPlusParam  	20000000	       100 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_GPlus2Params	10000000	       138 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_GPlusAll    	 1000000	      1838 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_ParseStatic 	20000000	        90.9 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_ParseParam  	20000000	       123 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_Parse2Params	10000000	       133 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_ParseAll    	  300000	      3902 ns/op	       0 B/op	       0 allocs/op
+Benchmarklars_StaticAll   	   50000	     24861 ns/op	       0 B/op	       0 allocs/op
 
 ```
 

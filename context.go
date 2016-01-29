@@ -1,4 +1,4 @@
-package lcars
+package lars
 
 import (
 	"net"
@@ -43,8 +43,8 @@ type Context struct {
 
 var _ context.Context = &Context{}
 
-// NewContext returns a new default LCARS Context object.
-func NewContext(l *LCARS) *Context {
+// NewContext returns a new default lars Context object.
+func NewContext(l *LARS) *Context {
 
 	return &Context{
 		params:   make(Params, l.mostParams),

@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-experimental/lcars"
+	"github.com/go-experimental/lars"
 )
 
 func main() {
 
-	l := lcars.New()
+	l := lars.New()
 	l.Use(Logger)
 
 	l.Get("/", HelloWorld)
@@ -19,16 +19,16 @@ func main() {
 	http.ListenAndServe(":3007", l.Serve())
 }
 
-func HelloWorld(c *lcars.Context) {
+func HelloWorld(c *lars.Context) {
 	c.Response().Write([]byte("Hello World"))
 }
 
-func Redirect(c *lcars.Context) {
+func Redirect(c *lars.Context) {
 	c.Response().Write([]byte("Redirect"))
 }
 
 // Logger ...
-func Logger(c *lcars.Context) {
+func Logger(c *lars.Context) {
 
 	req := c.Request()
 

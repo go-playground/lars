@@ -1,4 +1,4 @@
-package lcars
+package lars
 
 import (
 	"net/http"
@@ -59,7 +59,7 @@ func TestFindOneOffs(t *testing.T) {
 	Equal(t, body, GET)
 }
 
-func TestLCARS(t *testing.T) {
+func Testlars(t *testing.T) {
 	l := New()
 
 	l.Get("/", func(c *Context) {
@@ -73,7 +73,7 @@ func TestLCARS(t *testing.T) {
 	l.Serve()
 }
 
-func TestLCARSStatic(t *testing.T) {
+func TestlarsStatic(t *testing.T) {
 	l := New()
 	path := "/github.com/go-experimental/:id"
 	l.Get(path, basicHandler)
@@ -82,7 +82,7 @@ func TestLCARSStatic(t *testing.T) {
 	Equal(t, body, "")
 }
 
-func TestLCARSParam(t *testing.T) {
+func TestlarsParam(t *testing.T) {
 	l := New()
 	path := "/github.com/go-experimental/:id/"
 	l.Get(path, func(c *Context) {
@@ -95,7 +95,7 @@ func TestLCARSParam(t *testing.T) {
 	Equal(t, body, "808w70")
 }
 
-func TestLCARSTwoParam(t *testing.T) {
+func TestlarsTwoParam(t *testing.T) {
 	var p Params
 
 	l := New()
@@ -669,7 +669,7 @@ var _ IGlobals = &myGlobals{}
 
 func TestCustomGlobals(t *testing.T) {
 
-	var l *LCARS
+	var l *LARS
 
 	fn := func() IGlobals {
 		return &myGlobals{}
@@ -775,7 +775,7 @@ func TestRedirect(t *testing.T) {
 	Equal(t, code, http.StatusNotFound)
 }
 
-func request(method, path string, l *LCARS) (int, string) {
+func request(method, path string, l *LARS) (int, string) {
 	r, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
 	l.serveHTTP(w, r)

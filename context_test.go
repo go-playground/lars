@@ -1,4 +1,4 @@
-package lcars
+package lars
 
 import (
 	"net/http"
