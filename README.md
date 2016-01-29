@@ -1,5 +1,5 @@
-#lars HTTP Router
-<img align="right" src="https://raw.githubusercontent.com/go-experimental/lars/master/logo.png">
+#LARS HTTP Router
+
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
 lars (Library Access/Retrieval System), is a fast radix-tree based, zero allocation, HTTP router for Go.
