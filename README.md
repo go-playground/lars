@@ -1,17 +1,17 @@
-#####LCARS (Library Computer Access/Retrieval System), a fast radix-tree based, HTTP router for Go.
+#LCARS HTTP Router
 --------------------
-
-![LCARS Logo](logo.png)
-
+<img align="right" src="https://raw.githubusercontent.com/go-experimental/lcars/master/logo.png">
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
+
+LCARS (Library Computer Access/Retrieval System), is a fast radix-tree based, zero allocation, HTTP router for Go.
+
 
 ![test gif](examples/README/test.gif)
 
 
-
 Why Another HTTP Router?
 ------------------------
-I have noticed that most routers out there are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LCARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LCARS wraps the framework instead of the framework wrapping LCARS**.<add link to an example here>
+I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LCARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LCARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LCARS wraps the framework instead of the framework wrapping LCARS**.<add link to an example here>
 
 Unique Features 
 --------------
