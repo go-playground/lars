@@ -66,7 +66,7 @@ const (
 	Vary               = "Vary"
 	WWWAuthenticate    = "WWW-Authenticate"
 	XForwardedFor      = "X-Forwarded-For"
-	XRealIP            = "X-Real-IP"
+	XRealIP            = "X-Real-Ip"
 
 	basePath = "/"
 	blank    = ""

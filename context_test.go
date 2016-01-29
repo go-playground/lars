@@ -110,3 +110,25 @@ func TestContext(t *testing.T) {
 	Equal(t, c.handlers, nil)
 
 }
+
+func TestClientIP(t *testing.T) {
+	l := New()
+	c := NewContext(l)
+
+	c.request, _ = http.NewRequest("POST", "/", nil)
+
+	c.request.Header.Set("X-Real-IP", " 10.10.10.10  ")
+	c.request.Header.Set("X-Forwarded-For", "  20.20.20.20, 30.30.30.30")
+	c.request.RemoteAddr = "  40.40.40.40:42123 "
+
+	Equal(t, c.ClientIP(), "10.10.10.10")
+
+	c.request.Header.Del("X-Real-IP")
+	Equal(t, c.ClientIP(), "20.20.20.20")
+
+	c.request.Header.Set("X-Forwarded-For", "30.30.30.30  ")
+	Equal(t, c.ClientIP(), "30.30.30.30")
+
+	c.request.Header.Del("X-Forwarded-For")
+	Equal(t, c.ClientIP(), "40.40.40.40")
+}

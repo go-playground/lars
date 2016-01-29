@@ -1,7 +1,9 @@
 package lcars
 
 import (
+	"net"
 	"net/http"
+	"strings"
 
 	"golang.org/x/net/context"
 )
@@ -128,4 +130,38 @@ func (c *Context) Get(key string) (value interface{}, exists bool) {
 func (c *Context) Next() {
 	c.index++
 	c.handlers[c.index](c)
+}
+
+// http request helpers
+
+// ClientIP implements a best effort algorithm to return the real client IP, it parses
+// X-Real-IP and X-Forwarded-For in order to work properly with reverse-proxies such us: nginx or haproxy.
+func (c *Context) ClientIP() (clientIP string) {
+
+	var values []string
+
+	if values, _ = c.request.Header[XRealIP]; len(values) > 0 {
+
+		clientIP = strings.TrimSpace(values[0])
+		if clientIP != blank {
+			return
+		}
+	}
+
+	if values, _ = c.request.Header[XForwardedFor]; len(values) > 0 {
+		clientIP = values[0]
+
+		if index := strings.IndexByte(clientIP, ','); index >= 0 {
+			clientIP = clientIP[0:index]
+		}
+
+		clientIP = strings.TrimSpace(clientIP)
+		if clientIP != blank {
+			return
+		}
+	}
+
+	clientIP, _, _ = net.SplitHostPort(strings.TrimSpace(c.request.RemoteAddr))
+
+	return
 }
