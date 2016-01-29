@@ -89,7 +89,7 @@ func TestContext(t *testing.T) {
 	Equal(t, "-74.005941", vString[3])
 
 	// Reset
-	c.Reset(w, r)
+	c.reset(w, r)
 
 	//Request
 	NotEqual(t, c.Request(), nil)
@@ -131,4 +131,29 @@ func TestClientIP(t *testing.T) {
 
 	c.request.Header.Del("X-Forwarded-For")
 	Equal(t, c.ClientIP(), "40.40.40.40")
+}
+
+func TestAcceptedLanguages(t *testing.T) {
+	l := New()
+	c := NewContext(l)
+
+	c.request, _ = http.NewRequest("POST", "/", nil)
+	c.request.Header.Set(AcceptedLanguage, "da, en-gb;q=0.8, en;q=0.7")
+
+	languages := c.AcceptedLanguages()
+
+	Equal(t, languages[0], "da")
+	Equal(t, languages[1], "en-gb")
+	Equal(t, languages[2], "en")
+
+	c.request.Header.Del(AcceptedLanguage)
+
+	languages = c.AcceptedLanguages()
+
+	Equal(t, languages, nil)
+
+	c.request.Header.Set(AcceptedLanguage, "")
+	languages = c.AcceptedLanguages()
+
+	Equal(t, languages, nil)
 }

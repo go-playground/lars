@@ -54,6 +54,16 @@ func NewContext(l *LARS) *Context {
 	}
 }
 
+// reset resets the Context to it's default request state
+func (c *Context) reset(w http.ResponseWriter, r *http.Request) {
+	c.request = r
+	c.response.reset(w)
+	c.params = c.params[0:0]
+	c.store = nil
+	c.index = -1
+	c.handlers = nil
+}
+
 // Request returns *http.Request of the given context
 func (c *Context) Request() *http.Request {
 	return c.request
@@ -91,16 +101,6 @@ func (c *Context) Param(name string) (string, bool) {
 // Params returns the array of parameters within the*Context
 func (c *Context) Params() Params {
 	return c.params
-}
-
-// Reset resets the Context to it's default request state
-func (c *Context) Reset(w http.ResponseWriter, r *http.Request) {
-	c.request = r
-	c.response.reset(w)
-	c.params = c.params[0:0]
-	c.store = nil
-	c.index = -1
-	c.handlers = nil
 }
 
 // Set is used to store a new key/value pair exclusivelly for this*Context.
@@ -161,4 +161,28 @@ func (c *Context) ClientIP() (clientIP string) {
 	clientIP, _, _ = net.SplitHostPort(strings.TrimSpace(c.request.RemoteAddr))
 
 	return
+}
+
+// AcceptedLanguages returns an array of accepted languages denoted by
+// the Accept-Language header sent by the browser or nil if none
+// NOTE: this lowercases the locales as some stupid browsers send CamelCase
+func (c *Context) AcceptedLanguages() []string {
+
+	var accepted string
+
+	if accepted = c.request.Header.Get(AcceptedLanguage); accepted == blank {
+		return nil
+	}
+
+	options := strings.Split(accepted, ",")
+	l := len(options)
+
+	language := make([]string, l)
+
+	for i := 0; i < l; i++ {
+		locale := strings.SplitN(options[i], ";", 2)
+		language[i] = strings.ToLower(strings.Trim(locale[0], " "))
+	}
+
+	return language
 }

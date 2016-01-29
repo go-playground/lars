@@ -55,6 +55,7 @@ const (
 	// Headers
 	//---------
 
+	AcceptedLanguage   = "Accept-Language"
 	AcceptEncoding     = "Accept-Encoding"
 	Authorization      = "Authorization"
 	ContentDisposition = "Content-Disposition"
@@ -221,7 +222,7 @@ func (l *LARS) Serve() http.Handler {
 func (l *LARS) serveHTTPWithGlobals(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Context)
 
-	c.Reset(w, r)
+	c.reset(w, r)
 	c.Globals.Reset(c)
 	l.router.find(c, true)
 	c.Next()
@@ -234,7 +235,7 @@ func (l *LARS) serveHTTPWithGlobals(w http.ResponseWriter, r *http.Request) {
 func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Context)
 
-	c.Reset(w, r)
+	c.reset(w, r)
 	l.router.find(c, true)
 	c.Next()
 
