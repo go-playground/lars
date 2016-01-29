@@ -30,15 +30,16 @@ func (r *Router) add(method string, path string, rg *routeGroup, h HandlersChain
 	cn := r.tree
 
 	var (
-		start  int
-		end    int
-		j      int
-		c      byte
-		en     *node
-		ok     bool
-		chunk  string
-		err    error
-		pCount uint8 = 1
+		start      int
+		end        int
+		j          int
+		c          byte
+		en         *node
+		ok         bool
+		chunk      string
+		err        error
+		pCount     uint8 = 1
+		paramSlash bool
 	)
 
 	if path, err = url.QueryUnescape(path); err != nil {
@@ -107,7 +108,12 @@ MAIN:
 
 					pCount++
 					cn = cn.params
-					start = end + 1 // may be wrong here might be + 2 or plus nothing
+					start = end + 1
+
+					if path[start:] == blank {
+						paramSlash = true
+						goto END
+					}
 
 					continue MAIN
 				}
@@ -126,7 +132,12 @@ MAIN:
 				cn.params = nn
 				pCount++
 				cn = nn
-				start = end + 1 // may be wrong here might be + 2 or plus nothing
+				start = end + 1
+
+				if path[start:] == blank {
+					paramSlash = true
+					goto END
+				}
 
 				continue MAIN
 			}
@@ -212,15 +223,17 @@ END:
 		r.lars.mostParams = pCount
 	}
 
+	if paramSlash {
+		cn.addSlashChain(origPath, method, append(rg.middleware, h...))
+		return
+	}
+
 	cn.addChain(origPath, method, append(rg.middleware, h...))
 }
 
 // Find attempts to match a given use to a mapped route
 // attempting redirect if specified to do so.
 func (r *Router) find(ctx *Context, processEnd bool) {
-
-	cn := r.tree
-	path := ctx.request.URL.Path[1:]
 
 	var (
 		start int
@@ -230,6 +243,9 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		i     int
 		j     int
 	)
+
+	cn := r.tree
+	path := ctx.request.URL.Path[1:]
 
 	// start parsing URL
 	for ; end < len(path); end++ {
@@ -263,7 +279,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		if cn.params != nil {
 
 			if path[j:] == blank {
-				if ctx.handlers, ok = cn.params.chains[ctx.request.Method]; !ok {
+				if ctx.handlers, ok = cn.params.parmsSlashChains[ctx.request.Method]; !ok {
 					goto WILD
 				}
 
@@ -342,7 +358,6 @@ WILDNOSLASH:
 	cn = nil
 
 END:
-	// fmt.Println("END:", ctx.handlers)
 	if ctx.handlers == nil && processEnd {
 		ctx.params = ctx.params[0:0]
 

@@ -16,13 +16,13 @@ type node struct {
 	// Wildcard Children
 	wild *node
 
-	chains chainMethods
-
+	chains           chainMethods
+	parmsSlashChains chainMethods
 	// set only on params node
 	param string
 }
 
-func (n *node) addChain(origPath, method string, chain HandlersChain) {
+func (n *node) addChain(origPath string, method string, chain HandlersChain) {
 
 	if n.chains == nil {
 		n.chains = map[string]HandlersChain{}
@@ -33,4 +33,17 @@ func (n *node) addChain(origPath, method string, chain HandlersChain) {
 	}
 
 	n.chains[method] = chain
+}
+
+func (n *node) addSlashChain(origPath, method string, chain HandlersChain) {
+
+	if n.parmsSlashChains == nil {
+		n.parmsSlashChains = map[string]HandlersChain{}
+	}
+
+	if n.parmsSlashChains[method] != nil {
+		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
+	}
+
+	n.parmsSlashChains[method] = chain
 }

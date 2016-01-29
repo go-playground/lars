@@ -57,6 +57,19 @@ func TestFindOneOffs(t *testing.T) {
 	code, body = request(GET, "/superheroes/thor", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, GET)
+
+	l.Get("/zombies/:id/profile/", fn)
+	l.Get("/zombies/:id/", fn)
+
+	code, body = request(GET, "/zombies/10/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, GET)
+
+	code, body = request(GET, "/zombies/10", l)
+	Equal(t, code, http.StatusMovedPermanently)
+	Equal(t, body, "<a href=\"/zombies/10/\">Moved Permanently</a>.\n\n")
+
+	PanicMatches(t, func() { l.Get("/zombies/:id/") }, "Duplicate Handler for method 'GET' with path '/zombies/:id/'")
 }
 
 func Testlars(t *testing.T) {
@@ -777,6 +790,25 @@ func TestRedirect(t *testing.T) {
 	Equal(t, code, http.StatusNotFound)
 
 	code, _ = request(POST, "/home", l)
+	Equal(t, code, http.StatusNotFound)
+
+	l.SetRedirectTrailingSlash(true)
+
+	l.Get("/users/:id", basicHandler)
+	l.Get("/users/:id/profile", basicHandler)
+
+	code, _ = request(GET, "/users/10", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(GET, "/users/10/", l)
+	Equal(t, code, http.StatusMovedPermanently)
+
+	l.SetRedirectTrailingSlash(false)
+
+	code, _ = request(GET, "/users/10", l)
+	Equal(t, code, http.StatusOK)
+
+	code, _ = request(GET, "/users/10/", l)
 	Equal(t, code, http.StatusNotFound)
 }
 
