@@ -400,7 +400,7 @@ func (r *Router) redirect(ctx *Context) {
 
 	fn := func(c *Context) {
 		req := c.Request()
-		http.Redirect(c.Response(), req, req.URL.Path, code)
+		http.Redirect(c.Response(), req, req.URL.String(), code)
 	}
 
 	ctx.handlers = append(r.lcars.routeGroup.middleware, fn)

@@ -1,5 +1,4 @@
 #LCARS HTTP Router
---------------------
 <img align="right" src="https://raw.githubusercontent.com/go-experimental/lcars/master/logo.png">
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
 
