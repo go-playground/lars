@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-experimental/lars"
+	"github.com/go-playground/lars"
 )
 
 func main() {

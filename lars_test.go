@@ -86,21 +86,21 @@ func Testlars(t *testing.T) {
 
 func TestlarsStatic(t *testing.T) {
 	l := New()
-	path := "/github.com/go-experimental/:id"
+	path := "/github.com/go-playground/:id"
 	l.Get(path, basicHandler)
-	code, body := request(GET, "/github.com/go-experimental/808w70", l)
+	code, body := request(GET, "/github.com/go-playground/808w70", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "")
 }
 
 func TestlarsParam(t *testing.T) {
 	l := New()
-	path := "/github.com/go-experimental/:id/"
+	path := "/github.com/go-playground/:id/"
 	l.Get(path, func(c *Context) {
 		p, _ := c.Param("id")
 		c.Response().Write([]byte(p))
 	})
-	code, body := request(GET, "/github.com/go-experimental/808w70/", l)
+	code, body := request(GET, "/github.com/go-playground/808w70/", l)
 
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "808w70")

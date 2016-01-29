@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-experimental/lars"
+	"github.com/go-playground/lars"
 )
 
 // This is a contrived example using globals as I would use it in production
