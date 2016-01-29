@@ -19,10 +19,12 @@ func main() {
 	http.ListenAndServe(":3007", l.Serve())
 }
 
+// HelloWorld ...
 func HelloWorld(c *lars.Context) {
 	c.Response().Write([]byte("Hello World"))
 }
 
+// Redirect ...
 func Redirect(c *lars.Context) {
 	c.Response().Write([]byte("Redirect"))
 }
@@ -37,12 +39,11 @@ func Logger(c *lars.Context) {
 	c.Next()
 
 	stop := time.Now()
-	method := req.Method
 	path := req.URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", method, c.Response().Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", req.Method, c.Response().Status(), path, stop.Sub(start))
 }
