@@ -69,8 +69,6 @@ func Testlars(t *testing.T) {
 	code, body := request(GET, "/", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "home")
-
-	l.Serve()
 }
 
 func TestlarsStatic(t *testing.T) {
@@ -665,14 +663,20 @@ func (g *myGlobals) Reset(c *Context) {
 	g.text = "URL: " + c.Request().URL.Path
 }
 
+func (g *myGlobals) Done() {
+	g.text = ""
+}
+
 var _ IGlobals = &myGlobals{}
 
 func TestCustomGlobals(t *testing.T) {
 
 	var l *LARS
 
+	globals := &myGlobals{}
+
 	fn := func() IGlobals {
-		return &myGlobals{}
+		return globals
 	}
 
 	l = New()
@@ -685,6 +689,7 @@ func TestCustomGlobals(t *testing.T) {
 	code, body := request(GET, "/home/", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "URL: /home/")
+	Equal(t, globals.text, "")
 }
 
 func TestCustom404(t *testing.T) {
@@ -778,7 +783,8 @@ func TestRedirect(t *testing.T) {
 func request(method, path string, l *LARS) (int, string) {
 	r, _ := http.NewRequest(method, path, nil)
 	w := httptest.NewRecorder()
-	l.serveHTTP(w, r)
+	hf := l.Serve()
+	hf.ServeHTTP(w, r)
 	return w.Code, w.Body.String()
 }
 

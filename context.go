@@ -27,6 +27,7 @@ type store map[string]interface{}
 // being the interface, which does not have a clear separation of http Context vs Globals
 type IGlobals interface {
 	Reset(*Context)
+	Done()
 }
 
 // Context encapsulates the http request, response context
@@ -92,7 +93,7 @@ func (c *Context) Params() Params {
 	return c.params
 }
 
-// Reset resets the*Context to it's default request state
+// Reset resets the Context to it's default request state
 func (c *Context) Reset(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
@@ -100,10 +101,6 @@ func (c *Context) Reset(w http.ResponseWriter, r *http.Request) {
 	c.store = nil
 	c.index = -1
 	c.handlers = nil
-
-	if c.Globals != nil {
-		c.Globals.Reset(c)
-	}
 }
 
 // Set is used to store a new key/value pair exclusivelly for this*Context.

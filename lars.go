@@ -90,7 +90,7 @@ type HandlersChain []HandlerFunc
 // GlobalsFunc is a function that creates a new Global object to be passed around the request
 type GlobalsFunc func() IGlobals
 
-// lars is the main routing instance
+// LARS is the main routing instance
 type LARS struct {
 	routeGroup
 	router *Router
@@ -101,6 +101,7 @@ type LARS struct {
 	mostParams uint8
 
 	newGlobals GlobalsFunc
+	hasGlobals bool
 
 	pool sync.Pool
 
@@ -173,6 +174,7 @@ func New() *LARS {
 // and resetting of a global object passed per http request
 func (l *LARS) RegisterGlobals(fn GlobalsFunc) {
 	l.newGlobals = fn
+	l.hasGlobals = true
 }
 
 // Register404 alows for overriding of the not found handler function.
@@ -208,16 +210,32 @@ func (l *LARS) Serve() http.Handler {
 	// i.e. although this router does not use priority to determine route order
 	// could add sorting of tree nodes here....
 
+	if l.hasGlobals {
+		return http.HandlerFunc(l.serveHTTPWithGlobals)
+	}
+
 	return http.HandlerFunc(l.serveHTTP)
+}
+
+// Conforms to the http.Handler interface.
+func (l *LARS) serveHTTPWithGlobals(w http.ResponseWriter, r *http.Request) {
+	c := l.pool.Get().(*Context)
+
+	c.Reset(w, r)
+	c.Globals.Reset(c)
+	l.router.find(c, true)
+	c.Next()
+	c.Globals.Done()
+
+	l.pool.Put(c)
 }
 
 // Conforms to the http.Handler interface.
 func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Context)
+
 	c.Reset(w, r)
-
 	l.router.find(c, true)
-
 	c.Next()
 
 	l.pool.Put(c)
