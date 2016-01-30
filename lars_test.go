@@ -612,7 +612,7 @@ func TestHandlerWrapping(t *testing.T) {
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "/stdlib-context-handlerfunc/")
 
-	// test same as above but already commited
+	// test same as above but already committed
 
 	stdlinHandlerFunc2 := func() http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {

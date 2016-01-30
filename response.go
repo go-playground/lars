@@ -104,7 +104,7 @@ func (r *Response) Size() int64 {
 }
 
 // Committed returns whether the *Response header has already been written to
-// and if has been commited to this return.
+// and if has been committed to this return.
 func (r *Response) Committed() bool {
 	return r.committed
 }
