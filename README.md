@@ -1,8 +1,10 @@
-#LARS HTTP Router
+####LARS - Library Access/Retrieval System, is a fast radix-tree based, zero allocation, HTTP router for Go.
+-----------
 
 ![Project status](http://img.shields.io/status/experimental.png?color=red)
-
-lars (Library Access/Retrieval System), is a fast radix-tree based, zero allocation, HTTP router for Go.
+[![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
+[![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
+[![GoDoc](https://godoc.org/github.com/go-playground/lars?status.svg)](https://godoc.org/github.com/go-playground/lars)
 
 
 ![test gif](examples/README/test.gif)
