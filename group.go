@@ -114,7 +114,8 @@ func (g *routeGroup) Match(methods []string, path string, h ...Handler) {
 }
 
 // Group creates a new sub router with prefix. It inherits all properties from
-// the parent. Passing middleware overrides parent middleware.
+// the parent. Passing middleware overrides parent middleware but still keeps
+// the root level middleware intact.
 func (g *routeGroup) Group(prefix string, middleware ...Handler) IRouteGroup {
 
 	rg := &routeGroup{
@@ -135,10 +136,8 @@ func (g *routeGroup) Group(prefix string, middleware ...Handler) IRouteGroup {
 	}
 
 	rg.middleware = make(HandlersChain, len(middleware))
-
-	for i, m := range middleware {
-		rg.middleware[i] = wrapHandler(m)
-	}
+	copy(rg.middleware, g.lars.middleware)
+	rg.Use(middleware...)
 
 	return rg
 }
