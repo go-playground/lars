@@ -24,7 +24,7 @@ func TestContext(t *testing.T) {
 	l := New()
 	r, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	c := NewContext(l)
+	c := newContext(l)
 
 	var varParams []Param
 
@@ -113,7 +113,7 @@ func TestContext(t *testing.T) {
 
 func TestClientIP(t *testing.T) {
 	l := New()
-	c := NewContext(l)
+	c := newContext(l)
 
 	c.request, _ = http.NewRequest("POST", "/", nil)
 
@@ -135,7 +135,7 @@ func TestClientIP(t *testing.T) {
 
 func TestAcceptedLanguages(t *testing.T) {
 	l := New()
-	c := NewContext(l)
+	c := newContext(l)
 
 	c.request, _ = http.NewRequest("POST", "/", nil)
 	c.request.Header.Set(AcceptedLanguage, "da, en-gb;q=0.8, en;q=0.7")

@@ -163,9 +163,9 @@ func New() *LARS {
 	}
 
 	l.routeGroup.lars = l
-	l.router = NewRouter(l)
+	l.router = newRouter(l)
 	l.pool.New = func() interface{} {
-		return NewContext(l)
+		return newContext(l)
 	}
 
 	return l

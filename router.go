@@ -13,8 +13,8 @@ type Router struct {
 	tree *node
 }
 
-// NewRouter return a router instance for use
-func NewRouter(l *LARS) *Router {
+// newRouter return a router instance for use
+func newRouter(l *LARS) *Router {
 	return &Router{
 		lars: l,
 		tree: &node{

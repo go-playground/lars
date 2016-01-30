@@ -44,8 +44,8 @@ type Context struct {
 
 var _ context.Context = &Context{}
 
-// NewContext returns a new default lars Context object.
-func NewContext(l *LARS) *Context {
+// newContext returns a new default lars Context object.
+func newContext(l *LARS) *Context {
 
 	return &Context{
 		params:   make(Params, l.mostParams),
