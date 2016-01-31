@@ -134,7 +134,7 @@ func Home(c *lars.Context) {
 
 	app.Log.Println("Found User")
 
-	c.Response().Write([]byte("Welcome Home " + username))
+	c.Response.Write([]byte("Welcome Home " + username))
 }
 
 // Users ...
@@ -144,7 +144,7 @@ func Users(c *lars.Context) {
 
 	app.Log.Println("In Users Function")
 
-	c.Response().Write([]byte("Users"))
+	c.Response.Write([]byte("Users"))
 }
 
 // User ...
@@ -152,7 +152,7 @@ func User(c *lars.Context) {
 
 	app := c.Globals.(*ApplicationGlobals)
 
-	id, _ := c.Param("id")
+	id := c.Param("id")
 
 	var username string
 
@@ -160,7 +160,7 @@ func User(c *lars.Context) {
 
 	app.Log.Println("Found User")
 
-	c.Response().Write([]byte("Welcome " + username + " with id " + id))
+	c.Response.Write([]byte("Welcome " + username + " with id " + id))
 }
 
 // UserProfile ...
@@ -168,7 +168,7 @@ func UserProfile(c *lars.Context) {
 
 	app := c.Globals.(*ApplicationGlobals)
 
-	id, _ := c.Param("id")
+	id := c.Param("id")
 
 	var profile string
 
@@ -176,26 +176,24 @@ func UserProfile(c *lars.Context) {
 
 	app.Log.Println("Found User Profile")
 
-	c.Response().Write([]byte("Here's your profile " + profile + " user " + id))
+	c.Response.Write([]byte("Here's your profile " + profile + " user " + id))
 }
 
 // Logger ...
 func Logger(c *lars.Context) {
-
-	req := c.Request()
 
 	start := time.Now()
 
 	c.Next()
 
 	stop := time.Now()
-	path := req.URL.Path
+	path := c.Request.URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", req.Method, c.Response().Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
 }
 
 ```
@@ -214,28 +212,28 @@ go test -bench=. -benchmem=true
    LARS: 7240 Bytes
 
 #ParseAPI Routes: 26
-   LARS: 8160 Bytes
+   LARS: 8368 Bytes
 
 #Static Routes: 157
-   LARS: 81128 Bytes
+   LARS: 81544 Bytes
 
 PASS
-BenchmarkLARS_Param       	20000000	        86.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5      	10000000	       138 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20     	 5000000	       362 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite  	10000000	       157 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubStatic	20000000	       103 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam 	10000000	       148 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll   	   50000	     36726 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic 	20000000	        67.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam  	20000000	        95.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params	10000000	       137 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll    	 1000000	      1763 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic 	20000000	        86.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam  	20000000	       108 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params	10000000	       123 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll    	  500000	      3683 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll   	   50000	     23222 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param       	20000000	        83.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param5      	10000000	       137 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param20     	 5000000	       361 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParamWrite  	10000000	       155 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubStatic	20000000	        97.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubParam 	10000000	       146 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubAll   	   50000	     36804 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusStatic 	20000000	        66.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusParam  	20000000	        92.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlus2Params	10000000	       134 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusAll    	 1000000	      1758 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseStatic 	20000000	        88.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseParam  	20000000	       107 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Parse2Params	10000000	       125 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseAll    	  500000	      3682 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_StaticAll   	  100000	     22895 ns/op	       0 B/op	       0 allocs/op
 
 ```
 

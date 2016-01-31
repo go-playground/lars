@@ -76,24 +76,22 @@ func Home(c *lars.Context) {
 
 	app.Log.Println("Found User")
 
-	c.Response().Write([]byte("Welcome Home " + username))
+	c.Response.Write([]byte("Welcome Home " + username))
 }
 
 // Logger ...
 func Logger(c *lars.Context) {
-
-	req := c.Request()
 
 	start := time.Now()
 
 	c.Next()
 
 	stop := time.Now()
-	path := req.URL.Path
+	path := c.Request.URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", req.Method, c.Response().Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
 }

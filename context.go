@@ -33,13 +33,13 @@ type IGlobals interface {
 // Context encapsulates the http request, response context
 type Context struct {
 	context.Context
-	request           *http.Request
-	response          *Response
+	Request           *http.Request
+	Response          *Response
+	Globals           IGlobals
 	params            Params
 	handlers          HandlersChain
 	store             store
 	index             int
-	Globals           IGlobals
 	parsedQueryParams bool
 }
 
@@ -50,15 +50,15 @@ func newContext(l *LARS) *Context {
 
 	return &Context{
 		params:   make(Params, l.mostParams),
-		response: &Response{},
+		Response: &Response{},
 		Globals:  l.newGlobals(),
 	}
 }
 
 // reset resets the Context to it's default request state
 func (c *Context) reset(w http.ResponseWriter, r *http.Request) {
-	c.request = r
-	c.response.reset(w)
+	c.Request = r
+	c.Response.reset(w)
 	c.params = c.params[0:0]
 	c.store = nil
 	c.index = -1
@@ -66,22 +66,12 @@ func (c *Context) reset(w http.ResponseWriter, r *http.Request) {
 	c.parsedQueryParams = false
 }
 
-// Request returns *http.Request of the given context
-func (c *Context) Request() *http.Request {
-	return c.request
-}
-
-// Response returns http.ResponseWriter of the given context
-func (c *Context) Response() *Response {
-	return c.response
-}
-
 // Param returns the value of the first Param which key matches the given name.
 // If no matching Param is found, an empty string is returned.
 func (c *Context) Param(name string) string {
 
 	if c.parsedQueryParams {
-		return c.Request().FormValue(name)
+		return c.Request.FormValue(name)
 	}
 
 	for _, entry := range c.params {
@@ -101,16 +91,14 @@ func (c *Context) parseParams() {
 		return
 	}
 
-	req := c.Request()
-
-	if req.Form == nil {
-		req.ParseForm()
+	if c.Request.Form == nil {
+		c.Request.ParseForm()
 	}
 
 	for _, entry := range c.params {
 
-		if _, ok := req.Form[entry.Key]; !ok {
-			req.Form[entry.Key] = []string{entry.Value}
+		if _, ok := c.Request.Form[entry.Key]; !ok {
+			c.Request.Form[entry.Key] = []string{entry.Value}
 		}
 	}
 
@@ -151,7 +139,7 @@ func (c *Context) ClientIP() (clientIP string) {
 
 	var values []string
 
-	if values, _ = c.request.Header[XRealIP]; len(values) > 0 {
+	if values, _ = c.Request.Header[XRealIP]; len(values) > 0 {
 
 		clientIP = strings.TrimSpace(values[0])
 		if clientIP != blank {
@@ -159,7 +147,7 @@ func (c *Context) ClientIP() (clientIP string) {
 		}
 	}
 
-	if values, _ = c.request.Header[XForwardedFor]; len(values) > 0 {
+	if values, _ = c.Request.Header[XForwardedFor]; len(values) > 0 {
 		clientIP = values[0]
 
 		if index := strings.IndexByte(clientIP, ','); index >= 0 {
@@ -172,7 +160,7 @@ func (c *Context) ClientIP() (clientIP string) {
 		}
 	}
 
-	clientIP, _, _ = net.SplitHostPort(strings.TrimSpace(c.request.RemoteAddr))
+	clientIP, _, _ = net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr))
 
 	return
 }
@@ -184,7 +172,7 @@ func (c *Context) AcceptedLanguages() []string {
 
 	var accepted string
 
-	if accepted = c.request.Header.Get(AcceptedLanguage); accepted == blank {
+	if accepted = c.Request.Header.Get(AcceptedLanguage); accepted == blank {
 		return nil
 	}
 

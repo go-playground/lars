@@ -44,13 +44,13 @@ func TestContext(t *testing.T) {
 
 	c.params = varParams
 	c.store = storeMap
-	c.request = r
+	c.Request = r
 
 	//Request
-	NotEqual(t, c.Request(), nil)
+	NotEqual(t, c.Request, nil)
 
 	//Response
-	NotEqual(t, c.Response(), nil)
+	NotEqual(t, c.Response, nil)
 
 	//Paramter by name
 	bsonValue := c.Param("userID")
@@ -87,10 +87,10 @@ func TestContext(t *testing.T) {
 	c.reset(w, r)
 
 	//Request
-	NotEqual(t, c.Request(), nil)
+	NotEqual(t, c.Request, nil)
 
 	//Response
-	NotEqual(t, c.Response(), nil)
+	NotEqual(t, c.Response, nil)
 
 	//Set
 	Equal(t, c.store, nil)
@@ -107,7 +107,7 @@ func TestQueryParams(t *testing.T) {
 	l := New()
 	l.Get("/home/:id", func(c *Context) {
 		c.Param("nonexistant")
-		c.Response().Write([]byte(c.Request().URL.RawQuery))
+		c.Response.Write([]byte(c.Request.URL.RawQuery))
 	})
 
 	code, body := request(GET, "/home/13?test=true&test2=true", l)
@@ -137,21 +137,21 @@ func TestClientIP(t *testing.T) {
 	l := New()
 	c := newContext(l)
 
-	c.request, _ = http.NewRequest("POST", "/", nil)
+	c.Request, _ = http.NewRequest("POST", "/", nil)
 
-	c.request.Header.Set("X-Real-IP", " 10.10.10.10  ")
-	c.request.Header.Set("X-Forwarded-For", "  20.20.20.20, 30.30.30.30")
-	c.request.RemoteAddr = "  40.40.40.40:42123 "
+	c.Request.Header.Set("X-Real-IP", " 10.10.10.10  ")
+	c.Request.Header.Set("X-Forwarded-For", "  20.20.20.20, 30.30.30.30")
+	c.Request.RemoteAddr = "  40.40.40.40:42123 "
 
 	Equal(t, c.ClientIP(), "10.10.10.10")
 
-	c.request.Header.Del("X-Real-IP")
+	c.Request.Header.Del("X-Real-IP")
 	Equal(t, c.ClientIP(), "20.20.20.20")
 
-	c.request.Header.Set("X-Forwarded-For", "30.30.30.30  ")
+	c.Request.Header.Set("X-Forwarded-For", "30.30.30.30  ")
 	Equal(t, c.ClientIP(), "30.30.30.30")
 
-	c.request.Header.Del("X-Forwarded-For")
+	c.Request.Header.Del("X-Forwarded-For")
 	Equal(t, c.ClientIP(), "40.40.40.40")
 }
 
@@ -159,8 +159,8 @@ func TestAcceptedLanguages(t *testing.T) {
 	l := New()
 	c := newContext(l)
 
-	c.request, _ = http.NewRequest("POST", "/", nil)
-	c.request.Header.Set(AcceptedLanguage, "da, en-gb;q=0.8, en;q=0.7")
+	c.Request, _ = http.NewRequest("POST", "/", nil)
+	c.Request.Header.Set(AcceptedLanguage, "da, en-gb;q=0.8, en;q=0.7")
 
 	languages := c.AcceptedLanguages()
 
@@ -168,13 +168,13 @@ func TestAcceptedLanguages(t *testing.T) {
 	Equal(t, languages[1], "en-gb")
 	Equal(t, languages[2], "en")
 
-	c.request.Header.Del(AcceptedLanguage)
+	c.Request.Header.Del(AcceptedLanguage)
 
 	languages = c.AcceptedLanguages()
 
 	Equal(t, languages, nil)
 
-	c.request.Header.Set(AcceptedLanguage, "")
+	c.Request.Header.Set(AcceptedLanguage, "")
 	languages = c.AcceptedLanguages()
 
 	Equal(t, languages, nil)

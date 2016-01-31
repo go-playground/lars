@@ -30,54 +30,52 @@ func main() {
 
 // Home ...
 func Home(c *lars.Context) {
-	c.Response().Write([]byte("Welcome Home"))
+	c.Response.Write([]byte("Welcome Home"))
 }
 
 // Users ...
 func Users(c *lars.Context) {
-	c.Response().Write([]byte("Users"))
+	c.Response.Write([]byte("Users"))
 }
 
 // User ...
 func User(c *lars.Context) {
-	c.Response().Write([]byte("User"))
+	c.Response.Write([]byte("User"))
 }
 
 // UserProfile ...
 func UserProfile(c *lars.Context) {
-	c.Response().Write([]byte("User Profile"))
+	c.Response.Write([]byte("User Profile"))
 }
 
 // Admins ...
 func Admins(c *lars.Context) {
-	c.Response().Write([]byte("Admins"))
+	c.Response.Write([]byte("Admins"))
 }
 
 // Admin ...
 func Admin(c *lars.Context) {
-	c.Response().Write([]byte("Admin"))
+	c.Response.Write([]byte("Admin"))
 }
 
 // AdminProfile ...
 func AdminProfile(c *lars.Context) {
-	c.Response().Write([]byte("Admin Profile"))
+	c.Response.Write([]byte("Admin Profile"))
 }
 
 // Logger ...
 func Logger(c *lars.Context) {
-
-	req := c.Request()
 
 	start := time.Now()
 
 	c.Next()
 
 	stop := time.Now()
-	path := req.URL.Path
+	path := c.Request.URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", req.Method, c.Response().Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
 }

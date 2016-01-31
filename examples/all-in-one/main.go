@@ -85,7 +85,7 @@ func Home(c *lars.Context) {
 
 	app.Log.Println("Found User")
 
-	c.Response().Write([]byte("Welcome Home " + username))
+	c.Response.Write([]byte("Welcome Home " + username))
 }
 
 // Users ...
@@ -95,7 +95,7 @@ func Users(c *lars.Context) {
 
 	app.Log.Println("In Users Function")
 
-	c.Response().Write([]byte("Users"))
+	c.Response.Write([]byte("Users"))
 }
 
 // User ...
@@ -103,7 +103,7 @@ func User(c *lars.Context) {
 
 	app := c.Globals.(*ApplicationGlobals)
 
-	id, _ := c.Param("id")
+	id := c.Param("id")
 
 	var username string
 
@@ -111,7 +111,7 @@ func User(c *lars.Context) {
 
 	app.Log.Println("Found User")
 
-	c.Response().Write([]byte("Welcome " + username + " with id " + id))
+	c.Response.Write([]byte("Welcome " + username + " with id " + id))
 }
 
 // UserProfile ...
@@ -119,7 +119,7 @@ func UserProfile(c *lars.Context) {
 
 	app := c.Globals.(*ApplicationGlobals)
 
-	id, _ := c.Param("id")
+	id := c.Param("id")
 
 	var profile string
 
@@ -127,24 +127,22 @@ func UserProfile(c *lars.Context) {
 
 	app.Log.Println("Found User Profile")
 
-	c.Response().Write([]byte("Here's your profile " + profile + " user " + id))
+	c.Response.Write([]byte("Here's your profile " + profile + " user " + id))
 }
 
 // Logger ...
 func Logger(c *lars.Context) {
-
-	req := c.Request()
 
 	start := time.Now()
 
 	c.Next()
 
 	stop := time.Now()
-	path := req.URL.Path
+	path := c.Request.URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", req.Method, c.Response().Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
 }

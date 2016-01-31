@@ -127,7 +127,7 @@ type LARS struct {
 
 var (
 	default404Handler = func(c *Context) {
-		http.Error(c.Response(), http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		http.Error(c.Response, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
 
 	methodNotAllowedHandler = func(c *Context) {
@@ -135,7 +135,7 @@ var (
 		m, _ := c.Get("methods")
 		methods := m.(chainMethods)
 
-		res := c.Response()
+		res := c.Response
 
 		for k := range methods {
 			res.Header().Add("Allow", k)
