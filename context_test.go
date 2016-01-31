@@ -52,14 +52,9 @@ func TestContext(t *testing.T) {
 	//Response
 	NotEqual(t, c.Response(), nil)
 
-	//Parameters by ID
-	bsonValue, ok := c.P(0)
-	Equal(t, true, ok)
-	Equal(t, "507f191e810c19729de860ea", bsonValue)
-
 	//Paramter by name
-	bsonValue, ok = c.Param("userID")
-	Equal(t, true, ok)
+	bsonValue := c.Param("userID")
+	NotEqual(t, len(bsonValue), 0)
 	Equal(t, "507f191e810c19729de860ea", bsonValue)
 
 	//Store
@@ -97,9 +92,6 @@ func TestContext(t *testing.T) {
 	//Response
 	NotEqual(t, c.Response(), nil)
 
-	//Param
-	Equal(t, len(c.Params()), 0)
-
 	//Set
 	Equal(t, c.store, nil)
 
@@ -109,6 +101,36 @@ func TestContext(t *testing.T) {
 	// Handlers
 	Equal(t, c.handlers, nil)
 
+}
+
+func TestQueryParams(t *testing.T) {
+	l := New()
+	l.Get("/home/:id", func(c *Context) {
+		c.Param("nonexistant")
+		c.Response().Write([]byte(c.Request().URL.RawQuery))
+	})
+
+	code, body := request(GET, "/home/13?test=true&test2=true", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "test=true&test2=true")
+}
+
+func TestNativeHandlersAndQueryParams(t *testing.T) {
+
+	l := New()
+	l.Use(func(c *Context) {
+		// to triiger the form parsing
+		c.Param("nonexistant")
+		c.Next()
+
+	})
+	l.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.FormValue("id")))
+	})
+
+	code, body := request(GET, "/users/13", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "13")
 }
 
 func TestClientIP(t *testing.T) {

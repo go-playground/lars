@@ -19,8 +19,8 @@ type Response struct {
 	committed bool
 }
 
-// NewResponse creates a new Response for testing purposes
-func NewResponse(w http.ResponseWriter, l *LARS) *Response {
+// newResponse creates a new Response for testing purposes
+func newResponse(w http.ResponseWriter, l *LARS) *Response {
 	return &Response{ResponseWriter: w}
 }
 

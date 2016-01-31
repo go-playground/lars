@@ -33,13 +33,14 @@ type IGlobals interface {
 // Context encapsulates the http request, response context
 type Context struct {
 	context.Context
-	request  *http.Request
-	response *Response
-	params   Params
-	handlers HandlersChain
-	store    store
-	index    int
-	Globals  IGlobals
+	request           *http.Request
+	response          *Response
+	params            Params
+	handlers          HandlersChain
+	store             store
+	index             int
+	Globals           IGlobals
+	parsedQueryParams bool
 }
 
 var _ context.Context = &Context{}
@@ -62,6 +63,7 @@ func (c *Context) reset(w http.ResponseWriter, r *http.Request) {
 	c.store = nil
 	c.index = -1
 	c.handlers = nil
+	c.parsedQueryParams = false
 }
 
 // Request returns *http.Request of the given context
@@ -74,33 +76,45 @@ func (c *Context) Response() *Response {
 	return c.response
 }
 
-// P returns path parameter by index.
-func (c *Context) P(i int) (string, bool) {
-
-	l := len(c.params)
-
-	if i < l {
-		return c.params[i].Value, true
-	}
-
-	return blank, false
-}
-
 // Param returns the value of the first Param which key matches the given name.
-// If no matching Param is found, an empty string is returned and false is returned.
-func (c *Context) Param(name string) (string, bool) {
+// If no matching Param is found, an empty string is returned.
+func (c *Context) Param(name string) string {
+
+	if c.parsedQueryParams {
+		return c.Request().FormValue(name)
+	}
 
 	for _, entry := range c.params {
 		if entry.Key == name {
-			return entry.Value, true
+			return entry.Value
 		}
 	}
-	return blank, false
+
+	c.parseParams()
+
+	return c.Param(name)
 }
 
-// Params returns the array of parameters within the*Context
-func (c *Context) Params() Params {
-	return c.params
+func (c *Context) parseParams() {
+
+	if c.parsedQueryParams {
+		return
+	}
+
+	req := c.Request()
+
+	if req.Form == nil {
+		req.ParseForm()
+	}
+
+	for _, entry := range c.params {
+
+		if _, ok := req.Form[entry.Key]; !ok {
+			req.Form[entry.Key] = []string{entry.Value}
+		}
+	}
+
+	c.parsedQueryParams = true
 }
 
 // Set is used to store a new key/value pair exclusivelly for this*Context.

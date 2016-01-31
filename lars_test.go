@@ -97,7 +97,7 @@ func TestlarsParam(t *testing.T) {
 	l := New()
 	path := "/github.com/go-playground/:id/"
 	l.Get(path, func(c *Context) {
-		p, _ := c.Param("id")
+		p := c.Param("id")
 		c.Response().Write([]byte(p))
 	})
 	code, body := request(GET, "/github.com/go-playground/808w70/", l)
@@ -107,19 +107,21 @@ func TestlarsParam(t *testing.T) {
 }
 
 func TestlarsTwoParam(t *testing.T) {
-	var p Params
+	var p1 string
+	var p2 string
 
 	l := New()
 	path := "/github.com/user/:id/:age/"
 	l.Get(path, func(c *Context) {
-		p = c.Params()
+		p1 = c.Param("id")
+		p2 = c.Param("age")
 	})
 
 	code, _ := request(GET, "/github.com/user/808w70/67/", l)
 
 	Equal(t, code, http.StatusOK)
-	Equal(t, p[0].Value, "808w70")
-	Equal(t, p[1].Value, "67")
+	Equal(t, p1, "808w70")
+	Equal(t, p2, "67")
 }
 
 func TestRouterMatchAny(t *testing.T) {
@@ -166,61 +168,43 @@ func TestRouterMicroParam(t *testing.T) {
 	code, _ := request(GET, "/1/2/3", l)
 	Equal(t, code, http.StatusOK)
 
-	value, exists := context.P(0)
-
+	value := context.Param("a")
+	NotEqual(t, len(value), 0)
 	Equal(t, "1", value)
-	Equal(t, true, exists)
 
-	value, exists = context.P(1)
+	value = context.Param("b")
+	NotEqual(t, len(value), 0)
 	Equal(t, "2", value)
-	Equal(t, true, exists)
 
-	value, exists = context.P(2)
+	value = context.Param("c")
+	NotEqual(t, len(value), 0)
 	Equal(t, "3", value)
-	Equal(t, true, exists)
 
-	value, exists = context.P(4)
-	Equal(t, exists, false)
-	Equal(t, value, "")
-
-	value, exists = context.Param("a")
-
-	Equal(t, "1", value)
-	Equal(t, true, exists)
-
-	value, exists = context.Param("b")
-	Equal(t, "2", value)
-	Equal(t, true, exists)
-
-	value, exists = context.Param("c")
-	Equal(t, "3", value)
-	Equal(t, true, exists)
-
-	value, exists = context.Param("key")
-	Equal(t, false, exists)
+	value = context.Param("key")
+	Equal(t, len(value), 0)
 	Equal(t, "", value)
 
 }
 
 func TestRouterMixParamMatchAny(t *testing.T) {
-	var p Params
+	var p string
 
 	l := New()
 
 	//Route
 	l.Get("/users/:id/*", func(c *Context) {
 		c.Response().Write([]byte(c.Request().URL.Path))
-		p = c.Params()
+		p = c.Param("id")
 	})
 	code, body := request(GET, "/users/joe/comments", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, "joe", p[0].Value)
+	Equal(t, "joe", p)
 	Equal(t, "/users/joe/comments", body)
 }
 
 func TestRouterMultiRoute(t *testing.T) {
 	var p string
-	var parameters Params
+	var parameter string
 
 	l := New()
 	//Route
@@ -233,7 +217,7 @@ func TestRouterMultiRoute(t *testing.T) {
 	})
 
 	l.Get("/users/:id", func(c *Context) {
-		parameters = c.Params()
+		parameter = c.Param("id")
 	})
 	// Route > /users
 	code, _ := request(GET, "/users", l)
@@ -242,7 +226,7 @@ func TestRouterMultiRoute(t *testing.T) {
 	// Route > /users/:id
 	code, _ = request(GET, "/users/1", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, "1", parameters[0].Value)
+	Equal(t, "1", parameter)
 
 	// Route > /user/1
 	code, _ = request(GET, "/user/1", l)
@@ -251,7 +235,8 @@ func TestRouterMultiRoute(t *testing.T) {
 
 func TestRouterParamNames(t *testing.T) {
 	var getP string
-	var p Params
+	var p1 string
+	var p2 string
 
 	l := New()
 	//Routes
@@ -264,11 +249,12 @@ func TestRouterParamNames(t *testing.T) {
 	})
 
 	l.Get("/users/:id", func(c *Context) {
-		p = c.Params()
+		p1 = c.Param("id")
 	})
 
 	l.Get("/users/:id/files/:fid", func(c *Context) {
-		p = c.Params()
+		p1 = c.Param("id")
+		p2 = c.Param("fid")
 	})
 
 	// Route > users
@@ -279,16 +265,13 @@ func TestRouterParamNames(t *testing.T) {
 	// Route >/users/:id
 	code, _ = request(GET, "/users/1", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, "id", p[0].Key)
-	Equal(t, "1", p[0].Value)
+	Equal(t, "1", p1)
 
 	// Route > /users/:uid/files/:fid
-	code, _ = request(GET, "/users/1/files/1", l)
+	code, _ = request(GET, "/users/1/files/13", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, "id", p[0].Key)
-	Equal(t, "1", p[0].Value)
-	Equal(t, "fid", p[1].Key)
-	Equal(t, "1", p[1].Value)
+	Equal(t, "1", p1)
+	Equal(t, "13", p2)
 }
 
 func TestRouterAPI(t *testing.T) {
