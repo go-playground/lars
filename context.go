@@ -1,6 +1,7 @@
 package lars
 
 import (
+	"bytes"
 	"net"
 	"net/http"
 	"strings"
@@ -33,14 +34,15 @@ type IGlobals interface {
 // Context encapsulates the http request, response context
 type Context struct {
 	context.Context
-	Request           *http.Request
-	Response          *Response
-	Globals           IGlobals
-	params            Params
-	handlers          HandlersChain
-	store             store
-	index             int
-	parsedQueryParams bool
+	Request        *http.Request
+	Response       *Response
+	Globals        IGlobals
+	params         Params
+	handlers       HandlersChain
+	store          store
+	index          int
+	rawQueryParsed bool
+	origRawQuery   string
 }
 
 var _ context.Context = &Context{}
@@ -63,16 +65,12 @@ func (c *Context) reset(w http.ResponseWriter, r *http.Request) {
 	c.store = nil
 	c.index = -1
 	c.handlers = nil
-	c.parsedQueryParams = false
+	c.rawQueryParsed = false
 }
 
 // Param returns the value of the first Param which key matches the given name.
 // If no matching Param is found, an empty string is returned.
 func (c *Context) Param(name string) string {
-
-	if c.parsedQueryParams {
-		return c.Request.FormValue(name)
-	}
 
 	for _, entry := range c.params {
 		if entry.Key == name {
@@ -80,29 +78,42 @@ func (c *Context) Param(name string) string {
 		}
 	}
 
-	c.parseParams()
-
-	return c.Param(name)
+	return blank
 }
 
-func (c *Context) parseParams() {
+func (c *Context) parseRawQuery() {
 
-	if c.parsedQueryParams {
+	if c.rawQueryParsed {
 		return
 	}
 
-	if c.Request.Form == nil {
-		c.Request.ParseForm()
-	}
+	buff := bytes.NewBufferString(blank)
 
 	for _, entry := range c.params {
+		buff.WriteString(entry.Key)
+		buff.WriteString("=")
+		buff.WriteString(entry.Value)
+		buff.WriteString("&")
+	}
 
-		if _, ok := c.Request.Form[entry.Key]; !ok {
+	c.origRawQuery = c.Request.URL.RawQuery
+
+	if buff.Len() > 0 {
+
+		if c.Request.URL.RawQuery == blank {
+			c.Request.URL.RawQuery = buff.String()[:buff.Len()-1]
+		} else {
+			c.Request.URL.RawQuery = buff.String() + c.Request.URL.RawQuery
+		}
+	}
+
+	if c.Request.Form != nil {
+		for _, entry := range c.params {
 			c.Request.Form[entry.Key] = []string{entry.Value}
 		}
 	}
 
-	c.parsedQueryParams = true
+	c.rawQueryParsed = true
 }
 
 // Set is used to store a new key/value pair exclusivelly for this*Context.

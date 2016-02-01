@@ -414,8 +414,10 @@ func (r *Router) redirect(ctx *Context) {
 	}
 
 	fn := func(c *Context) {
-		req := c.Request
-		http.Redirect(c.Response, req, req.URL.String(), code)
+		if ctx.rawQueryParsed {
+			c.Request.URL.RawQuery = ctx.origRawQuery
+		}
+		http.Redirect(c.Response, c.Request, c.Request.URL.String(), code)
 	}
 
 	ctx.handlers = append(r.lars.routeGroup.middleware, fn)

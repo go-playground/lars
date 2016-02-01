@@ -14,7 +14,7 @@ func wrapHandler(h Handler) HandlerFunc {
 			res := c.Response
 
 			// this sets any url params on parsed form for use in native Handlers
-			c.parseParams()
+			c.parseRawQuery()
 
 			if h.(http.Handler).ServeHTTP(res, c.Request); res.status != http.StatusOK || res.committed {
 				return
@@ -29,7 +29,7 @@ func wrapHandler(h Handler) HandlerFunc {
 			res := c.Response
 
 			// this sets any url params on parsed form for use in native Handlers
-			c.parseParams()
+			c.parseRawQuery()
 
 			if h(res, c.Request); res.status != http.StatusOK || res.committed {
 				return

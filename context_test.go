@@ -115,11 +115,11 @@ func TestQueryParams(t *testing.T) {
 	Equal(t, body, "test=true&test2=true")
 }
 
-func TestNativeHandlersAndQueryParams(t *testing.T) {
+func TestNativeHandlersAndParseForm(t *testing.T) {
 
 	l := New()
 	l.Use(func(c *Context) {
-		// to triiger the form parsing
+		// to trigger the form parsing
 		c.Param("nonexistant")
 		c.Next()
 
@@ -131,6 +131,59 @@ func TestNativeHandlersAndQueryParams(t *testing.T) {
 	code, body := request(GET, "/users/13", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "13")
+}
+
+func TestNativeHandlersAndParsingForm2(t *testing.T) {
+
+	l := New()
+	l.Use(func(w http.ResponseWriter, r *http.Request) {
+		// to trigger the form parsing
+
+		r.ParseForm()
+	})
+	l.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.FormValue("id")))
+	})
+
+	code, body := request(GET, "/users/13", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "13")
+
+	l2 := New()
+	l2.Use(func(c *Context) {
+		// to trigger the form parsing
+		c.parseRawQuery()
+		c.Next()
+	})
+	l2.Get("/users/:id", func(c *Context) {
+		c.Response.Write([]byte(c.Request.FormValue("id")))
+	})
+
+	code, body = request(GET, "/users/13/", l2)
+	Equal(t, code, http.StatusMovedPermanently)
+	Equal(t, body, "<a href=\"/users/13\">Moved Permanently</a>.\n\n")
+
+	l3 := New()
+	l3.Use(func(c *Context) {
+		// to trigger the form parsing
+		c.Request.ParseForm()
+		c.Next()
+	})
+	l3.Get("/users/:id", func(c *Context) {
+		c.parseRawQuery()
+		c.Response.Write([]byte(c.Request.FormValue("id")))
+	})
+
+	l4 := New()
+	l4.Get("/admins/:id", func(c *Context) {
+		c.Request.ParseForm()
+		c.parseRawQuery()
+		c.Response.Write([]byte(c.Request.FormValue("id") + "|" + c.Request.FormValue("id2")))
+	})
+
+	code, body = request(GET, "/admins/15?id2=16", l4)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "15|16")
 }
 
 func TestClientIP(t *testing.T) {
