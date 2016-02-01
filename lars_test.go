@@ -1,6 +1,10 @@
 package lars
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -801,6 +805,39 @@ func request(method, path string, l *LARS) (int, string) {
 	hf := l.Serve()
 	hf.ServeHTTP(w, r)
 	return w.Code, w.Body.String()
+}
+
+func requestMultiPart(method string, url string, l *LARS) (int, string) {
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("file", "test.txt")
+	if err != nil {
+		fmt.Println("ERR FILE:", err)
+	}
+
+	buff := bytes.NewBufferString("FILE TEST DATA")
+	_, err = io.Copy(part, buff)
+	if err != nil {
+		fmt.Println("ERR COPY:", err)
+	}
+
+	writer.WriteField("username", "joeybloggs")
+
+	err = writer.Close()
+	if err != nil {
+		fmt.Println("ERR:", err)
+	}
+
+	r, _ := http.NewRequest(method, url, body)
+	r.Header.Set(ContentType, writer.FormDataContentType())
+
+	wr := httptest.NewRecorder()
+	hf := l.Serve()
+	hf.ServeHTTP(wr, r)
+
+	return wr.Code, wr.Body.String()
 }
 
 type route struct {

@@ -1,7 +1,6 @@
 package lars
 
 import (
-	"bytes"
 	"net"
 	"net/http"
 	"strings"
@@ -34,16 +33,15 @@ type IGlobals interface {
 // Context encapsulates the http request, response context
 type Context struct {
 	context.Context
-	Request        *http.Request
-	Response       *Response
-	Globals        IGlobals
-	params         Params
-	handlers       HandlersChain
-	store          store
-	index          int
-	rawQueryParsed bool
-	origRawQuery   string
-	parsedRawQuery string
+	Request             *http.Request
+	Response            *Response
+	Globals             IGlobals
+	params              Params
+	handlers            HandlersChain
+	store               store
+	index               int
+	formParsed          bool
+	multipartFormParsed bool
 }
 
 var _ context.Context = &Context{}
@@ -51,11 +49,14 @@ var _ context.Context = &Context{}
 // newContext returns a new default lars Context object.
 func newContext(l *LARS) *Context {
 
-	return &Context{
-		params:   make(Params, l.mostParams),
-		Response: &Response{},
-		Globals:  l.newGlobals(),
+	c := &Context{
+		params:  make(Params, l.mostParams),
+		Globals: l.newGlobals(),
 	}
+
+	c.Response = newResponse(nil, c)
+
+	return c
 }
 
 // reset resets the Context to it's default request state
@@ -66,7 +67,8 @@ func (c *Context) reset(w http.ResponseWriter, r *http.Request) {
 	c.store = nil
 	c.index = -1
 	c.handlers = nil
-	c.rawQueryParsed = false
+	c.formParsed = false
+	c.multipartFormParsed = false
 }
 
 // Param returns the value of the first Param which key matches the given name.
@@ -82,42 +84,51 @@ func (c *Context) Param(name string) string {
 	return blank
 }
 
-func (c *Context) parseRawQuery() {
+// ParseForm calls the underlying http.Request ParseForm
+// but also adds the URL params to the request Form as if
+// they were defined as query params i.e. ?id=13&ok=true but
+// does not add the params to the http.Request.URL.RawQuery
+// for SEO purposes
+func (c *Context) ParseForm() error {
 
-	if c.rawQueryParsed {
-		c.Request.URL.RawQuery = c.parsedRawQuery
-		return
+	if c.formParsed {
+		return nil
 	}
 
-	buff := bytes.NewBufferString(blank)
+	if err := c.Request.ParseForm(); err != nil {
+		return err
+	}
 
 	for _, entry := range c.params {
-		buff.WriteString(entry.Key)
-		buff.WriteString("=")
-		buff.WriteString(entry.Value)
-		buff.WriteString("&")
+		c.Request.Form[entry.Key] = []string{entry.Value}
 	}
 
-	c.origRawQuery = c.Request.URL.RawQuery
+	c.formParsed = true
 
-	if buff.Len() > 0 {
+	return nil
+}
 
-		if c.Request.URL.RawQuery == blank {
-			c.parsedRawQuery = buff.String()[:buff.Len()-1]
-		} else {
-			c.parsedRawQuery = buff.String() + c.Request.URL.RawQuery
-		}
+// ParseMultipartForm calls the underlying http.Request ParseMultipartForm
+// but also adds the URL params to the request Form as if they were defined
+// as query params i.e. ?id=13&ok=true but does not add the params to the
+// http.Request.URL.RawQuery for SEO purposes
+func (c *Context) ParseMultipartForm(maxMemory int64) error {
 
-		c.Request.URL.RawQuery = c.parsedRawQuery
+	if c.multipartFormParsed {
+		return nil
 	}
 
-	if c.Request.Form != nil {
-		for _, entry := range c.params {
-			c.Request.Form[entry.Key] = []string{entry.Value}
-		}
+	if err := c.Request.ParseMultipartForm(maxMemory); err != nil {
+		return err
 	}
 
-	c.rawQueryParsed = true
+	for _, entry := range c.params {
+		c.Request.Form[entry.Key] = []string{entry.Value}
+	}
+
+	c.multipartFormParsed = true
+
+	return nil
 }
 
 // Set is used to store a new key/value pair exclusivelly for this*Context.

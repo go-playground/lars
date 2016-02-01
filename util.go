@@ -11,17 +11,10 @@ func wrapHandler(h Handler) HandlerFunc {
 		return h
 	case http.Handler, http.HandlerFunc:
 		return func(c *Context) {
-			res := c.Response
 
-			// this sets any url params on parsed form for use in native Handlers
-			c.parseRawQuery()
-
-			if h.(http.Handler).ServeHTTP(res, c.Request); res.status != http.StatusOK || res.committed {
-				c.Request.URL.RawQuery = c.origRawQuery
+			if h.(http.Handler).ServeHTTP(c.Response, c.Request); c.Response.status != http.StatusOK || c.Response.committed {
 				return
 			}
-
-			c.Request.URL.RawQuery = c.origRawQuery
 
 			if c.index+1 < len(c.handlers) {
 				c.Next()
@@ -29,17 +22,10 @@ func wrapHandler(h Handler) HandlerFunc {
 		}
 	case func(http.ResponseWriter, *http.Request):
 		return func(c *Context) {
-			res := c.Response
 
-			// this sets any url params on parsed form for use in native Handlers
-			c.parseRawQuery()
-
-			if h(res, c.Request); res.status != http.StatusOK || res.committed {
-				c.Request.URL.RawQuery = c.origRawQuery
+			if h(c.Response, c.Request); c.Response.status != http.StatusOK || c.Response.committed {
 				return
 			}
-
-			c.Request.URL.RawQuery = c.origRawQuery
 
 			if c.index+1 < len(c.handlers) {
 				c.Next()
@@ -48,4 +34,12 @@ func wrapHandler(h Handler) HandlerFunc {
 	default:
 		panic("unknown handler")
 	}
+}
+
+// GetContext is a helper method for retrieving the *Context object from
+// the ResponseWriter when using native go hanlders.
+// NOTE: this will panic if fed an http.ResponseWriter not provided by lars's
+// chaining.
+func GetContext(w http.ResponseWriter) *Context {
+	return w.(*Response).context
 }

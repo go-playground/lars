@@ -414,9 +414,6 @@ func (r *Router) redirect(ctx *Context) {
 	}
 
 	fn := func(c *Context) {
-		if ctx.rawQueryParsed {
-			c.Request.URL.RawQuery = ctx.origRawQuery
-		}
 		http.Redirect(c.Response, c.Request, c.Request.URL.String(), code)
 	}
 

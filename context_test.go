@@ -130,16 +130,80 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 
 	code, body := request(GET, "/users/13", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, body, "13")
+	Equal(t, body, "")
+
+	l2 := New()
+	l2.Use(func(c *Context) {
+		// to trigger the form parsing
+		c.ParseForm()
+		c.Next()
+
+	})
+	l2.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.FormValue("id")))
+	})
+
+	code, body = request(GET, "/users/14", l2)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "14")
+
+	l3 := New()
+	l3.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+
+		c := GetContext(w)
+		c.ParseForm()
+
+		w.Write([]byte(r.FormValue("id")))
+	})
+
+	code, body = request(GET, "/users/15", l3)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "15")
+
+	l4 := New()
+	l4.Use(func(c *Context) {
+		// to trigger the form parsing
+		c.ParseForm()
+		c.Next()
+
+	})
+	l4.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+
+		c := GetContext(w)
+		c.ParseForm()
+
+		w.Write([]byte(r.FormValue("id")))
+	})
+
+	code, body = request(GET, "/users/16", l4)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "16")
+
+	l5 := New()
+	l5.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+
+		c := GetContext(w)
+		if err := c.ParseForm(); err != nil {
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.Write([]byte(r.FormValue("id")))
+	})
+
+	code, body = request(GET, "/users/16?test=%2f%%efg", l5)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "invalid URL escape \"%%e\"")
 }
 
-func TestNativeHandlersAndParsingForm2(t *testing.T) {
+func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 
 	l := New()
-	l.Use(func(w http.ResponseWriter, r *http.Request) {
+	l.Use(func(c *Context) {
 		// to trigger the form parsing
+		c.Param("nonexistant")
+		c.Next()
 
-		r.ParseForm()
 	})
 	l.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(r.FormValue("id")))
@@ -147,43 +211,69 @@ func TestNativeHandlersAndParsingForm2(t *testing.T) {
 
 	code, body := request(GET, "/users/13", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, body, "13")
+	Equal(t, body, "")
 
 	l2 := New()
 	l2.Use(func(c *Context) {
 		// to trigger the form parsing
-		c.parseRawQuery()
+		c.ParseMultipartForm(10 << 5) // 5 MB
 		c.Next()
 	})
-	l2.Get("/users/:id", func(c *Context) {
-		c.Response.Write([]byte(c.Request.FormValue("id")))
+	l2.Post("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.FormValue("id")))
 	})
 
-	code, body = request(GET, "/users/13/", l2)
-	Equal(t, code, http.StatusMovedPermanently)
-	Equal(t, body, "<a href=\"/users/13\">Moved Permanently</a>.\n\n")
+	code, body = requestMultiPart(POST, "/users/14", l2)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "14")
 
 	l3 := New()
-	l3.Use(func(c *Context) {
-		// to trigger the form parsing
-		c.Request.ParseForm()
-		c.Next()
+	l3.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+
+		c := GetContext(w)
+		c.ParseMultipartForm(10 << 5) // 5 MB
+
+		w.Write([]byte(r.FormValue("id")))
 	})
-	l3.Get("/users/:id", func(c *Context) {
-		c.parseRawQuery()
-		c.Response.Write([]byte(c.Request.FormValue("id")))
-	})
+
+	code, body = requestMultiPart(GET, "/users/15", l3)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "15")
 
 	l4 := New()
-	l4.Get("/admins/:id", func(c *Context) {
-		c.Request.ParseForm()
-		c.parseRawQuery()
-		c.Response.Write([]byte(c.Request.FormValue("id") + "|" + c.Request.FormValue("id2")))
+	l4.Use(func(c *Context) {
+		// to trigger the form parsing
+		c.ParseMultipartForm(10 << 5) // 5 MB
+		c.Next()
+
+	})
+	l4.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+
+		c := GetContext(w)
+		c.ParseMultipartForm(10 << 5) // 5 MB
+
+		w.Write([]byte(r.FormValue("id")))
 	})
 
-	code, body = request(GET, "/admins/15?id2=16", l4)
+	code, body = requestMultiPart(GET, "/users/16", l4)
 	Equal(t, code, http.StatusOK)
-	Equal(t, body, "15|16")
+	Equal(t, body, "16")
+
+	l5 := New()
+	l5.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
+
+		c := GetContext(w)
+		if err := c.ParseMultipartForm(10 << 5); err != nil {
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.Write([]byte(r.FormValue("id")))
+	})
+
+	code, body = requestMultiPart(GET, "/users/16?test=%2f%%efg", l5)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "invalid URL escape \"%%e\"")
 }
 
 func TestClientIP(t *testing.T) {

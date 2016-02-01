@@ -21,6 +21,7 @@ Unique Features
 * Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
   * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
 * Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
+* Full support for standard/native http Handler + HandlerFunc
 
 
 
