@@ -10,13 +10,14 @@ LARS is a fast radix-tree based, zero allocation, HTTP router for Go.
 
 Why Another HTTP Router?
 ------------------------
-I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LARS wraps the framework instead of the framework wrapping LARS**.<add link to an example here>
+I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LARS wraps the framework instead of the framework wrapping LARS** [see example here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
 
 Unique Features 
 --------------
 * Context allows the passing of framework/globals/application specific variables via it's Globals field.
   * The Globals object is essentially all of the application specific variables and libraries needed by your handlers and functions, keeping a clear separation between your http and application contexts.
 * Handles mutiple url patterns not supported by many other routers.
+  * the route algorithm was written from scratch and is **NOT** a modification of any other router.
 * Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
   * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
 * Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
@@ -46,6 +47,7 @@ import "github.com/go-playground/lars"
 
 Usage
 ------
+Below is a full example, for a simpler example [see here](https://github.com/go-playground/lars/blob/master/examples/groups/main.go)
 ```go
 package main
 
