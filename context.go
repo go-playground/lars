@@ -43,6 +43,7 @@ type Context struct {
 	index          int
 	rawQueryParsed bool
 	origRawQuery   string
+	parsedRawQuery string
 }
 
 var _ context.Context = &Context{}
@@ -84,6 +85,7 @@ func (c *Context) Param(name string) string {
 func (c *Context) parseRawQuery() {
 
 	if c.rawQueryParsed {
+		c.Request.URL.RawQuery = c.parsedRawQuery
 		return
 	}
 
@@ -101,10 +103,12 @@ func (c *Context) parseRawQuery() {
 	if buff.Len() > 0 {
 
 		if c.Request.URL.RawQuery == blank {
-			c.Request.URL.RawQuery = buff.String()[:buff.Len()-1]
+			c.parsedRawQuery = buff.String()[:buff.Len()-1]
 		} else {
-			c.Request.URL.RawQuery = buff.String() + c.Request.URL.RawQuery
+			c.parsedRawQuery = buff.String() + c.Request.URL.RawQuery
 		}
+
+		c.Request.URL.RawQuery = c.parsedRawQuery
 	}
 
 	if c.Request.Form != nil {

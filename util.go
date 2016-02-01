@@ -17,8 +17,11 @@ func wrapHandler(h Handler) HandlerFunc {
 			c.parseRawQuery()
 
 			if h.(http.Handler).ServeHTTP(res, c.Request); res.status != http.StatusOK || res.committed {
+				c.Request.URL.RawQuery = c.origRawQuery
 				return
 			}
+
+			c.Request.URL.RawQuery = c.origRawQuery
 
 			if c.index+1 < len(c.handlers) {
 				c.Next()
@@ -32,8 +35,11 @@ func wrapHandler(h Handler) HandlerFunc {
 			c.parseRawQuery()
 
 			if h(res, c.Request); res.status != http.StatusOK || res.committed {
+				c.Request.URL.RawQuery = c.origRawQuery
 				return
 			}
+
+			c.Request.URL.RawQuery = c.origRawQuery
 
 			if c.index+1 < len(c.handlers) {
 				c.Next()
