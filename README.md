@@ -6,7 +6,7 @@
 [![Go Report Card](http://goreportcard.com/badge/go-playground/lars)](http://goreportcard.com/badge/go-playground/lars)
 [![GoDoc](https://godoc.org/github.com/go-playground/lars?status.svg)](https://godoc.org/github.com/go-playground/lars)
 
-LARS is a fast radix-tree based, zero allocation, HTTP router for Go.
+LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view examples](https://github.com/go-playground/lars/tree/master/examples)
 
 Why Another HTTP Router?
 ------------------------
@@ -21,7 +21,7 @@ Unique Features
 * Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
   * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
 * Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
-* Full support for standard/native http Handler + HandlerFunc
+* Full support for standard/native http Handler + HandlerFunc [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
 
 
 
@@ -199,6 +199,55 @@ func Logger(c *lars.Context) {
 	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
 }
 
+```
+
+Native Handler Support
+```go
+package main
+
+import (
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/go-playground/lars"
+)
+
+func main() {
+
+	l := lars.New()
+	l.Use(Logger)
+
+	l.Get("/", HelloWorld)
+
+	http.ListenAndServe(":3007", l.Serve())
+}
+
+// HelloWorld ...
+func HelloWorld(w http.ResponseWriter, r *http.Request) {
+
+	// lar's context! get it and ROCK ON!
+	ctx := lars.GetContext(w)
+
+	ctx.Response.Write([]byte("Hello World"))
+}
+
+// Logger ...
+func Logger(c *lars.Context) {
+
+	start := time.Now()
+
+	c.Next()
+
+	stop := time.Now()
+	path := c.Request.URL.Path
+
+	if path == "" {
+		path = "/"
+	}
+
+	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
+}
 ```
 
 Benchmarks
