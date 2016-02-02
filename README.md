@@ -250,6 +250,16 @@ func Logger(c *lars.Context) {
 }
 ```
 
+Middleware
+-----------
+There are some pre-defined middlewares within the middleware folder; NOTE: that the middleware inside will
+comply with the following rule(s):
+
+* Are completely reusable by the community without modification
+
+Other middleware will be listed under the examples/middleware/... folder for a quick copy/paste modify. as an example a logging or
+recovery middleware are very application dependent and therefore will be listed under the examples/middleware/...
+
 Benchmarks
 -----------
 Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.5.3 darwin/amd64

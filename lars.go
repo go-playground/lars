@@ -69,6 +69,8 @@ const (
 	XForwardedFor      = "X-Forwarded-For"
 	XRealIP            = "X-Real-Ip"
 
+	Gzip = "gzip"
+
 	basePath = "/"
 	blank    = ""
 
