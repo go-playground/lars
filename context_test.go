@@ -19,6 +19,32 @@ import (
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
 
+// var TestHandlerForName = func(c *Context) {
+// 	c.Response.Write([]byte(c.HandlerName()))
+// }
+
+func HandlerForName(c *Context) {
+	c.Response.Write([]byte(c.HandlerName()))
+}
+
+func TestHandlerName(t *testing.T) {
+	l := New()
+	l.Get("/users/:id", HandlerForName)
+
+	code, body := request(GET, "/users/13", l)
+	Equal(t, code, http.StatusOK)
+	MatchRegex(t, body, "^(.*/vendor/)?github.com/go-playground/lars.HandlerForName$")
+
+	l.Get("/admin/:id", func(c *Context) {
+		c.handlers = nil
+		c.Response.Write([]byte(c.HandlerName()))
+	})
+
+	code, body = request(GET, "/admin/14", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "")
+}
+
 func TestContext(t *testing.T) {
 
 	l := New()

@@ -3,6 +3,8 @@ package lars
 import (
 	"net"
 	"net/http"
+	"reflect"
+	"runtime"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -213,4 +215,16 @@ func (c *Context) AcceptedLanguages() []string {
 	}
 
 	return language
+}
+
+// HandlerName returns the current Contexts final handler name
+func (c *Context) HandlerName() string {
+
+	if c.handlers == nil || len(c.handlers) == 0 {
+		return blank
+	}
+
+	handler := c.handlers[len(c.handlers)-1]
+
+	return runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name()
 }
