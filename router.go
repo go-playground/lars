@@ -28,6 +28,7 @@ func (r *Router) add(method string, path string, rg *routeGroup, h HandlersChain
 
 	origPath := path
 	cn := r.tree
+	existingParams := map[string]struct{}{}
 
 	var (
 		start      int
@@ -95,6 +96,10 @@ MAIN:
 
 				chunk = path[start:end]
 
+				if _, ok = existingParams[chunk]; ok {
+					panic("Duplicate param name '" + chunk + "' detected for route '" + origPath + "'")
+				}
+
 				// existing param node?
 				if cn.params != nil {
 
@@ -105,6 +110,8 @@ MAIN:
 					if cn.params.param != chunk {
 						panic("Different param names defined for path '" + origPath + "', param '" + chunk + "'' should be '" + cn.params.param + "'")
 					}
+
+					existingParams[chunk] = struct{}{}
 
 					pCount++
 					cn = cn.params
@@ -124,6 +131,8 @@ MAIN:
 						panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 					}
 				}
+
+				existingParams[chunk] = struct{}{}
 
 				nn := &node{
 					param: chunk,
@@ -147,11 +156,16 @@ MAIN:
 			pCount++
 			chunk = path[start:]
 
+			if _, ok = existingParams[chunk]; ok {
+				panic("Duplicate param name '" + chunk + "' detected for route '" + origPath + "'")
+			}
+
 			if cn.params != nil {
 				if cn.params.param != chunk {
 					panic("Different param names defined for path '" + origPath + "', param '" + chunk + "'' should be '" + cn.params.param + "'")
 				}
 
+				existingParams[chunk] = struct{}{}
 				cn = cn.params
 
 				goto END
@@ -163,6 +177,8 @@ MAIN:
 					panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 				}
 			}
+
+			existingParams[chunk] = struct{}{}
 
 			cn.params = &node{
 				param: chunk,
