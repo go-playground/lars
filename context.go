@@ -1,6 +1,7 @@
 package lars
 
 import (
+	"io"
 	"net"
 	"net/http"
 	"reflect"
@@ -227,4 +228,23 @@ func (c *Context) HandlerName() string {
 	handler := c.handlers[len(c.handlers)-1]
 
 	return runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name()
+}
+
+// Stream provides HTTP Streaming
+func (c *Context) Stream(step func(w io.Writer) bool) {
+	w := c.Response
+	clientGone := w.CloseNotify()
+
+	for {
+		select {
+		case <-clientGone:
+			return
+		default:
+			keepOpen := step(w)
+			w.Flush()
+			if !keepOpen {
+				return
+			}
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package lars
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,9 +20,54 @@ import (
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
 
-// var TestHandlerForName = func(c *Context) {
-// 	c.Response.Write([]byte(c.HandlerName()))
-// }
+func TestStream(t *testing.T) {
+	l := New()
+
+	count := 0
+
+	l.Get("/stream/:id", func(c *Context) {
+		c.Stream(func(w io.Writer) bool {
+
+			w.Write([]byte("a"))
+			count++
+
+			if count == 13 {
+				return false
+			}
+
+			return true
+		})
+	})
+
+	l.Get("/stream2/:id", func(c *Context) {
+		c.Stream(func(w io.Writer) bool {
+
+			w.Write([]byte("a"))
+			count++
+
+			if count == 5 {
+				c.Response.Writer().(*closeNotifyingRecorder).close()
+			}
+
+			if count == 1000 {
+				return false
+			}
+
+			return true
+		})
+	})
+
+	code, body := request(GET, "/stream/13", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "aaaaaaaaaaaaa")
+
+	count = 0
+
+	code, body = request(GET, "/stream2/13", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "aaaaa")
+
+}
 
 func HandlerForName(c *Context) {
 	c.Response.Write([]byte(c.HandlerName()))

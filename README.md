@@ -303,6 +303,7 @@ This package is inspired by the following
 - [httptreemux](https://github.com/dimfeld/httptreemux)
 - [httprouter](https://github.com/julienschmidt/httprouter)
 - [echo](https://github.com/labstack/echo)
+- [gin](https://github.com/gin-gonic/gin)
 
 License 
 --------

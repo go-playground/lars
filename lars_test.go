@@ -799,9 +799,25 @@ func TestRedirect(t *testing.T) {
 	Equal(t, code, http.StatusNotFound)
 }
 
+type closeNotifyingRecorder struct {
+	*httptest.ResponseRecorder
+	closed chan bool
+}
+
+func (c *closeNotifyingRecorder) close() {
+	c.closed <- true
+}
+
+func (c *closeNotifyingRecorder) CloseNotify() <-chan bool {
+	return c.closed
+}
+
 func request(method, path string, l *LARS) (int, string) {
 	r, _ := http.NewRequest(method, path, nil)
-	w := httptest.NewRecorder()
+	w := &closeNotifyingRecorder{
+		httptest.NewRecorder(),
+		make(chan bool, 1),
+	}
 	hf := l.Serve()
 	hf.ServeHTTP(w, r)
 	return w.Code, w.Body.String()
@@ -832,8 +848,10 @@ func requestMultiPart(method string, url string, l *LARS) (int, string) {
 
 	r, _ := http.NewRequest(method, url, body)
 	r.Header.Set(ContentType, writer.FormDataContentType())
-
-	wr := httptest.NewRecorder()
+	wr := &closeNotifyingRecorder{
+		httptest.NewRecorder(),
+		make(chan bool, 1),
+	}
 	hf := l.Serve()
 	hf.ServeHTTP(wr, r)
 
