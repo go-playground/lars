@@ -36,7 +36,7 @@ func (g *ApplicationGlobals) Done() {
 	// DB.Close()
 }
 
-var _ lars.IGlobals = &ApplicationGlobals{} // ensures ApplicationGlobals complies with lasr.IGlobals at compile time
+var _ lars.IAppContext = &ApplicationGlobals{} // ensures ApplicationGlobals complies with lasr.IGlobals at compile time
 
 func main() {
 
@@ -46,7 +46,7 @@ func main() {
 	// json := ...
 	// schema := ...
 
-	globalsFn := func() lars.IGlobals {
+	globalsFn := func() lars.IAppContext {
 		return &ApplicationGlobals{
 			Log: logger,
 			// Translator: translator,
@@ -57,7 +57,7 @@ func main() {
 	}
 
 	l := lars.New()
-	l.RegisterGlobals(globalsFn)
+	l.RegisterAppContext(globalsFn)
 	l.Use(Logger)
 
 	l.Get("/", Home)
@@ -77,7 +77,7 @@ func main() {
 // Home ...
 func Home(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	var username string
 
@@ -91,7 +91,7 @@ func Home(c *lars.Context) {
 // Users ...
 func Users(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	app.Log.Println("In Users Function")
 
@@ -101,7 +101,7 @@ func Users(c *lars.Context) {
 // User ...
 func User(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	id := c.Param("id")
 
@@ -117,7 +117,7 @@ func User(c *lars.Context) {
 // UserProfile ...
 func UserProfile(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	id := c.Param("id")
 

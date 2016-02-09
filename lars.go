@@ -90,8 +90,8 @@ type HandlerFunc func(*Context)
 // HandlersChain is an array of HanderFunc handlers to run
 type HandlersChain []HandlerFunc
 
-// GlobalsFunc is a function that creates a new Global object to be passed around the request
-type GlobalsFunc func() IGlobals
+// AppContextFunc is a function that creates a new AppContext object to be passed around the request
+type AppContextFunc func() IAppContext
 
 // LARS is the main routing instance
 type LARS struct {
@@ -103,8 +103,8 @@ type LARS struct {
 	// of each*Context Params
 	mostParams uint8
 
-	newGlobals GlobalsFunc
-	hasGlobals bool
+	newAppContext AppContextFunc
+	hasAppContext bool
 
 	pool sync.Pool
 
@@ -154,7 +154,7 @@ func New() *LARS {
 		routeGroup: routeGroup{
 			middleware: make(HandlersChain, 0),
 		},
-		newGlobals: func() IGlobals {
+		newAppContext: func() IAppContext {
 			return nil
 		},
 		mostParams:             0,
@@ -173,11 +173,11 @@ func New() *LARS {
 	return l
 }
 
-// RegisterGlobals registers a custom globals function for creation
+// RegisterAppContext registers a custom AppContext function for creation
 // and resetting of a global object passed per http request
-func (l *LARS) RegisterGlobals(fn GlobalsFunc) {
-	l.newGlobals = fn
-	l.hasGlobals = true
+func (l *LARS) RegisterAppContext(fn AppContextFunc) {
+	l.newAppContext = fn
+	l.hasAppContext = true
 }
 
 // Register404 alows for overriding of the not found handler function.
@@ -213,22 +213,22 @@ func (l *LARS) Serve() http.Handler {
 	// i.e. although this router does not use priority to determine route order
 	// could add sorting of tree nodes here....
 
-	if l.hasGlobals {
-		return http.HandlerFunc(l.serveHTTPWithGlobals)
+	if l.hasAppContext {
+		return http.HandlerFunc(l.serveHTTPWithAppContext)
 	}
 
 	return http.HandlerFunc(l.serveHTTP)
 }
 
 // Conforms to the http.Handler interface.
-func (l *LARS) serveHTTPWithGlobals(w http.ResponseWriter, r *http.Request) {
+func (l *LARS) serveHTTPWithAppContext(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Context)
 
 	c.reset(w, r)
-	c.Globals.Reset(c)
+	c.AppContext.Reset(c)
 	l.router.find(c, true)
 	c.Next()
-	c.Globals.Done()
+	c.AppContext.Done()
 
 	l.pool.Put(c)
 }

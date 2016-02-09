@@ -667,7 +667,7 @@ func (g *myGlobals) Done() {
 	g.text = ""
 }
 
-var _ IGlobals = &myGlobals{}
+var _ IAppContext = &myGlobals{}
 
 func TestCustomGlobals(t *testing.T) {
 
@@ -675,15 +675,15 @@ func TestCustomGlobals(t *testing.T) {
 
 	globals := &myGlobals{}
 
-	fn := func() IGlobals {
+	fn := func() IAppContext {
 		return globals
 	}
 
 	l = New()
-	l.RegisterGlobals(fn)
+	l.RegisterAppContext(fn)
 
 	l.Get("/home/", func(c *Context) {
-		c.Response.Write([]byte(c.Globals.(*myGlobals).text))
+		c.Response.Write([]byte(c.AppContext.(*myGlobals).text))
 	})
 
 	code, body := request(GET, "/home/", l)

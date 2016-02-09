@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-0.7.0-green.svg)
+![Project status](https://img.shields.io/badge/version-0.8.0-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](http://goreportcard.com/badge/go-playground/lars)](http://goreportcard.com/badge/go-playground/lars)
@@ -10,12 +10,12 @@ LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view ex
 
 Why Another HTTP Router?
 ------------------------
-I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LARS allowing the passing of global + application variables that comply with it's IGlobals interface (right on the Context object) makes frameworks redundant as **LARS wraps the framework instead of the framework wrapping LARS** [see example here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
+I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LARS allowing the passing of global variables + application context that comply with it's IAppContext interface (right on the Context object) makes frameworks redundant as **LARS wraps the framework instead of the framework wrapping LARS** [see example here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
 
 Unique Features 
 --------------
-* Context allows the passing of framework/globals/application specific variables via it's Globals field.
-  * The Globals object is essentially all of the application specific variables and libraries needed by your handlers and functions, keeping a clear separation between your http and application contexts.
+* Context allows the passing of framework/globals/application specific variables via it's AppContext field.
+  * The AppContext object is essentially all of the application specific variables and libraries needed by your handlers and functions, keeping a clear separation between your http and application contexts.
 * Handles mutiple url patterns not supported by many other routers.
   * the route algorithm was written from scratch and is **NOT** a modification of any other router.
 * Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
@@ -88,7 +88,7 @@ func (g *ApplicationGlobals) Done() {
 	// DB.Close()
 }
 
-var _ lars.IGlobals = &ApplicationGlobals{} // ensures ApplicationGlobals complies with lasr.IGlobals at compile time
+var _ lars.IAppContext = &ApplicationGlobals{} // ensures ApplicationGlobals complies with lasr.IGlobals at compile time
 
 func main() {
 
@@ -98,7 +98,7 @@ func main() {
 	// json := ...
 	// schema := ...
 
-	globalsFn := func() lars.IGlobals {
+	globalsFn := func() lars.IAppContext {
 		return &ApplicationGlobals{
 			Log: logger,
 			// Translator: translator,
@@ -109,7 +109,7 @@ func main() {
 	}
 
 	l := lars.New()
-	l.RegisterGlobals(globalsFn)
+	l.RegisterAppContext(globalsFn)
 	l.Use(Logger)
 
 	l.Get("/", Home)
@@ -129,7 +129,7 @@ func main() {
 // Home ...
 func Home(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	var username string
 
@@ -143,7 +143,7 @@ func Home(c *lars.Context) {
 // Users ...
 func Users(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	app.Log.Println("In Users Function")
 
@@ -153,7 +153,7 @@ func Users(c *lars.Context) {
 // User ...
 func User(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	id := c.Param("id")
 
@@ -169,7 +169,7 @@ func User(c *lars.Context) {
 // UserProfile ...
 func UserProfile(c *lars.Context) {
 
-	app := c.Globals.(*ApplicationGlobals)
+	app := c.AppContext.(*ApplicationGlobals)
 
 	id := c.Param("id")
 
@@ -198,7 +198,6 @@ func Logger(c *lars.Context) {
 
 	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
 }
-
 ```
 
 Native Handler Support

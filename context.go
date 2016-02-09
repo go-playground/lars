@@ -24,11 +24,11 @@ type Params []Param
 
 type store map[string]interface{}
 
-// IGlobals is an interface for a globals http request object that can be passed
+// IAppContext is an interface for an AppContext http request object that can be passed
 // around and allocated efficiently; and most importantly is not tied to the
 // context object and can be passed around separately if desired instead of Context
-// being the interface, which does not have a clear separation of http Context vs Globals
-type IGlobals interface {
+// being the interface, which does not have a clear separation of http Context vs App Context
+type IAppContext interface {
 	Reset(*Context)
 	Done()
 }
@@ -38,7 +38,7 @@ type Context struct {
 	context.Context
 	Request             *http.Request
 	Response            *Response
-	Globals             IGlobals
+	AppContext          IAppContext
 	params              Params
 	handlers            HandlersChain
 	store               store
@@ -53,8 +53,8 @@ var _ context.Context = &Context{}
 func newContext(l *LARS) *Context {
 
 	c := &Context{
-		params:  make(Params, l.mostParams),
-		Globals: l.newGlobals(),
+		params:     make(Params, l.mostParams),
+		AppContext: l.newAppContext(),
 	}
 
 	c.Response = newResponse(nil, c)
