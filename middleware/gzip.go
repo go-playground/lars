@@ -72,3 +72,43 @@ func Gzip(c *lars.Context) {
 
 	c.Next()
 }
+
+// GzipLevel returns a middleware which compresses HTTP response using gzip compression
+// scheme using the level specified
+func GzipLevel(level int) lars.HandlerFunc {
+
+	// test gzip level, then don;t have to each time one is created
+	// in the pool
+
+	if _, err := gzip.NewWriterLevel(ioutil.Discard, level); err != nil {
+		panic(err)
+	}
+
+	var pool = sync.Pool{
+		New: func() interface{} {
+			z, _ := gzip.NewWriterLevel(ioutil.Discard, level)
+			return z
+		},
+	}
+
+	return func(c *lars.Context) {
+		c.Response.Header().Add(lars.Vary, lars.AcceptEncoding)
+
+		if strings.Contains(c.Request.Header.Get(lars.AcceptEncoding), lars.Gzip) {
+
+			w := pool.Get().(*gzip.Writer)
+			w.Reset(c.Response.Writer())
+
+			defer func() {
+				w.Close()
+				pool.Put(w)
+			}()
+
+			gw := gzipWriter{Writer: w, ResponseWriter: c.Response.Writer()}
+			c.Response.Header().Set(lars.ContentEncoding, lars.Gzip)
+			c.Response.SetWriter(gw)
+		}
+
+		c.Next()
+	}
+}
