@@ -77,7 +77,7 @@ func Gzip(c *lars.Context) {
 // scheme using the level specified
 func GzipLevel(level int) lars.HandlerFunc {
 
-	// test gzip level, then don;t have to each time one is created
+	// test gzip level, then don't have to each time one is created
 	// in the pool
 
 	if _, err := gzip.NewWriterLevel(ioutil.Discard, level); err != nil {
