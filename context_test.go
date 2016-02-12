@@ -266,6 +266,20 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	code, body = request(GET, "/users/16?test=%2f%%efg", l5)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "invalid URL escape \"%%e\"")
+
+	l6 := New()
+	l6.Get("/chain-handler", func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("a"))
+			handler.ServeHTTP(w, r)
+		})
+	}, func(c *Context) {
+		c.Response.Write([]byte("ok"))
+	})
+
+	code, body = request(GET, "/chain-handler", l6)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "aok")
 }
 
 func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {

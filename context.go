@@ -219,6 +219,8 @@ func (c *Context) AcceptedLanguages() []string {
 }
 
 // HandlerName returns the current Contexts final handler name
+// NOTE: this only works for lars HandlerFunc i.e. func(*Context)
+// as native middleware functions are wrapped
 func (c *Context) HandlerName() string {
 
 	if c.handlers == nil || len(c.handlers) == 0 {

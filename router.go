@@ -239,12 +239,16 @@ END:
 		r.lars.mostParams = pCount
 	}
 
+	hndlrs := make(HandlersChain, len(rg.middleware)+len(h))
+	copy(hndlrs, rg.middleware)
+	copy(hndlrs[len(rg.middleware):], h)
+
 	if paramSlash {
-		cn.addSlashChain(origPath, method, append(rg.middleware, h...))
+		cn.addSlashChain(origPath, method, hndlrs)
 		return
 	}
 
-	cn.addChain(origPath, method, append(rg.middleware, h...))
+	cn.addChain(origPath, method, hndlrs)
 }
 
 // Find attempts to match a given use to a mapped route
@@ -337,7 +341,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		if ctx.handlers, ok = nn.chains[ctx.Request.Method]; !ok {
 			goto PARAMSNOSLASH
 		}
-		// ctx.handlers = nn.chains[ctx.Request.Method]
+
 		cn = nn
 
 		goto END
@@ -345,6 +349,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 
 PARAMSNOSLASH:
 	if cn.params != nil {
+
 		if ctx.handlers, ok = cn.params.chains[ctx.Request.Method]; !ok {
 			goto WILDNOSLASH
 		}
@@ -415,8 +420,7 @@ END:
 			}
 		}
 
-		ctx.params = ctx.params[0:0]
-		ctx.handlers = append(r.lars.routeGroup.middleware, r.lars.http404...)
+		ctx.handlers = r.lars.notFound
 	}
 }
 
@@ -433,5 +437,9 @@ func (r *Router) redirect(ctx *Context) {
 		http.Redirect(c.Response, c.Request, c.Request.URL.String(), code)
 	}
 
-	ctx.handlers = append(r.lars.routeGroup.middleware, fn)
+	hndlrs := make(HandlersChain, len(r.lars.routeGroup.middleware)+1)
+	copy(hndlrs, r.lars.routeGroup.middleware)
+	hndlrs[len(r.lars.routeGroup.middleware)] = fn
+
+	ctx.handlers = hndlrs
 }

@@ -111,6 +111,8 @@ type LARS struct {
 	http404 HandlersChain // 404 Not Found
 	http405 HandlersChain // 405 Method Not Allowed
 
+	notFound HandlersChain
+
 	// Enables automatic redirection if the current route can't be matched but a
 	// handler for the path with (without) the trailing slash exists.
 	// For example if /foo/ is requested but a route only exists for /foo, the
@@ -212,6 +214,10 @@ func (l *LARS) Serve() http.Handler {
 	// reserved for any logic that needs to happen before serving starts.
 	// i.e. although this router does not use priority to determine route order
 	// could add sorting of tree nodes here....
+
+	l.notFound = make(HandlersChain, len(l.middleware)+len(l.http404))
+	copy(l.notFound, l.middleware)
+	copy(l.notFound[len(l.middleware):], l.http404)
 
 	if l.hasAppContext {
 		return http.HandlerFunc(l.serveHTTPWithAppContext)
