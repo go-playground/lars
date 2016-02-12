@@ -2,9 +2,9 @@ package lars
 
 import "net/http"
 
-// nativeChainHandlerFunc is used in native handler chains
+// NativeChainHandler is used in native handler chains
 // example using nosurf crsf middleware nosurf.NewPure(lars.NativeChainHandlerFunc)
-var nativeChainHandlerFunc = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var NativeChainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	c := GetContext(w)
 
@@ -45,7 +45,7 @@ func wrapHandler(h Handler) HandlerFunc {
 		}
 	case func(handler http.Handler) http.Handler:
 
-		hf := h(nativeChainHandlerFunc)
+		hf := h(NativeChainHandler)
 
 		return func(c *Context) {
 			hf.ServeHTTP(c.Response, c.Request)
