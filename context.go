@@ -195,14 +195,15 @@ func (c *Context) ClientIP() (clientIP string) {
 }
 
 // AcceptedLanguages returns an array of accepted languages denoted by
-// the Accept-Language header sent by the browser or nil if none
-// NOTE: this lowercases the locales as some stupid browsers send CamelCase
-func (c *Context) AcceptedLanguages() []string {
+// the Accept-Language header sent by the browser
+// NOTE: this lowercases the locales as some stupid browsers send in lowercase
+// when all the rest send it properly
+func (c *Context) AcceptedLanguages(lowercase bool) []string {
 
 	var accepted string
 
 	if accepted = c.Request.Header.Get(AcceptedLanguage); accepted == blank {
-		return nil
+		return []string{}
 	}
 
 	options := strings.Split(accepted, ",")
@@ -212,7 +213,13 @@ func (c *Context) AcceptedLanguages() []string {
 
 	for i := 0; i < l; i++ {
 		locale := strings.SplitN(options[i], ";", 2)
-		language[i] = strings.ToLower(strings.Trim(locale[0], " "))
+
+		if lowercase {
+			language[i] = strings.ToLower(strings.Trim(locale[0], " "))
+			continue
+		}
+
+		language[i] = strings.Trim(locale[0], " ")
 	}
 
 	return language

@@ -389,9 +389,15 @@ func TestAcceptedLanguages(t *testing.T) {
 	c := newContext(l)
 
 	c.Request, _ = http.NewRequest("POST", "/", nil)
-	c.Request.Header.Set(AcceptedLanguage, "da, en-gb;q=0.8, en;q=0.7")
+	c.Request.Header.Set(AcceptedLanguage, "da, en-GB;q=0.8, en;q=0.7")
 
-	languages := c.AcceptedLanguages()
+	languages := c.AcceptedLanguages(false)
+
+	Equal(t, languages[0], "da")
+	Equal(t, languages[1], "en-GB")
+	Equal(t, languages[2], "en")
+
+	languages = c.AcceptedLanguages(true)
 
 	Equal(t, languages[0], "da")
 	Equal(t, languages[1], "en-gb")
@@ -399,12 +405,12 @@ func TestAcceptedLanguages(t *testing.T) {
 
 	c.Request.Header.Del(AcceptedLanguage)
 
-	languages = c.AcceptedLanguages()
+	languages = c.AcceptedLanguages(false)
 
-	Equal(t, languages, nil)
+	Equal(t, languages, []string{})
 
 	c.Request.Header.Set(AcceptedLanguage, "")
-	languages = c.AcceptedLanguages()
+	languages = c.AcceptedLanguages(false)
 
-	Equal(t, languages, nil)
+	Equal(t, languages, []string{})
 }
