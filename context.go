@@ -196,8 +196,7 @@ func (c *Context) ClientIP() (clientIP string) {
 
 // AcceptedLanguages returns an array of accepted languages denoted by
 // the Accept-Language header sent by the browser
-// NOTE: this lowercases the locales as some stupid browsers send in lowercase
-// when all the rest send it properly
+// NOTE: some stupid browsers send in locales lowercase when all the rest send it properly
 func (c *Context) AcceptedLanguages(lowercase bool) []string {
 
 	var accepted string
