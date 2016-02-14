@@ -209,6 +209,7 @@ MAIN:
 
 			cn.wild = &node{}
 			cn = cn.wild
+			pCount++
 
 			goto END
 		}
@@ -328,6 +329,10 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		if cn.wild != nil {
 			ctx.handlers = cn.wild.chains[ctx.Request.Method]
 			cn = cn.wild
+			i = len(ctx.params)
+			ctx.params = ctx.params[:i+1]
+			ctx.params[i].Key = WildcardParam
+			ctx.params[i].Value = path[start:j]
 			goto END
 		}
 
@@ -368,6 +373,10 @@ WILDNOSLASH:
 	if cn.wild != nil {
 		ctx.handlers = cn.wild.chains[ctx.Request.Method]
 		cn = cn.wild
+		i = len(ctx.params)
+		ctx.params = ctx.params[:i+1]
+		ctx.params[i].Key = WildcardParam
+		ctx.params[i].Value = path[start:]
 
 		goto END
 	}

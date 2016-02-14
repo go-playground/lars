@@ -210,15 +210,18 @@ func (c *Context) AcceptedLanguages(lowercase bool) []string {
 
 	language := make([]string, l)
 
-	for i := 0; i < l; i++ {
-		locale := strings.SplitN(options[i], ";", 2)
+	if lowercase {
 
-		if lowercase {
+		for i := 0; i < l; i++ {
+			locale := strings.SplitN(options[i], ";", 2)
 			language[i] = strings.ToLower(strings.Trim(locale[0], " "))
-			continue
 		}
+	} else {
 
-		language[i] = strings.Trim(locale[0], " ")
+		for i := 0; i < l; i++ {
+			locale := strings.SplitN(options[i], ";", 2)
+			language[i] = strings.Trim(locale[0], " ")
+		}
 	}
 
 	return language

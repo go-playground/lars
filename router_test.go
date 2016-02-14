@@ -1,6 +1,7 @@
 package lars
 
 import (
+	"net/http"
 	"testing"
 
 	. "gopkg.in/go-playground/assert.v1"
@@ -27,4 +28,19 @@ func TestDuplicateParams(t *testing.T) {
 
 	l.Get("/company/:id/", basicHandler)
 	PanicMatches(t, func() { l.Get("/company/:id/employee/:id/", basicHandler) }, "Duplicate param name 'id' detected for route '/company/:id/employee/:id/'")
+}
+
+func TestWildcardParam(t *testing.T) {
+	l := New()
+	l.Get("/users/*", func(c *Context) {
+		c.Response.Write([]byte(c.Param(WildcardParam)))
+	})
+
+	code, body := request(GET, "/users/testwild", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "testwild")
+
+	code, body = request(GET, "/users/testwildslash/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "testwildslash/")
 }
