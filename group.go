@@ -1,5 +1,11 @@
 package lars
 
+import (
+	"net/http"
+
+	"golang.org/x/net/websocket"
+)
+
 // IRouteGroup interface for router group
 type IRouteGroup interface {
 	IRoutes
@@ -19,6 +25,7 @@ type IRoutes interface {
 	Head(string, ...Handler)
 	Connect(string, ...Handler)
 	Trace(string, ...Handler)
+	WebSocket(string, Handler)
 }
 
 // routeGroup struct containing all fields and methods for use.
@@ -111,6 +118,25 @@ func (g *routeGroup) Match(methods []string, path string, h ...Handler) {
 	for _, m := range methods {
 		g.handle(m, path, h)
 	}
+}
+
+// WebSocket adds a websocket route
+func (g *routeGroup) WebSocket(path string, h Handler) {
+
+	handler := wrapHandler(h)
+
+	g.Get(path, func(c *Context) {
+
+		wss := websocket.Server{
+			Handler: func(ws *websocket.Conn) {
+				c.WebSocket = ws
+				c.Response.status = http.StatusSwitchingProtocols
+				c.Next()
+			},
+		}
+
+		wss.ServeHTTP(c.Response, c.Request)
+	}, handler)
 }
 
 // Group creates a new sub router with prefix. It inherits all properties from

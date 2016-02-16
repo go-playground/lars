@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
+	"golang.org/x/net/websocket"
 )
 
 // Param is a single URL parameter, consisting of a key and a value.
@@ -38,6 +39,7 @@ type Context struct {
 	context.Context
 	Request             *http.Request
 	Response            *Response
+	WebSocket           *websocket.Conn
 	AppContext          IAppContext
 	params              Params
 	handlers            HandlersChain
