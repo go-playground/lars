@@ -1,11 +1,15 @@
 package lars
 
-type nodes map[string]*node
+// type nodes []*node
+type nodes []*node
 
 type chainMethods map[string]HandlersChain
 
 // node
 type node struct {
+
+	// path to match
+	path string
 
 	// Static Children
 	static nodes
@@ -20,6 +24,21 @@ type node struct {
 	parmsSlashChains chainMethods
 	// set only on params node
 	param string
+}
+
+func (n *node) findStatic(path string) (found *node) {
+
+	for i := 0; i < len(n.static); i++ {
+
+		// fmt.Println(n.static[i].path, "=", path)
+		found = n.static[i]
+		if found.path == path {
+			return
+		}
+	}
+
+	found = nil
+	return
 }
 
 func (n *node) addChain(origPath string, method string, chain HandlersChain) {
