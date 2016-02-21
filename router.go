@@ -81,7 +81,6 @@ MAIN:
 			}
 
 			cn.static = append(cn.static, nn)
-			// cn.static[chunk] = nn
 			cn = nn
 			start = j
 
@@ -235,10 +234,6 @@ MAIN:
 		cn.static = nodes{}
 	}
 
-	// nn := &node{
-	// 	path: chunk,
-	// }
-
 	cn.static = append(cn.static, &node{path: chunk})
 	cn = cn.static[len(cn.static)-1]
 
@@ -268,9 +263,8 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		start int
 		end   int
 		nn    *node
-		// ok    bool
-		i int
-		j int
+		i     int
+		j     int
 	)
 
 	cn := r.tree
