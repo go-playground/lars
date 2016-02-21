@@ -270,6 +270,11 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 	cn := r.tree
 	path := ctx.Request.URL.Path[1:]
 
+	if len(path) == j {
+		ctx.handlers = cn.chains.find(ctx.Request.Method)
+		goto END
+	}
+
 	// start parsing URL
 	for ; end < len(path); end++ {
 
@@ -281,7 +286,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 
 		if nn = cn.findStatic(path[start:j]); nn != nil {
 
-			if path[j:] == blank {
+			if j == len(path) {
 				if ctx.handlers = nn.chains.find(ctx.Request.Method); ctx.handlers == nil {
 					goto PARAMS
 				}
@@ -301,7 +306,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		// no matching static chunk look at params if available
 		if cn.params != nil {
 
-			if path[j:] == blank {
+			if j == len(path) {
 				if ctx.handlers = cn.params.parmsSlashChains.find(ctx.Request.Method); ctx.handlers == nil {
 					goto WILD
 				}
@@ -381,10 +386,6 @@ WILDNOSLASH:
 		ctx.params[i].Value = path[start:]
 
 		goto END
-	}
-
-	if path == blank {
-		ctx.handlers = cn.chains.find(ctx.Request.Method)
 	}
 
 	cn = nil
