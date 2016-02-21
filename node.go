@@ -26,19 +26,26 @@ type node struct {
 	param string
 }
 
-func (n *node) findStatic(path string) (found *node) {
+func (n *node) findStatic(path string) *node {
 
-	for i := 0; i < len(n.static); i++ {
+	// for i := 0; i < len(n.static); i++ {
 
-		// fmt.Println(n.static[i].path, "=", path)
-		found = n.static[i]
-		if found.path == path {
-			return
+	// 	// fmt.Println(n.static[i].path, "=", path)
+	// 	found = n.static[i]
+	// 	if found.path == path {
+	// 		return
+	// 	}
+	// }
+
+	// found = nil
+
+	for _, sn := range n.static {
+		if sn.path == path {
+			return sn
 		}
 	}
 
-	found = nil
-	return
+	return nil
 }
 
 func (n *node) addChain(origPath string, method string, chain HandlersChain) {
