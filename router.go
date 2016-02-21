@@ -131,7 +131,7 @@ MAIN:
 
 				// wild already exists! then will conflict
 				if cn.wild != nil {
-					if _, ok := cn.wild.chains[method]; ok {
+					if cn.wild.chains.find(method) != nil {
 						panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 					}
 				}
@@ -177,7 +177,7 @@ MAIN:
 
 			// wild already exists! then will conflict
 			if cn.wild != nil {
-				if _, ok := cn.wild.chains[method]; ok {
+				if cn.wild.chains.find(method) != nil {
 					panic("Cannot add url param '" + chunk + "' for path '" + origPath + "', a conflicting wildcard path exists")
 				}
 			}
@@ -206,7 +206,7 @@ MAIN:
 
 			// param already exists! then will conflict
 			if cn.params != nil {
-				if _, ok := cn.params.chains[method]; ok {
+				if cn.params.chains.find(method) != nil {
 					panic("Cannot add wildcard for path '" + origPath + "', a conflicting param path exists with param '" + cn.params.param + "'")
 				}
 			}
@@ -268,9 +268,9 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		start int
 		end   int
 		nn    *node
-		ok    bool
-		i     int
-		j     int
+		// ok    bool
+		i int
+		j int
 	)
 
 	cn := r.tree
@@ -288,7 +288,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		if nn = cn.findStatic(path[start:j]); nn != nil {
 
 			if path[j:] == blank {
-				if ctx.handlers, ok = nn.chains[ctx.Request.Method]; !ok {
+				if ctx.handlers = nn.chains.find(ctx.Request.Method); ctx.handlers == nil {
 					goto PARAMS
 				}
 
@@ -308,7 +308,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		if cn.params != nil {
 
 			if path[j:] == blank {
-				if ctx.handlers, ok = cn.params.parmsSlashChains[ctx.Request.Method]; !ok {
+				if ctx.handlers = cn.params.parmsSlashChains.find(ctx.Request.Method); ctx.handlers == nil {
 					goto WILD
 				}
 
@@ -335,7 +335,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 	WILD:
 		// no matching static or param chunk look at wild if available
 		if cn.wild != nil {
-			ctx.handlers = cn.wild.chains[ctx.Request.Method]
+			ctx.handlers = cn.wild.chains.find(ctx.Request.Method)
 			cn = cn.wild
 			i = len(ctx.params)
 			ctx.params = ctx.params[:i+1]
@@ -351,7 +351,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 
 	// no slash encountered, end of path...
 	if nn = cn.findStatic(path[start:]); nn != nil {
-		if ctx.handlers, ok = nn.chains[ctx.Request.Method]; !ok {
+		if ctx.handlers = nn.chains.find(ctx.Request.Method); ctx.handlers == nil {
 			goto PARAMSNOSLASH
 		}
 
@@ -363,7 +363,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 PARAMSNOSLASH:
 	if cn.params != nil {
 
-		if ctx.handlers, ok = cn.params.chains[ctx.Request.Method]; !ok {
+		if ctx.handlers = cn.params.chains.find(ctx.Request.Method); ctx.handlers == nil {
 			goto WILDNOSLASH
 		}
 
@@ -379,7 +379,7 @@ PARAMSNOSLASH:
 WILDNOSLASH:
 	// no matching chunk nor param check if wild
 	if cn.wild != nil {
-		ctx.handlers = cn.wild.chains[ctx.Request.Method]
+		ctx.handlers = cn.wild.chains.find(ctx.Request.Method)
 		cn = cn.wild
 		i = len(ctx.params)
 		ctx.params = ctx.params[:i+1]
@@ -390,7 +390,7 @@ WILDNOSLASH:
 	}
 
 	if path == blank {
-		ctx.handlers = cn.chains[ctx.Request.Method]
+		ctx.handlers = cn.chains.find(ctx.Request.Method)
 	}
 
 	cn = nil

@@ -3,7 +3,13 @@ package lars
 // type nodes []*node
 type nodes []*node
 
-type chainMethods map[string]HandlersChain
+type methodChain struct {
+	method string
+	chain  HandlersChain
+}
+
+// type chainMethods map[string]HandlersChain
+type chainMethods []methodChain
 
 // node
 type node struct {
@@ -48,28 +54,41 @@ func (n *node) findStatic(path string) *node {
 	return nil
 }
 
+func (m chainMethods) find(method string) HandlersChain {
+	for _, mc := range m {
+		if mc.method == method {
+			return mc.chain
+		}
+	}
+
+	return nil
+}
+
 func (n *node) addChain(origPath string, method string, chain HandlersChain) {
 
 	if n.chains == nil {
-		n.chains = map[string]HandlersChain{}
+		n.chains = make(chainMethods, 0)
+		// n.chains = map[string]HandlersChain{}
 	}
 
-	if n.chains[method] != nil {
+	if n.chains.find(method) != nil {
 		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
 	}
 
-	n.chains[method] = chain
+	n.chains = append(n.chains, methodChain{method: method, chain: chain})
+	// n.chains[method] = chain
 }
 
 func (n *node) addSlashChain(origPath, method string, chain HandlersChain) {
 
 	if n.parmsSlashChains == nil {
-		n.parmsSlashChains = map[string]HandlersChain{}
+		n.parmsSlashChains = make(chainMethods, 0)
+		// n.parmsSlashChains = map[string]HandlersChain{}
 	}
 
-	if n.parmsSlashChains[method] != nil {
+	if n.parmsSlashChains.find(method) != nil {
 		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
 	}
 
-	n.parmsSlashChains[method] = chain
+	n.parmsSlashChains = append(n.parmsSlashChains, methodChain{method: method, chain: chain})
 }
