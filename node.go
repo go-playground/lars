@@ -45,9 +45,16 @@ func (n *node) findStatic(path string) *node {
 
 	// found = nil
 
-	for _, sn := range n.static {
-		if sn.path == path {
-			return sn
+	// for _, sn := range n.static {
+	// 	if sn.path == path {
+	// 		return sn
+	// 	}
+	// }
+
+	l := len(n.static)
+	for i := 0; i < l; i++ {
+		if n.static[i].path == path {
+			return n.static[i]
 		}
 	}
 
@@ -55,9 +62,16 @@ func (n *node) findStatic(path string) *node {
 }
 
 func (m chainMethods) find(method string) HandlersChain {
-	for _, mc := range m {
-		if mc.method == method {
-			return mc.chain
+	// for _, mc := range m {
+	// 	if mc.method == method {
+	// 		return mc.chain
+	// 	}
+	// }
+
+	l := len(m)
+	for i := 0; i < l; i++ {
+		if m[i].method == method {
+			return m[i].chain
 		}
 	}
 
