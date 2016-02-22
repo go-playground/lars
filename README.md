@@ -280,22 +280,22 @@ go test -bench=. -benchmem=true
    LARS: 30992 Bytes
 
 PASS
-BenchmarkLARS_Param       	20000000	        84.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5      	10000000	       133 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20     	 5000000	       368 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite  	10000000	       150 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubStatic	20000000	       111 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam 	10000000	       131 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll   	   50000	     37935 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic 	20000000	        67.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam  	20000000	        98.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params	10000000	       135 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll    	 1000000	      1770 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic 	20000000	        77.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam  	20000000	        94.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params	20000000	       110 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll    	  500000	      3509 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll   	   50000	     27678 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param       	20000000	        81.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param5      	10000000	       130 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param20     	 5000000	       345 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParamWrite  	10000000	       145 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubStatic	20000000	       110 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubParam 	10000000	       129 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubAll   	   50000	     37792 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusStatic 	20000000	        67.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusParam  	20000000	        90.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlus2Params	10000000	       127 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusAll    	 1000000	      1737 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseStatic 	20000000	        75.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseParam  	20000000	        91.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Parse2Params	20000000	       108 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseAll    	  500000	      3393 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_StaticAll   	   50000	     27306 ns/op	       0 B/op	       0 allocs/op
 
 ```
 
