@@ -143,8 +143,8 @@ var (
 
 		res := c.Response
 
-		for k := range methods {
-			res.Header().Add("Allow", k)
+		for _, k := range methods {
+			res.Header().Add("Allow", k.method)
 		}
 
 		res.WriteHeader(http.StatusMethodNotAllowed)
