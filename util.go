@@ -1,6 +1,10 @@
 package lars
 
-import "net/http"
+import (
+	"mime"
+	"net/http"
+	"path/filepath"
+)
 
 // NativeChainHandler is used in native handler chains
 // example using nosurf crsf middleware nosurf.NewPure(lars.NativeChainHandlerFunc)
@@ -12,6 +16,21 @@ var NativeChainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 		c.Next()
 	}
 })
+
+// GetContext is a helper method for retrieving the *Context object from
+// the ResponseWriter when using native go hanlders.
+// NOTE: this will panic if fed an http.ResponseWriter not provided by lars's
+// chaining.
+func GetContext(w http.ResponseWriter) *Context {
+	return w.(*Response).context
+}
+
+func detectContentType(filename string) (t string) {
+	if t = mime.TypeByExtension(filepath.Ext(filename)); t == "" {
+		t = OctetStream
+	}
+	return
+}
 
 // wrapHandler wraps Handler type
 func wrapHandler(h Handler) HandlerFunc {
@@ -53,12 +72,4 @@ func wrapHandler(h Handler) HandlerFunc {
 	default:
 		panic("unknown handler")
 	}
-}
-
-// GetContext is a helper method for retrieving the *Context object from
-// the ResponseWriter when using native go hanlders.
-// NOTE: this will panic if fed an http.ResponseWriter not provided by lars's
-// chaining.
-func GetContext(w http.ResponseWriter) *Context {
-	return w.(*Response).context
 }

@@ -261,3 +261,29 @@ func (c *Context) Stream(step func(w io.Writer) bool) {
 		}
 	}
 }
+
+// Attachment is a helper method for returning an attachement file
+// to be downloaded, if you with to open inline see function
+func (c *Context) Attachment(r io.Reader, filename string) (err error) {
+
+	c.Response.Header().Set(ContentDisposition, "attachment;filename="+filename)
+	c.Response.Header().Set(ContentType, detectContentType(filename))
+	c.Response.WriteHeader(http.StatusOK)
+
+	_, err = io.Copy(c.Response, r)
+
+	return
+}
+
+// Inline is a helper method for returning a file inline to
+// be rendered/opened by the browser
+func (c *Context) Inline(r io.Reader, filename string) (err error) {
+
+	c.Response.Header().Set(ContentDisposition, "inline;filename="+filename)
+	c.Response.Header().Set(ContentType, detectContentType(filename))
+	c.Response.WriteHeader(http.StatusOK)
+
+	_, err = io.Copy(c.Response, r)
+
+	return
+}

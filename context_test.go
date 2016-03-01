@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	. "gopkg.in/go-playground/assert.v1"
@@ -382,6 +383,88 @@ func TestClientIP(t *testing.T) {
 
 	c.Request.Header.Del("X-Forwarded-For")
 	Equal(t, c.ClientIP(), "40.40.40.40")
+}
+
+func TestAttachment(t *testing.T) {
+
+	l := New()
+
+	l.Get("/dl", func(c *Context) {
+		f, _ := os.Open("logo.png")
+		c.Attachment(f, "logo.png")
+	})
+
+	l.Get("/dl-unknown-type", func(c *Context) {
+		f, _ := os.Open("logo.png")
+		c.Attachment(f, "logo")
+	})
+
+	r, _ := http.NewRequest(GET, "/dl", nil)
+	w := &closeNotifyingRecorder{
+		httptest.NewRecorder(),
+		make(chan bool, 1),
+	}
+	hf := l.Serve()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentDisposition), "attachment;filename=logo.png")
+	Equal(t, w.Header().Get(ContentType), "image/png")
+	Equal(t, w.Body.Len(), 3041)
+
+	r, _ = http.NewRequest(GET, "/dl-unknown-type", nil)
+	w = &closeNotifyingRecorder{
+		httptest.NewRecorder(),
+		make(chan bool, 1),
+	}
+	hf = l.Serve()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentDisposition), "attachment;filename=logo")
+	Equal(t, w.Header().Get(ContentType), "application/octet-stream")
+	Equal(t, w.Body.Len(), 3041)
+}
+
+func TestInline(t *testing.T) {
+
+	l := New()
+
+	l.Get("/dl", func(c *Context) {
+		f, _ := os.Open("logo.png")
+		c.Inline(f, "logo.png")
+	})
+
+	l.Get("/dl-unknown-type", func(c *Context) {
+		f, _ := os.Open("logo.png")
+		c.Inline(f, "logo")
+	})
+
+	r, _ := http.NewRequest(GET, "/dl", nil)
+	w := &closeNotifyingRecorder{
+		httptest.NewRecorder(),
+		make(chan bool, 1),
+	}
+	hf := l.Serve()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentDisposition), "inline;filename=logo.png")
+	Equal(t, w.Header().Get(ContentType), "image/png")
+	Equal(t, w.Body.Len(), 3041)
+
+	r, _ = http.NewRequest(GET, "/dl-unknown-type", nil)
+	w = &closeNotifyingRecorder{
+		httptest.NewRecorder(),
+		make(chan bool, 1),
+	}
+	hf = l.Serve()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentDisposition), "inline;filename=logo")
+	Equal(t, w.Header().Get(ContentType), "application/octet-stream")
+	Equal(t, w.Body.Len(), 3041)
 }
 
 func TestAcceptedLanguages(t *testing.T) {
