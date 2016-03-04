@@ -266,30 +266,31 @@ Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600
 
 
 ```go
-go test -bench=. -benchmem=true
+go test -cpu=4 -bench=. -benchmem=true
 
-   githubAPI: 43272 Bytes
-   gplusAPI: 5568 Bytes
-   parseAPI: 4672 Bytes
-   staticAPI: 30992 Bytes
+   githubAPI: 47440 Bytes
+   gplusAPI: 3760 Bytes
+   parseAPI: 4552 Bytes
+   staticAPI: 31136 Bytes
+
 
 PASS
-BenchmarkLARS_GithubStatic-8	20000000	       108 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam-8 	10000000	       133 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll-8   	   50000	     37751 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic-8 	20000000	        68.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam-8  	20000000	        92.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params-8	10000000	       128 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll-8    	 1000000	      1754 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic-8 	20000000	        76.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam-8  	20000000	        91.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params-8	20000000	       110 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll-8    	  500000	      3477 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll-8   	   50000	     27655 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param-8       	20000000	        81.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5-8      	10000000	       133 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20-8     	 5000000	       357 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite-8  	20000000	        81.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubStatic-4	20000000	        98.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubParam-4 	10000000	       149 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubAll-4   	   50000	     35988 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusStatic-4 	20000000	        65.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusParam-4  	20000000	        95.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlus2Params-4	10000000	       133 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusAll-4    	 1000000	      1782 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseStatic-4 	20000000	        89.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseParam-4  	20000000	       110 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Parse2Params-4	10000000	       125 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseAll-4    	  300000	      3699 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_StaticAll-4   	  100000	     22738 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param-4       	20000000	        84.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param5-4      	10000000	       138 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param20-4     	 5000000	       380 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParamWrite-4  	20000000	        85.9 ns/op	       0 B/op	       0 allocs/op
 
 ```
 

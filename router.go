@@ -64,7 +64,7 @@ MAIN:
 			chunk = path[start:j]
 
 			// check for existing node
-			if en = cn.findStatic(chunk); en != nil {
+			if en = cn.static[chunk]; en != nil {
 				cn = en
 				start = j
 
@@ -76,11 +76,9 @@ MAIN:
 				cn.static = nodes{}
 			}
 
-			nn := &node{
-				path: chunk,
-			}
+			nn := new(node)
 
-			cn.static = append(cn.static, nn)
+			cn.static[chunk] = nn
 			cn = nn
 			start = j
 
@@ -225,7 +223,7 @@ MAIN:
 		goto END
 	}
 
-	if en = cn.findStatic(chunk); en != nil {
+	if en = cn.static[chunk]; en != nil {
 		cn = en
 		goto END
 	}
@@ -234,8 +232,8 @@ MAIN:
 		cn.static = nodes{}
 	}
 
-	cn.static = append(cn.static, &node{path: chunk})
-	cn = cn.static[len(cn.static)-1]
+	cn.static[chunk] = new(node)
+	cn = cn.static[chunk]
 
 END:
 
@@ -284,7 +282,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 
 		j = end + 1
 
-		if nn = cn.findStatic(path[start:j]); nn != nil {
+		if nn = cn.static[path[start:j]]; nn != nil {
 
 			if j == len(path) {
 				if ctx.handlers = nn.chains.find(ctx.Request.Method); ctx.handlers == nil {
@@ -349,7 +347,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 	}
 
 	// no slash encountered, end of path...
-	if nn = cn.findStatic(path[start:]); nn != nil {
+	if nn = cn.static[path[start:]]; nn != nil {
 		if ctx.handlers = nn.chains.find(ctx.Request.Method); ctx.handlers == nil {
 			goto PARAMSNOSLASH
 		}
