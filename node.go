@@ -1,6 +1,6 @@
 package lars
 
-type nodes []*node
+type nodes map[string]*node
 
 type methodChain struct {
 	method string
@@ -13,7 +13,7 @@ type chainMethods []methodChain
 type node struct {
 
 	// path to match
-	path string
+	// path string
 
 	// Static Children
 	static nodes
@@ -33,19 +33,20 @@ type node struct {
 
 func (n *node) findStatic(path string) *node {
 
-	l := len(n.static)
-	for i := 0; i < l; i++ {
+	return n.static[path]
+	// l := len(n.static)
+	// for i := 0; i < l; i++ {
 
-		if len(n.static[i].path) != len(path) {
-			continue
-		}
+	// 	if len(n.static[i].path) != len(path) {
+	// 		continue
+	// 	}
 
-		if n.static[i].path == path {
-			return n.static[i]
-		}
-	}
+	// 	if n.static[i].path == path {
+	// 		return n.static[i]
+	// 	}
+	// }
 
-	return nil
+	// return nil
 }
 
 func (m chainMethods) find(method string) HandlersChain {

@@ -76,11 +76,14 @@ MAIN:
 				cn.static = nodes{}
 			}
 
-			nn := &node{
-				path: chunk,
-			}
+			// nn := &node{
+			// // path: chunk,
+			// }
 
-			cn.static = append(cn.static, nn)
+			nn := new(node)
+
+			cn.static[chunk] = nn
+			// cn.static = append(cn.static, nn)
 			cn = nn
 			start = j
 
@@ -234,8 +237,10 @@ MAIN:
 		cn.static = nodes{}
 	}
 
-	cn.static = append(cn.static, &node{path: chunk})
-	cn = cn.static[len(cn.static)-1]
+	cn.static[chunk] = new(node)
+	cn = cn.static[chunk]
+	// cn.static = append(cn.static, &node{path: chunk})
+	// cn = cn.static[len(cn.static)-1]
 
 END:
 
