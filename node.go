@@ -12,9 +12,6 @@ type chainMethods []methodChain
 // node
 type node struct {
 
-	// path to match
-	// path string
-
 	// Static Children
 	static nodes
 
@@ -29,24 +26,6 @@ type node struct {
 
 	// set only on params node
 	param string
-}
-
-func (n *node) findStatic(path string) *node {
-
-	return n.static[path]
-	// l := len(n.static)
-	// for i := 0; i < l; i++ {
-
-	// 	if len(n.static[i].path) != len(path) {
-	// 		continue
-	// 	}
-
-	// 	if n.static[i].path == path {
-	// 		return n.static[i]
-	// 	}
-	// }
-
-	// return nil
 }
 
 func (m chainMethods) find(method string) HandlersChain {
