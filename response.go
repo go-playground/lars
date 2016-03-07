@@ -17,11 +17,11 @@ type Response struct {
 	status    int
 	size      int64
 	committed bool
-	context   *Context
+	context   Context
 }
 
 // newResponse creates a new Response for testing purposes
-func newResponse(w http.ResponseWriter, context *Context) *Response {
+func newResponse(w http.ResponseWriter, context Context) *Response {
 	return &Response{ResponseWriter: w, context: context}
 }
 

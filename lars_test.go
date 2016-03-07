@@ -23,11 +23,11 @@ import (
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
 
-var basicHandler = func(*Context) {}
+var basicHandler = func(Context) {}
 
 func TestFindOneOffs(t *testing.T) {
-	fn := func(c *Context) {
-		c.Response.Write([]byte(c.Request.Method))
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
 	}
 
 	l := New()
@@ -77,8 +77,8 @@ func TestFindOneOffs(t *testing.T) {
 func Testlars(t *testing.T) {
 	l := New()
 
-	l.Get("/", func(c *Context) {
-		c.Response.Write([]byte("home"))
+	l.Get("/", func(c Context) {
+		c.Response().Write([]byte("home"))
 	})
 
 	code, body := request(GET, "/", l)
@@ -98,9 +98,9 @@ func TestlarsStatic(t *testing.T) {
 func TestlarsParam(t *testing.T) {
 	l := New()
 	path := "/github.com/go-playground/:id/"
-	l.Get(path, func(c *Context) {
+	l.Get(path, func(c Context) {
 		p := c.Param("id")
-		c.Response.Write([]byte(p))
+		c.Response().Write([]byte(p))
 	})
 	code, body := request(GET, "/github.com/go-playground/808w70/", l)
 
@@ -114,7 +114,7 @@ func TestlarsTwoParam(t *testing.T) {
 
 	l := New()
 	path := "/github.com/user/:id/:age/"
-	l.Get(path, func(c *Context) {
+	l.Get(path, func(c Context) {
 		p1 = c.Param("id")
 		p2 = c.Param("age")
 	})
@@ -133,16 +133,16 @@ func TestRouterMatchAny(t *testing.T) {
 	path2 := "/github/*"
 	path3 := "/users/*"
 
-	l.Get(path1, func(c *Context) {
-		c.Response.Write([]byte(c.Request.URL.Path))
+	l.Get(path1, func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
 	})
 
-	l.Get(path2, func(c *Context) {
-		c.Response.Write([]byte(c.Request.URL.Path))
+	l.Get(path2, func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
 	})
 
-	l.Get(path3, func(c *Context) {
-		c.Response.Write([]byte(c.Request.URL.Path))
+	l.Get(path3, func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
 	})
 
 	code, body := request(GET, "/github/", l)
@@ -160,10 +160,10 @@ func TestRouterMatchAny(t *testing.T) {
 }
 
 func TestRouterMicroParam(t *testing.T) {
-	var context *Context
+	var context Context
 
 	l := New()
-	l.Get("/:a/:b/:c", func(c *Context) {
+	l.Get("/:a/:b/:c", func(c Context) {
 		context = c
 	})
 
@@ -194,8 +194,8 @@ func TestRouterMixParamMatchAny(t *testing.T) {
 	l := New()
 
 	//Route
-	l.Get("/users/:id/*", func(c *Context) {
-		c.Response.Write([]byte(c.Request.URL.Path))
+	l.Get("/users/:id/*", func(c Context) {
+		c.Response().Write([]byte(c.Request().URL.Path))
 		p = c.Param("id")
 	})
 	code, body := request(GET, "/users/joe/comments", l)
@@ -210,7 +210,7 @@ func TestRouterMultiRoute(t *testing.T) {
 
 	l := New()
 	//Route
-	l.Get("/users", func(c *Context) {
+	l.Get("/users", func(c Context) {
 		c.Set("path", "/users")
 		value, ok := c.Get("path")
 		if ok {
@@ -218,7 +218,7 @@ func TestRouterMultiRoute(t *testing.T) {
 		}
 	})
 
-	l.Get("/users/:id", func(c *Context) {
+	l.Get("/users/:id", func(c Context) {
 		parameter = c.Param("id")
 	})
 	// Route > /users
@@ -242,7 +242,7 @@ func TestRouterParamNames(t *testing.T) {
 
 	l := New()
 	//Routes
-	l.Get("/users", func(c *Context) {
+	l.Get("/users", func(c Context) {
 		c.Set("path", "/users")
 		value, ok := c.Get("path")
 		if ok {
@@ -250,11 +250,11 @@ func TestRouterParamNames(t *testing.T) {
 		}
 	})
 
-	l.Get("/users/:id", func(c *Context) {
+	l.Get("/users/:id", func(c Context) {
 		p1 = c.Param("id")
 	})
 
-	l.Get("/users/:id/files/:fid", func(c *Context) {
+	l.Get("/users/:id/files/:fid", func(c Context) {
 		p1 = c.Param("id")
 		p2 = c.Param("fid")
 	})
@@ -280,8 +280,8 @@ func TestRouterAPI(t *testing.T) {
 	l := New()
 
 	for _, route := range githubAPI {
-		l.handle(route.method, route.path, []Handler{func(c *Context) {
-			c.Response.Write([]byte(c.Request.URL.Path))
+		l.handle(route.method, route.path, []Handler{func(c Context) {
+			c.Response().Write([]byte(c.Request().URL.Path))
 		}})
 	}
 
@@ -293,14 +293,14 @@ func TestRouterAPI(t *testing.T) {
 }
 
 func TestUseAndGroup(t *testing.T) {
-	fn := func(c *Context) {
-		c.Response.Write([]byte(c.Request.Method))
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
 	}
 
 	var log string
 
-	logger := func(c *Context) {
-		log = c.Request.URL.Path
+	logger := func(c Context) {
+		log = c.Request().URL.Path
 		c.Next()
 	}
 
@@ -327,8 +327,8 @@ func TestUseAndGroup(t *testing.T) {
 	Equal(t, body, GET)
 	Equal(t, log, "/users/list/")
 
-	logger2 := func(c *Context) {
-		log = c.Request.URL.Path + "2"
+	logger2 := func(c Context) {
+		log = c.Request().URL.Path + "2"
 		c.Next()
 	}
 
@@ -378,8 +378,8 @@ func TestUseAndGroup(t *testing.T) {
 }
 
 func TestBadAdd(t *testing.T) {
-	fn := func(c *Context) {
-		c.Response.Write([]byte(c.Request.Method))
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
 	}
 
 	l := New()
@@ -407,8 +407,8 @@ func TestBadAdd(t *testing.T) {
 }
 
 func TestAddAllMethods(t *testing.T) {
-	fn := func(c *Context) {
-		c.Response.Write([]byte(c.Request.Method))
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
 	}
 
 	l := New()
@@ -466,8 +466,8 @@ func TestAddAllMethods(t *testing.T) {
 }
 
 func TestAddAllMethodsMatch(t *testing.T) {
-	fn := func(c *Context) {
-		c.Response.Write([]byte(c.Request.Method))
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
 	}
 
 	l := New()
@@ -512,8 +512,8 @@ func TestAddAllMethodsMatch(t *testing.T) {
 }
 
 func TestAddAllMethodsAny(t *testing.T) {
-	fn := func(c *Context) {
-		c.Response.Write([]byte(c.Request.Method))
+	fn := func(c Context) {
+		c.Response().Write([]byte(c.Request().Method))
 	}
 
 	l := New()
@@ -570,11 +570,11 @@ func TestHandlerWrapping(t *testing.T) {
 		w.Write([]byte(r.URL.Path))
 	}
 
-	fn := func(c *Context) { c.Response.Write([]byte(c.Request.URL.Path)) }
+	fn := func(c Context) { c.Response().Write([]byte(c.Request().URL.Path)) }
 
 	var hf HandlerFunc
 
-	hf = func(c *Context) { c.Response.Write([]byte(c.Request.URL.Path)) }
+	hf = func(c Context) { c.Response().Write([]byte(c.Request().URL.Path)) }
 
 	l.Get("/built-in-context-handler-func/", hf)
 	l.Get("/built-in-context-func/", fn)
@@ -653,47 +653,53 @@ func TestHandlerWrapping(t *testing.T) {
 	PanicMatches(t, func() { l.Get("/bad-handler/", bad) }, "unknown handler")
 }
 
-type myGlobals struct {
+type myContext struct {
+	*Ctx
 	text string
 }
 
-func (g *myGlobals) Reset(c *Context) {
-	g.text = "URL: " + c.Request.URL.Path
+func (c *myContext) BaseContext() *Ctx {
+	return c.Ctx
 }
 
-func (g *myGlobals) Done() {
-	g.text = ""
+func (c *myContext) Reset(w http.ResponseWriter, r *http.Request) {
+	c.Ctx.Reset(w, r)
+	c.text = "test"
 }
 
-var _ IAppContext = &myGlobals{}
+func (c *myContext) RequestComplete() {
+	c.text = ""
+}
 
-func TestCustomGlobals(t *testing.T) {
+func newCtx(l *LARS) Context {
 
-	var l *LARS
-
-	globals := &myGlobals{}
-
-	fn := func() IAppContext {
-		return globals
+	return &myContext{
+		Ctx: NewContext(l),
 	}
+}
 
-	l = New()
-	l.RegisterAppContext(fn)
+func TestCustomContext(t *testing.T) {
 
-	l.Get("/home/", func(c *Context) {
-		c.Response.Write([]byte(c.AppContext.(*myGlobals).text))
+	var ctx *myContext
+
+	l := New()
+	l.RegisterContext(newCtx)
+
+	l.Get("/home/", func(c Context) {
+		ctx = c.(*myContext)
+		c.Response().Write([]byte(ctx.text))
 	})
 
 	code, body := request(GET, "/home/", l)
 	Equal(t, code, http.StatusOK)
-	Equal(t, body, "URL: /home/")
-	Equal(t, globals.text, "")
+	Equal(t, body, "test")
+	Equal(t, ctx.text, "")
 }
 
 func TestCustom404(t *testing.T) {
 
-	fn := func(c *Context) {
-		http.Error(c.Response, "My Custom 404 Handler", http.StatusNotFound)
+	fn := func(c Context) {
+		http.Error(c.Response(), "My Custom 404 Handler", http.StatusNotFound)
 	}
 
 	l := New()

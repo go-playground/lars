@@ -23,13 +23,13 @@ import (
 
 func TestWebsockets(t *testing.T) {
 	l := New()
-	l.WebSocket("/ws", func(c *Context) {
+	l.WebSocket("/ws", func(c Context) {
 
 		recv := make([]byte, 1000)
 
-		i, err := c.WebSocket.Read(recv)
+		i, err := c.WebSocket().Read(recv)
 		if err == nil {
-			c.WebSocket.Write(recv[:i])
+			c.WebSocket().Write(recv[:i])
 		}
 	})
 

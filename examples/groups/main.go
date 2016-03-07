@@ -29,53 +29,53 @@ func main() {
 }
 
 // Home ...
-func Home(c *lars.Context) {
-	c.Response.Write([]byte("Welcome Home"))
+func Home(c lars.Context) {
+	c.Response().Write([]byte("Welcome Home"))
 }
 
 // Users ...
-func Users(c *lars.Context) {
-	c.Response.Write([]byte("Users"))
+func Users(c lars.Context) {
+	c.Response().Write([]byte("Users"))
 }
 
 // User ...
-func User(c *lars.Context) {
-	c.Response.Write([]byte("User"))
+func User(c lars.Context) {
+	c.Response().Write([]byte("User"))
 }
 
 // UserProfile ...
-func UserProfile(c *lars.Context) {
-	c.Response.Write([]byte("User Profile"))
+func UserProfile(c lars.Context) {
+	c.Response().Write([]byte("User Profile"))
 }
 
 // Admins ...
-func Admins(c *lars.Context) {
-	c.Response.Write([]byte("Admins"))
+func Admins(c lars.Context) {
+	c.Response().Write([]byte("Admins"))
 }
 
 // Admin ...
-func Admin(c *lars.Context) {
-	c.Response.Write([]byte("Admin"))
+func Admin(c lars.Context) {
+	c.Response().Write([]byte("Admin"))
 }
 
 // AdminProfile ...
-func AdminProfile(c *lars.Context) {
-	c.Response.Write([]byte("Admin Profile"))
+func AdminProfile(c lars.Context) {
+	c.Response().Write([]byte("Admin Profile"))
 }
 
 // Logger ...
-func Logger(c *lars.Context) {
+func Logger(c lars.Context) {
 
 	start := time.Now()
 
 	c.Next()
 
 	stop := time.Now()
-	path := c.Request.URL.Path
+	path := c.Request().URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", c.Request().Method, c.Response().Status(), path, stop.Sub(start))
 }

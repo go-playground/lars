@@ -23,7 +23,7 @@ func TestResponse(t *testing.T) {
 
 	l := New()
 	w := httptest.NewRecorder()
-	c := newContext(l)
+	c := NewContext(l)
 	r := newResponse(w, c)
 
 	// SetWriter

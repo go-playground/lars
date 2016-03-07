@@ -124,18 +124,19 @@ func (g *routeGroup) Match(methods []string, path string, h ...Handler) {
 func (g *routeGroup) WebSocket(path string, h Handler) {
 
 	handler := wrapHandler(h)
+	g.Get(path, func(c Context) {
 
-	g.Get(path, func(c *Context) {
+		ctx := c.BaseContext()
 
 		wss := websocket.Server{
 			Handler: func(ws *websocket.Conn) {
-				c.WebSocket = ws
-				c.Response.status = http.StatusSwitchingProtocols
-				c.Next()
+				ctx.websocket = ws
+				ctx.response.status = http.StatusSwitchingProtocols
+				ctx.Next()
 			},
 		}
 
-		wss.ServeHTTP(c.Response, c.Request)
+		wss.ServeHTTP(ctx.response, ctx.request)
 	}, handler)
 }
 

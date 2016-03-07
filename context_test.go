@@ -26,7 +26,7 @@ func TestStream(t *testing.T) {
 
 	count := 0
 
-	l.Get("/stream/:id", func(c *Context) {
+	l.Get("/stream/:id", func(c Context) {
 		c.Stream(func(w io.Writer) bool {
 
 			w.Write([]byte("a"))
@@ -40,14 +40,14 @@ func TestStream(t *testing.T) {
 		})
 	})
 
-	l.Get("/stream2/:id", func(c *Context) {
+	l.Get("/stream2/:id", func(c Context) {
 		c.Stream(func(w io.Writer) bool {
 
 			w.Write([]byte("a"))
 			count++
 
 			if count == 5 {
-				c.Response.Writer().(*closeNotifyingRecorder).close()
+				c.Response().Writer().(*closeNotifyingRecorder).close()
 			}
 
 			if count == 1000 {
@@ -70,8 +70,8 @@ func TestStream(t *testing.T) {
 
 }
 
-func HandlerForName(c *Context) {
-	c.Response.Write([]byte(c.HandlerName()))
+func HandlerForName(c Context) {
+	c.Response().Write([]byte(c.HandlerName()))
 }
 
 func TestHandlerName(t *testing.T) {
@@ -82,9 +82,9 @@ func TestHandlerName(t *testing.T) {
 	Equal(t, code, http.StatusOK)
 	MatchRegex(t, body, "^(.*/vendor/)?github.com/go-playground/lars.HandlerForName$")
 
-	l.Get("/admin/:id", func(c *Context) {
-		c.handlers = nil
-		c.Response.Write([]byte(c.HandlerName()))
+	l.Get("/admin/:id", func(c Context) {
+		c.BaseContext().handlers = nil
+		c.Response().Write([]byte(c.HandlerName()))
 	})
 
 	code, body = request(GET, "/admin/14", l)
@@ -97,7 +97,7 @@ func TestContext(t *testing.T) {
 	l := New()
 	r, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	c := newContext(l)
+	c := NewContext(l)
 
 	var varParams []Param
 
@@ -117,13 +117,13 @@ func TestContext(t *testing.T) {
 
 	c.params = varParams
 	c.store = storeMap
-	c.Request = r
+	c.request = r
 
 	//Request
-	NotEqual(t, c.Request, nil)
+	NotEqual(t, c.request, nil)
 
 	//Response
-	NotEqual(t, c.Response, nil)
+	NotEqual(t, c.response, nil)
 
 	//Paramter by name
 	bsonValue := c.Param("userID")
@@ -157,13 +157,13 @@ func TestContext(t *testing.T) {
 	Equal(t, "-74.005941", vString[3])
 
 	// Reset
-	c.reset(w, r)
+	c.Reset(w, r)
 
 	//Request
-	NotEqual(t, c.Request, nil)
+	NotEqual(t, c.request, nil)
 
 	//Response
-	NotEqual(t, c.Response, nil)
+	NotEqual(t, c.response, nil)
 
 	//Set
 	Equal(t, c.store, nil)
@@ -173,14 +173,13 @@ func TestContext(t *testing.T) {
 
 	// Handlers
 	Equal(t, c.handlers, nil)
-
 }
 
 func TestQueryParams(t *testing.T) {
 	l := New()
-	l.Get("/home/:id", func(c *Context) {
+	l.Get("/home/:id", func(c Context) {
 		c.Param("nonexistant")
-		c.Response.Write([]byte(c.Request.URL.RawQuery))
+		c.Response().Write([]byte(c.Request().URL.RawQuery))
 	})
 
 	code, body := request(GET, "/home/13?test=true&test2=true", l)
@@ -191,7 +190,7 @@ func TestQueryParams(t *testing.T) {
 func TestNativeHandlersAndParseForm(t *testing.T) {
 
 	l := New()
-	l.Use(func(c *Context) {
+	l.Use(func(c Context) {
 		// to trigger the form parsing
 		c.Param("nonexistant")
 		c.Next()
@@ -206,7 +205,7 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	Equal(t, body, "")
 
 	l2 := New()
-	l2.Use(func(c *Context) {
+	l2.Use(func(c Context) {
 		// to trigger the form parsing
 		c.ParseForm()
 		c.Next()
@@ -234,7 +233,7 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	Equal(t, body, "15")
 
 	l4 := New()
-	l4.Use(func(c *Context) {
+	l4.Use(func(c Context) {
 		// to trigger the form parsing
 		c.ParseForm()
 		c.Next()
@@ -274,8 +273,8 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 			w.Write([]byte("a"))
 			handler.ServeHTTP(w, r)
 		})
-	}, func(c *Context) {
-		c.Response.Write([]byte("ok"))
+	}, func(c Context) {
+		c.Response().Write([]byte("ok"))
 	})
 
 	code, body = request(GET, "/chain-handler", l6)
@@ -286,7 +285,7 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 
 	l := New()
-	l.Use(func(c *Context) {
+	l.Use(func(c Context) {
 		// to trigger the form parsing
 		c.Param("nonexistant")
 		c.Next()
@@ -301,7 +300,7 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 	Equal(t, body, "")
 
 	l2 := New()
-	l2.Use(func(c *Context) {
+	l2.Use(func(c Context) {
 		// to trigger the form parsing
 		c.ParseMultipartForm(10 << 5) // 5 MB
 		c.Next()
@@ -328,7 +327,7 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 	Equal(t, body, "15")
 
 	l4 := New()
-	l4.Use(func(c *Context) {
+	l4.Use(func(c Context) {
 		// to trigger the form parsing
 		c.ParseMultipartForm(10 << 5) // 5 MB
 		c.Next()
@@ -365,23 +364,23 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 
 func TestClientIP(t *testing.T) {
 	l := New()
-	c := newContext(l)
+	c := NewContext(l)
 
-	c.Request, _ = http.NewRequest("POST", "/", nil)
+	c.request, _ = http.NewRequest("POST", "/", nil)
 
-	c.Request.Header.Set("X-Real-IP", " 10.10.10.10  ")
-	c.Request.Header.Set("X-Forwarded-For", "  20.20.20.20, 30.30.30.30")
-	c.Request.RemoteAddr = "  40.40.40.40:42123 "
+	c.Request().Header.Set("X-Real-IP", " 10.10.10.10  ")
+	c.Request().Header.Set("X-Forwarded-For", "  20.20.20.20, 30.30.30.30")
+	c.Request().RemoteAddr = "  40.40.40.40:42123 "
 
 	Equal(t, c.ClientIP(), "10.10.10.10")
 
-	c.Request.Header.Del("X-Real-IP")
+	c.Request().Header.Del("X-Real-IP")
 	Equal(t, c.ClientIP(), "20.20.20.20")
 
-	c.Request.Header.Set("X-Forwarded-For", "30.30.30.30  ")
+	c.Request().Header.Set("X-Forwarded-For", "30.30.30.30  ")
 	Equal(t, c.ClientIP(), "30.30.30.30")
 
-	c.Request.Header.Del("X-Forwarded-For")
+	c.Request().Header.Del("X-Forwarded-For")
 	Equal(t, c.ClientIP(), "40.40.40.40")
 }
 
@@ -389,12 +388,12 @@ func TestAttachment(t *testing.T) {
 
 	l := New()
 
-	l.Get("/dl", func(c *Context) {
+	l.Get("/dl", func(c Context) {
 		f, _ := os.Open("logo.png")
 		c.Attachment(f, "logo.png")
 	})
 
-	l.Get("/dl-unknown-type", func(c *Context) {
+	l.Get("/dl-unknown-type", func(c Context) {
 		f, _ := os.Open("logo.png")
 		c.Attachment(f, "logo")
 	})
@@ -430,12 +429,12 @@ func TestInline(t *testing.T) {
 
 	l := New()
 
-	l.Get("/dl", func(c *Context) {
+	l.Get("/dl", func(c Context) {
 		f, _ := os.Open("logo.png")
 		c.Inline(f, "logo.png")
 	})
 
-	l.Get("/dl-unknown-type", func(c *Context) {
+	l.Get("/dl-unknown-type", func(c Context) {
 		f, _ := os.Open("logo.png")
 		c.Inline(f, "logo")
 	})
@@ -469,10 +468,10 @@ func TestInline(t *testing.T) {
 
 func TestAcceptedLanguages(t *testing.T) {
 	l := New()
-	c := newContext(l)
+	c := NewContext(l)
 
-	c.Request, _ = http.NewRequest("POST", "/", nil)
-	c.Request.Header.Set(AcceptedLanguage, "da, en-GB;q=0.8, en;q=0.7")
+	c.request, _ = http.NewRequest("POST", "/", nil)
+	c.Request().Header.Set(AcceptedLanguage, "da, en-GB;q=0.8, en;q=0.7")
 
 	languages := c.AcceptedLanguages(false)
 
@@ -486,13 +485,13 @@ func TestAcceptedLanguages(t *testing.T) {
 	Equal(t, languages[1], "en-gb")
 	Equal(t, languages[2], "en")
 
-	c.Request.Header.Del(AcceptedLanguage)
+	c.Request().Header.Del(AcceptedLanguage)
 
 	languages = c.AcceptedLanguages(false)
 
 	Equal(t, languages, []string{})
 
-	c.Request.Header.Set(AcceptedLanguage, "")
+	c.Request().Header.Set(AcceptedLanguage, "")
 	languages = c.AcceptedLanguages(false)
 
 	Equal(t, languages, []string{})

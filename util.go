@@ -11,17 +11,18 @@ import (
 var NativeChainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	c := GetContext(w)
+	b := c.BaseContext()
 
-	if c.index+1 < len(c.handlers) {
+	if b.index+1 < len(b.handlers) {
 		c.Next()
 	}
 })
 
-// GetContext is a helper method for retrieving the *Context object from
+// GetContext is a helper method for retrieving the Context object from
 // the ResponseWriter when using native go hanlders.
 // NOTE: this will panic if fed an http.ResponseWriter not provided by lars's
 // chaining.
-func GetContext(w http.ResponseWriter) *Context {
+func GetContext(w http.ResponseWriter) Context {
 	return w.(*Response).context
 }
 
@@ -38,27 +39,31 @@ func wrapHandler(h Handler) HandlerFunc {
 	switch h := h.(type) {
 	case HandlerFunc:
 		return h
-	case func(*Context):
+	case func(Context):
 		return h
 	case http.Handler, http.HandlerFunc:
-		return func(c *Context) {
+		return func(c Context) {
 
-			if h.(http.Handler).ServeHTTP(c.Response, c.Request); c.Response.status != http.StatusOK || c.Response.committed {
+			ctx := c.BaseContext()
+
+			if h.(http.Handler).ServeHTTP(ctx.response, ctx.request); ctx.response.status != http.StatusOK || ctx.response.committed {
 				return
 			}
 
-			if c.index+1 < len(c.handlers) {
+			if ctx.index+1 < len(ctx.handlers) {
 				c.Next()
 			}
 		}
 	case func(http.ResponseWriter, *http.Request):
-		return func(c *Context) {
+		return func(c Context) {
 
-			if h(c.Response, c.Request); c.Response.status != http.StatusOK || c.Response.committed {
+			ctx := c.BaseContext()
+
+			if h(ctx.response, ctx.request); ctx.response.status != http.StatusOK || ctx.response.committed {
 				return
 			}
 
-			if c.index+1 < len(c.handlers) {
+			if ctx.index+1 < len(ctx.handlers) {
 				c.Next()
 			}
 		}
@@ -66,8 +71,10 @@ func wrapHandler(h Handler) HandlerFunc {
 
 		hf := h(NativeChainHandler)
 
-		return func(c *Context) {
-			hf.ServeHTTP(c.Response, c.Request)
+		return func(c Context) {
+			ctx := c.BaseContext()
+
+			hf.ServeHTTP(ctx.response, ctx.request)
 		}
 	default:
 		panic("unknown handler")

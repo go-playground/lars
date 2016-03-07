@@ -30,8 +30,8 @@ import (
 func TestGzip(t *testing.T) {
 	l := lars.New()
 	l.Use(Gzip)
-	l.Get("/test", func(c *lars.Context) {
-		c.Response.Write([]byte("test"))
+	l.Get("/test", func(c lars.Context) {
+		c.Response().Write([]byte("test"))
 	})
 
 	server := httptest.NewServer(l.Serve())
@@ -74,8 +74,8 @@ func TestGzipLevel(t *testing.T) {
 
 	l := lars.New()
 	l.Use(GzipLevel(flate.BestCompression))
-	l.Get("/test", func(c *lars.Context) {
-		c.Response.Write([]byte("test"))
+	l.Get("/test", func(c lars.Context) {
+		c.Response().Write([]byte("test"))
 	})
 
 	server := httptest.NewServer(l.Serve())

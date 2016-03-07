@@ -88,13 +88,13 @@ const (
 type Handler interface{}
 
 // HandlerFunc is the internal handler type used for middleware and handlers
-type HandlerFunc func(*Context)
+type HandlerFunc func(Context)
 
 // HandlersChain is an array of HanderFunc handlers to run
 type HandlersChain []HandlerFunc
 
-// AppContextFunc is a function that creates a new AppContext object to be passed around the request
-type AppContextFunc func() IAppContext
+// ContextFunc is the function to run when creating a new context
+type ContextFunc func(l *LARS) Context
 
 // LARS is the main routing instance
 type LARS struct {
@@ -103,11 +103,11 @@ type LARS struct {
 
 	// mostParams used to keep track of the most amount of
 	// params in any URL and this will set the default capacity
-	// of each*Context Params
+	// of eachContext Params
 	mostParams uint8
 
-	newAppContext AppContextFunc
-	hasAppContext bool
+	// function that gets called to create the context object... is total overridable using RegisterContext
+	contextFunc ContextFunc
 
 	pool sync.Pool
 
@@ -133,16 +133,16 @@ type LARS struct {
 }
 
 var (
-	default404Handler = func(c *Context) {
-		http.Error(c.Response, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	default404Handler = func(c Context) {
+		http.Error(c.Response(), http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
 
-	methodNotAllowedHandler = func(c *Context) {
+	methodNotAllowedHandler = func(c Context) {
 
 		m, _ := c.Get("methods")
 		methods := m.(chainMethods)
 
-		res := c.Response
+		res := c.Response()
 
 		for _, k := range methods {
 			res.Header().Add("Allow", k.method)
@@ -159,8 +159,8 @@ func New() *LARS {
 		routeGroup: routeGroup{
 			middleware: make(HandlersChain, 0),
 		},
-		newAppContext: func() IAppContext {
-			return nil
+		contextFunc: func(l *LARS) Context {
+			return NewContext(l)
 		},
 		mostParams:             0,
 		http404:                []HandlerFunc{default404Handler},
@@ -172,17 +172,21 @@ func New() *LARS {
 	l.routeGroup.lars = l
 	l.router = newRouter(l)
 	l.pool.New = func() interface{} {
-		return newContext(l)
+
+		c := l.contextFunc(l)
+		b := c.BaseContext()
+		b.parent = c
+
+		return b
 	}
 
 	return l
 }
 
-// RegisterAppContext registers a custom AppContext function for creation
+// RegisterContext registers a custom Context function for creation
 // and resetting of a global object passed per http request
-func (l *LARS) RegisterAppContext(fn AppContextFunc) {
-	l.newAppContext = fn
-	l.hasAppContext = true
+func (l *LARS) RegisterContext(fn ContextFunc) {
+	l.contextFunc = fn
 }
 
 // Register404 alows for overriding of the not found handler function.
@@ -222,33 +226,17 @@ func (l *LARS) Serve() http.Handler {
 	copy(l.notFound, l.middleware)
 	copy(l.notFound[len(l.middleware):], l.http404)
 
-	if l.hasAppContext {
-		return http.HandlerFunc(l.serveHTTPWithAppContext)
-	}
-
 	return http.HandlerFunc(l.serveHTTP)
 }
 
 // Conforms to the http.Handler interface.
-func (l *LARS) serveHTTPWithAppContext(w http.ResponseWriter, r *http.Request) {
-	c := l.pool.Get().(*Context)
-
-	c.reset(w, r)
-	c.AppContext.Reset(c)
-	l.router.find(c, true)
-	c.Next()
-	c.AppContext.Done()
-
-	l.pool.Put(c)
-}
-
-// Conforms to the http.Handler interface.
 func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	c := l.pool.Get().(*Context)
+	c := l.pool.Get().(*Ctx)
 
-	c.reset(w, r)
+	c.parent.Reset(w, r)
 	l.router.find(c, true)
-	c.Next()
+	c.parent.Next()
 
+	c.parent.RequestComplete()
 	l.pool.Put(c)
 }

@@ -255,7 +255,7 @@ END:
 
 // Find attempts to match a given use to a mapped route
 // attempting redirect if specified to do so.
-func (r *Router) find(ctx *Context, processEnd bool) {
+func (r *Router) find(ctx *Ctx, processEnd bool) {
 
 	var (
 		start int
@@ -266,10 +266,10 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 	)
 
 	cn := r.tree
-	path := ctx.Request.URL.Path[1:]
+	path := ctx.request.URL.Path[1:]
 
 	if len(path) == j {
-		ctx.handlers = cn.chains.find(ctx.Request.Method)
+		ctx.handlers = cn.chains.find(ctx.request.Method)
 		goto END
 	}
 
@@ -285,7 +285,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		if nn = cn.static[path[start:j]]; nn != nil {
 
 			if j == len(path) {
-				if ctx.handlers = nn.chains.find(ctx.Request.Method); ctx.handlers == nil {
+				if ctx.handlers = nn.chains.find(ctx.request.Method); ctx.handlers == nil {
 					goto PARAMS
 				}
 
@@ -305,7 +305,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 		if cn.params != nil {
 
 			if j == len(path) {
-				if ctx.handlers = cn.params.parmsSlashChains.find(ctx.Request.Method); ctx.handlers == nil {
+				if ctx.handlers = cn.params.parmsSlashChains.find(ctx.request.Method); ctx.handlers == nil {
 					goto WILD
 				}
 
@@ -332,7 +332,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 	WILD:
 		// no matching static or param chunk look at wild if available
 		if cn.wild != nil {
-			ctx.handlers = cn.wild.chains.find(ctx.Request.Method)
+			ctx.handlers = cn.wild.chains.find(ctx.request.Method)
 			cn = cn.wild
 			i = len(ctx.params)
 			ctx.params = ctx.params[:i+1]
@@ -348,7 +348,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 
 	// no slash encountered, end of path...
 	if nn = cn.static[path[start:]]; nn != nil {
-		if ctx.handlers = nn.chains.find(ctx.Request.Method); ctx.handlers == nil {
+		if ctx.handlers = nn.chains.find(ctx.request.Method); ctx.handlers == nil {
 			goto PARAMSNOSLASH
 		}
 
@@ -360,7 +360,7 @@ func (r *Router) find(ctx *Context, processEnd bool) {
 PARAMSNOSLASH:
 	if cn.params != nil {
 
-		if ctx.handlers = cn.params.chains.find(ctx.Request.Method); ctx.handlers == nil {
+		if ctx.handlers = cn.params.chains.find(ctx.request.Method); ctx.handlers == nil {
 			goto WILDNOSLASH
 		}
 
@@ -376,7 +376,7 @@ PARAMSNOSLASH:
 WILDNOSLASH:
 	// no matching chunk nor param check if wild
 	if cn.wild != nil {
-		ctx.handlers = cn.wild.chains.find(ctx.Request.Method)
+		ctx.handlers = cn.wild.chains.find(ctx.request.Method)
 		cn = cn.wild
 		i = len(ctx.params)
 		ctx.params = ctx.params[:i+1]
@@ -401,11 +401,11 @@ END:
 		if r.lars.redirectTrailingSlash {
 
 			// find again all lowercase
-			lc := strings.ToLower(ctx.Request.URL.Path)
+			lc := strings.ToLower(ctx.request.URL.Path)
 
-			if lc != ctx.Request.URL.Path {
+			if lc != ctx.request.URL.Path {
 
-				ctx.Request.URL.Path = lc
+				ctx.request.URL.Path = lc
 				r.find(ctx, false)
 
 				if ctx.handlers != nil {
@@ -416,10 +416,10 @@ END:
 
 			ctx.params = ctx.params[0:0]
 
-			if ctx.Request.URL.Path[len(ctx.Request.URL.Path)-1:] == basePath {
-				ctx.Request.URL.Path = ctx.Request.URL.Path[:len(ctx.Request.URL.Path)-1]
+			if ctx.request.URL.Path[len(ctx.request.URL.Path)-1:] == basePath {
+				ctx.request.URL.Path = ctx.request.URL.Path[:len(ctx.request.URL.Path)-1]
 			} else {
-				ctx.Request.URL.Path = ctx.Request.URL.Path + basePath
+				ctx.request.URL.Path = ctx.request.URL.Path + basePath
 			}
 
 			// find with lowercase + or - sash
@@ -435,16 +435,17 @@ END:
 }
 
 // Redirect redirects the current request
-func (r *Router) redirect(ctx *Context) {
+func (r *Router) redirect(ctx *Ctx) {
 
 	code := http.StatusMovedPermanently
 
-	if ctx.Request.Method != GET {
+	if ctx.request.Method != GET {
 		code = http.StatusTemporaryRedirect
 	}
 
-	fn := func(c *Context) {
-		http.Redirect(c.Response, c.Request, c.Request.URL.String(), code)
+	fn := func(c Context) {
+		inCtx := c.BaseContext()
+		http.Redirect(inCtx.response, inCtx.request, inCtx.request.URL.String(), code)
 	}
 
 	hndlrs := make(HandlersChain, len(r.lars.routeGroup.middleware)+1)

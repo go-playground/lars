@@ -32,8 +32,8 @@ func TestDuplicateParams(t *testing.T) {
 
 func TestWildcardParam(t *testing.T) {
 	l := New()
-	l.Get("/users/*", func(c *Context) {
-		c.Response.Write([]byte(c.Param(WildcardParam)))
+	l.Get("/users/*", func(c Context) {
+		c.Response().Write([]byte(c.Param(WildcardParam)))
 	})
 
 	code, body := request(GET, "/users/testwild", l)

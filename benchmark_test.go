@@ -74,14 +74,14 @@ func calcMem(name string, load func()) {
 	println("   "+name+":", after-before, "Bytes")
 }
 
-func larsHandler(c *Context) {}
+func larsHandler(c Context) {}
 
-// func larsHandlerWrite(c *Context) {
+// func larsHandlerWrite(c Context) {
 // 	io.WriteString(c.Response, c.Param("name"))
 // }
 
-// func larsHandlerTest(c *Context) {
-// 	io.WriteString(c.Response, c.Request.RequestURI)
+// func larsHandlerTest(c Context) {
+// 	io.WriteString(c.Response, c.Request().RequestURI)
 // }
 
 func loadLARS(routes []route) http.Handler {

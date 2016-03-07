@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-0.9.9-green.svg)
+![Project status](https://img.shields.io/badge/version-1.0-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](http://goreportcard.com/badge/go-playground/lars)](http://goreportcard.com/badge/go-playground/lars)
@@ -11,18 +11,18 @@ LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view ex
 
 Why Another HTTP Router?
 ------------------------
-I have noticed that most routers out there, IMHO, are adding too much functionality that doesn't belong in an HTTP router, and they are turning into web frameworks, with all the bloat that entails. LARS aims to remain a simple yet powerful HTTP router that can be plugged into any existing framework; furthermore LARS allowing the passing of global variables + application context that comply with it's IAppContext interface (right on the Context object) makes frameworks redundant as **LARS wraps the framework instead of the framework wrapping LARS** [see example here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
+Have you ever been painted into a corner by a framework, **ya me too!** and I've noticed that allot of routers out there, IMHO, are adding so much functionality that they are turning into Web Frameworks, (which is fine, frameworks are important) however, not at the expense of flexibility and configurability. So with no further ado, introducing LARS an HTTP router that can be your launching pad in creating a framework for your needs. How? Context is an interface [see example here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go), where you can add as little or much as you want or need and most importantly...under your control. ( I will be creating a full example app in the near future that can be used as a starting point for any project. )
 
 Unique Features 
 --------------
-* Context allows the passing of framework/globals/application specific variables via it's AppContext field.
-  * The AppContext object is essentially all of the application specific variables and libraries needed by your handlers and functions, keeping a clear separation between your http and application contexts.
+* Context is an interface allowing passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
 * Handles mutiple url patterns not supported by many other routers.
   * the route algorithm was written from scratch and is **NOT** a modification of any other router.
 * Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
   * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
 * Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
 * Full support for standard/native http Handler + HandlerFunc [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
+  * When Parsing a form call Context's ParseForm amd ParseMulipartForm functions and the URL params will be added into the Form object, just like query parameters are, so no extra work
 
 
 
@@ -62,7 +62,7 @@ import (
 	"github.com/go-playground/lars"
 )
 
-// This is a contrived example using globals as I would use it in production
+// This is a contrived example of how I would use in production
 // I would break things into separate files but all here for simplicity
 
 // ApplicationGlobals houses all the application info for use.
@@ -77,7 +77,7 @@ type ApplicationGlobals struct {
 
 // Reset gets called just before a new HTTP request starts calling
 // middleware + handlers
-func (g *ApplicationGlobals) Reset(c *lars.Context) {
+func (g *ApplicationGlobals) Reset() {
 	// DB = new database connection or reset....
 	//
 	// We don't touch translator + log as they don't change per request
@@ -89,9 +89,7 @@ func (g *ApplicationGlobals) Done() {
 	// DB.Close()
 }
 
-var _ lars.IAppContext = &ApplicationGlobals{} // ensures ApplicationGlobals complies with lasr.IGlobals at compile time
-
-func main() {
+func newGlobals() *ApplicationGlobals {
 
 	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	// translator := ...
@@ -99,18 +97,45 @@ func main() {
 	// json := ...
 	// schema := ...
 
-	globalsFn := func() lars.IAppContext {
-		return &ApplicationGlobals{
-			Log: logger,
-			// Translator: translator,
-			// DB: db,
-			// JSON: json,
-			// schema:schema,
-		}
+	return &ApplicationGlobals{
+		Log: logger,
+		// Translator: translator,
+		// DB: db,
+		// JSON: json,
+		// schema:schema,
 	}
+}
+
+// MyContext is a custom context
+type MyContext struct {
+	*lars.Ctx  // a little dash of Duck Typing....
+	AppContext *ApplicationGlobals
+}
+
+// Reset overriding
+func (mc *MyContext) Reset(w http.ResponseWriter, r *http.Request) {
+
+	// call lars context reset, must be done
+	mc.Ctx.Reset(w, r)
+	mc.AppContext.Reset()
+}
+
+// RequestComplete overriding
+func (mc *MyContext) RequestComplete() {
+	mc.AppContext.Done()
+}
+
+func newContext(l *lars.LARS) lars.Context {
+	return &MyContext{
+		Ctx:        lars.NewContext(l),
+		AppContext: newGlobals(),
+	}
+}
+
+func main() {
 
 	l := lars.New()
-	l.RegisterAppContext(globalsFn)
+	l.RegisterContext(newContext) // all gets cached in pools for you
 	l.Use(Logger)
 
 	l.Get("/", Home)
@@ -128,76 +153,76 @@ func main() {
 }
 
 // Home ...
-func Home(c *lars.Context) {
+func Home(c lars.Context) {
 
-	app := c.AppContext.(*ApplicationGlobals)
+	ctx := c.(*MyContext)
 
 	var username string
 
-	// username = app.DB.find(user by .....)
+	// username = ctx.AppContext.DB.find(user by .....)
 
-	app.Log.Println("Found User")
+	ctx.AppContext.Log.Println("Found User")
 
-	c.Response.Write([]byte("Welcome Home " + username))
+	c.Response().Write([]byte("Welcome Home " + username))
 }
 
 // Users ...
-func Users(c *lars.Context) {
+func Users(c lars.Context) {
 
-	app := c.AppContext.(*ApplicationGlobals)
+	ctx := c.(*MyContext)
 
-	app.Log.Println("In Users Function")
+	ctx.AppContext.Log.Println("In Users Function")
 
-	c.Response.Write([]byte("Users"))
+	c.Response().Write([]byte("Users"))
 }
 
 // User ...
-func User(c *lars.Context) {
+func User(c lars.Context) {
 
-	app := c.AppContext.(*ApplicationGlobals)
+	ctx := c.(*MyContext)
 
 	id := c.Param("id")
 
 	var username string
 
-	// username = app.DB.find(user by id.....)
+	// username = ctx.AppContext.DB.find(user by id.....)
 
-	app.Log.Println("Found User")
+	ctx.AppContext.Log.Println("Found User")
 
-	c.Response.Write([]byte("Welcome " + username + " with id " + id))
+	c.Response().Write([]byte("Welcome " + username + " with id " + id))
 }
 
 // UserProfile ...
-func UserProfile(c *lars.Context) {
+func UserProfile(c lars.Context) {
 
-	app := c.AppContext.(*ApplicationGlobals)
+	ctx := c.(*MyContext)
 
 	id := c.Param("id")
 
 	var profile string
 
-	// profile = app.DB.find(user profile by .....)
+	// profile = ctx.AppContext.DB.find(user profile by .....)
 
-	app.Log.Println("Found User Profile")
+	ctx.AppContext.Log.Println("Found User Profile")
 
-	c.Response.Write([]byte("Here's your profile " + profile + " user " + id))
+	c.Response().Write([]byte("Here's your profile " + profile + " user " + id))
 }
 
 // Logger ...
-func Logger(c *lars.Context) {
+func Logger(c lars.Context) {
 
 	start := time.Now()
 
 	c.Next()
 
 	stop := time.Now()
-	path := c.Request.URL.Path
+	path := c.Request().URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", c.Request().Method, c.Response().Status(), path, stop.Sub(start))
 }
 ```
 
@@ -229,24 +254,24 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 	// lar's context! get it and ROCK ON!
 	ctx := lars.GetContext(w)
 
-	ctx.Response.Write([]byte("Hello World"))
+	ctx.Response().Write([]byte("Hello World"))
 }
 
 // Logger ...
-func Logger(c *lars.Context) {
+func Logger(c lars.Context) {
 
 	start := time.Now()
 
 	c.Next()
 
 	stop := time.Now()
-	path := c.Request.URL.Path
+	path := c.Request().URL.Path
 
 	if path == "" {
 		path = "/"
 	}
 
-	log.Printf("%s %d %s %s", c.Request.Method, c.Response.Status(), path, stop.Sub(start))
+	log.Printf("%s %d %s %s", c.Request().Method, c.Response().Status(), path, stop.Sub(start))
 }
 ```
 
@@ -262,39 +287,50 @@ recovery middleware are very application dependent and therefore will be listed 
 
 Benchmarks
 -----------
-Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.5.3 darwin/amd64
+Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.6 darwin/amd64
 
+NOTE: you may have noticed the benchmark get a tiny bit slower since turning Context into an interface, but in the real world when
+using your own Context ( even if only for passing around globals ), there is a single pool that your objects are stored in so the
+small hit now will save you on the flip side in real world usage.
 
 ```go
-go test -cpu=4 -bench=. -benchmem=true
-
-   githubAPI: 47440 Bytes
-   gplusAPI: 3760 Bytes
-   parseAPI: 4552 Bytes
-   staticAPI: 31136 Bytes
-
+go test -bench=. -benchmem=true
+   githubAPI: 47008 Bytes
+   gplusAPI: 3744 Bytes
+   parseAPI: 4744 Bytes
+   staticAPI: 31120 Bytes
 
 PASS
-BenchmarkLARS_GithubStatic-4	20000000	        98.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam-4 	10000000	       149 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll-4   	   50000	     35988 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic-4 	20000000	        65.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam-4  	20000000	        95.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params-4	10000000	       133 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll-4    	 1000000	      1782 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic-4 	20000000	        89.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam-4  	20000000	       110 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params-4	10000000	       125 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll-4    	  300000	      3699 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll-4   	  100000	     22738 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param-4       	20000000	        84.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5-4      	10000000	       138 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20-4     	 5000000	       380 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite-4  	20000000	        85.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubStatic-8	20000000	       105 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubParam-8 	10000000	       157 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubAll-8   	   50000	     38815 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusStatic-8 	20000000	        73.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusParam-8  	20000000	       103 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlus2Params-8	10000000	       147 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusAll-8    	 1000000	      1915 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseStatic-8 	20000000	        95.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseParam-8  	20000000	       114 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Parse2Params-8	10000000	       136 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseAll-8    	  500000	      3941 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_StaticAll-8   	   50000	     24865 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param-8       	20000000	        93.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param5-8      	10000000	       148 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param20-8     	 5000000	       394 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParamWrite-8  	20000000	        95.4 ns/op	       0 B/op	       0 allocs/op
 
 ```
 
+Package Versioning
+----------
+I'm jumping on the vendoring bandwagon, you should vendor this package as I will not
+be creating different version with gopkg.in like allot of my other libraries.
+
+Why? because my time is spread pretty thin maintaining all of the libraries I have + LIFE,
+it is so freeing not to worry about it and will help me keep pouring out bigger and better
+things for you the community.
+
 This package is inspired by the following 
+-----------
 - [httptreemux](https://github.com/dimfeld/httptreemux)
 - [httprouter](https://github.com/julienschmidt/httprouter)
 - [echo](https://github.com/labstack/echo)
