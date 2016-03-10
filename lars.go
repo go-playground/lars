@@ -1,7 +1,9 @@
 package lars
 
 import (
+	"fmt"
 	"net/http"
+	"reflect"
 	"sync"
 )
 
@@ -96,6 +98,14 @@ type HandlersChain []HandlerFunc
 // ContextFunc is the function to run when creating a new context
 type ContextFunc func(l *LARS) Context
 
+// CustomHandlerFunc wraped by HandlerFunc and called where you can type cast both Context and Handler
+// and call Handler
+type CustomHandlerFunc func(Context, Handler)
+
+// customHandlers is a map of your registered custom CustomHandlerFunc's
+// used in determining how to wrap them.
+type customHandlers map[reflect.Type]CustomHandlerFunc
+
 // LARS is the main routing instance
 type LARS struct {
 	routeGroup
@@ -115,6 +125,8 @@ type LARS struct {
 	http405 HandlersChain // 405 Method Not Allowed
 
 	notFound HandlersChain
+
+	customHandlersFuncs customHandlers
 
 	// Enables automatic redirection if the current route can't be matched but a
 	// handler for the path with (without) the trailing slash exists.
@@ -183,6 +195,22 @@ func New() *LARS {
 	return l
 }
 
+// RegisterCustomHandler registers a custom handler that gets wrapped by HandlerFunc
+func (l *LARS) RegisterCustomHandler(customType interface{}, fn CustomHandlerFunc) {
+
+	if l.customHandlersFuncs == nil {
+		l.customHandlersFuncs = make(customHandlers)
+	}
+
+	t := reflect.TypeOf(customType)
+
+	if _, ok := l.customHandlersFuncs[t]; ok {
+		panic(fmt.Sprint("Custom Type + CustomHandlerFunc already declared: ", t))
+	}
+
+	l.customHandlersFuncs[t] = fn
+}
+
 // RegisterContext registers a custom Context function for creation
 // and resetting of a global object passed per http request
 func (l *LARS) RegisterContext(fn ContextFunc) {
@@ -196,7 +224,7 @@ func (l *LARS) Register404(notFound ...Handler) {
 	chain := make(HandlersChain, len(notFound))
 
 	for i, h := range notFound {
-		chain[i] = wrapHandler(h)
+		chain[i] = l.wrapHandler(h)
 	}
 
 	l.http404 = chain

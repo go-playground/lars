@@ -696,6 +696,75 @@ func TestCustomContext(t *testing.T) {
 	Equal(t, ctx.text, "")
 }
 
+func castContext(c Context, handler Handler) {
+	handler.(func(*myContext))(c.(*myContext))
+}
+
+func TestCustomContextWrap(t *testing.T) {
+
+	var ctx *myContext
+
+	l := New()
+	l.RegisterContext(newCtx)
+	l.RegisterCustomHandler(func(*myContext) {}, castContext)
+
+	PanicMatches(t, func() { l.RegisterCustomHandler(func(*myContext) {}, castContext) }, "Custom Type + CustomHandlerFunc already declared: func(*lars.myContext)")
+
+	l.Get("/home/", func(c *myContext) {
+		ctx = c
+		c.Response().Write([]byte(c.text))
+	})
+
+	code, body := request(GET, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "test")
+	Equal(t, ctx.text, "")
+
+	l2 := New()
+	l2.Use(func(c Context) {
+		c.(*myContext).text = "first handler"
+		c.Next()
+	})
+	l2.RegisterContext(newCtx)
+	l2.RegisterCustomHandler(func(*myContext) {}, castContext)
+
+	l2.Get("/home/", func(c *myContext) {
+		ctx = c
+		c.Response().Write([]byte(c.text))
+	})
+
+	code, body = request(GET, "/home/", l2)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "first handler")
+	Equal(t, ctx.text, "")
+
+	l3 := New()
+	l3.RegisterContext(newCtx)
+	l3.RegisterCustomHandler(func(*myContext) {}, castContext)
+	l3.Use(func(c Context) {
+		c.(*myContext).text = "first handler"
+		c.Next()
+	})
+	l3.Use(func(c *myContext) {
+		c.text += " - second handler"
+		c.Next()
+	})
+	l3.Use(func(c Context) {
+		c.(*myContext).text += " - third handler"
+		c.Next()
+	})
+
+	l3.Get("/home/", func(c *myContext) {
+		ctx = c
+		c.Response().Write([]byte(c.text))
+	})
+
+	code, body = request(GET, "/home/", l3)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "first handler - second handler - third handler")
+	Equal(t, ctx.text, "")
+}
+
 func TestCustom404(t *testing.T) {
 
 	fn := func(c Context) {

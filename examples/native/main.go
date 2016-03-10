@@ -21,7 +21,7 @@ func main() {
 // HelloWorld ...
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
 
-	// lar's context! get it and ROCK ON!
+	// lars's context! get it and ROCK ON!
 	ctx := lars.GetContext(w)
 
 	ctx.Response().Write([]byte("Hello World"))

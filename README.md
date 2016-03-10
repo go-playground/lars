@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-1.0-green.svg)
+![Project status](https://img.shields.io/badge/version-1.1-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -21,6 +21,7 @@ Unique Features
 * Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
   * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
 * Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
+* Can register custom handlers for use as/in middleware + handlers; best part is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
 * Full support for standard/native http Handler + HandlerFunc [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
   * When Parsing a form call Context's ParseForm amd ParseMulipartForm functions and the URL params will be added into the Form object, just like query parameters are, so no extra work
 
@@ -251,7 +252,7 @@ func main() {
 // HelloWorld ...
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
 
-	// lar's context! get it and ROCK ON!
+	// lars's context! get it and ROCK ON!
 	ctx := lars.GetContext(w)
 
 	ctx.Response().Write([]byte("Hello World"))

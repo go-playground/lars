@@ -42,7 +42,7 @@ func (g *routeGroup) handle(method string, path string, handlers []Handler) {
 	chain := make(HandlersChain, len(handlers))
 
 	for i, h := range handlers {
-		chain[i] = wrapHandler(h)
+		chain[i] = g.lars.wrapHandler(h)
 	}
 
 	g.lars.router.add(method, g.prefix+path, g, chain)
@@ -51,7 +51,7 @@ func (g *routeGroup) handle(method string, path string, handlers []Handler) {
 // Use adds a middleware handler to the group middleware chain.
 func (g *routeGroup) Use(m ...Handler) {
 	for _, h := range m {
-		g.middleware = append(g.middleware, wrapHandler(h))
+		g.middleware = append(g.middleware, g.lars.wrapHandler(h))
 	}
 }
 
@@ -123,7 +123,7 @@ func (g *routeGroup) Match(methods []string, path string, h ...Handler) {
 // WebSocket adds a websocket route
 func (g *routeGroup) WebSocket(path string, h Handler) {
 
-	handler := wrapHandler(h)
+	handler := g.lars.wrapHandler(h)
 	g.Get(path, func(c Context) {
 
 		ctx := c.BaseContext()

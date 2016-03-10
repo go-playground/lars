@@ -4,6 +4,7 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"reflect"
 )
 
 // NativeChainHandler is used in native handler chains
@@ -34,7 +35,7 @@ func detectContentType(filename string) (t string) {
 }
 
 // wrapHandler wraps Handler type
-func wrapHandler(h Handler) HandlerFunc {
+func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 
 	switch h := h.(type) {
 	case HandlerFunc:
@@ -77,6 +78,12 @@ func wrapHandler(h Handler) HandlerFunc {
 			hf.ServeHTTP(ctx.response, ctx.request)
 		}
 	default:
+		if fn, ok := l.customHandlersFuncs[reflect.TypeOf(h)]; ok {
+			return func(c Context) {
+				fn(c, h)
+			}
+		}
+
 		panic("unknown handler")
 	}
 }
