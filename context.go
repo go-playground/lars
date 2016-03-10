@@ -108,7 +108,7 @@ func (c *Ctx) RequestComplete() {
 // Reset resets the Context to it's default request state
 func (c *Ctx) Reset(w http.ResponseWriter, r *http.Request) {
 	c.request = r
-	c.Response().reset(w)
+	c.response.reset(w)
 	c.params = c.params[0:0]
 	c.store = nil
 	c.index = -1
@@ -141,12 +141,12 @@ func (c *Ctx) ParseForm() error {
 		return nil
 	}
 
-	if err := c.Request().ParseForm(); err != nil {
+	if err := c.request.ParseForm(); err != nil {
 		return err
 	}
 
 	for _, entry := range c.params {
-		c.Request().Form[entry.Key] = []string{entry.Value}
+		c.request.Form[entry.Key] = []string{entry.Value}
 	}
 
 	c.formParsed = true
@@ -164,12 +164,12 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 		return nil
 	}
 
-	if err := c.Request().ParseMultipartForm(maxMemory); err != nil {
+	if err := c.request.ParseMultipartForm(maxMemory); err != nil {
 		return err
 	}
 
 	for _, entry := range c.params {
-		c.Request().Form[entry.Key] = []string{entry.Value}
+		c.request.Form[entry.Key] = []string{entry.Value}
 	}
 
 	c.multipartFormParsed = true
@@ -211,7 +211,7 @@ func (c *Ctx) ClientIP() (clientIP string) {
 
 	var values []string
 
-	if values, _ = c.Request().Header[XRealIP]; len(values) > 0 {
+	if values, _ = c.request.Header[XRealIP]; len(values) > 0 {
 
 		clientIP = strings.TrimSpace(values[0])
 		if clientIP != blank {
@@ -219,7 +219,7 @@ func (c *Ctx) ClientIP() (clientIP string) {
 		}
 	}
 
-	if values, _ = c.Request().Header[XForwardedFor]; len(values) > 0 {
+	if values, _ = c.request.Header[XForwardedFor]; len(values) > 0 {
 		clientIP = values[0]
 
 		if index := strings.IndexByte(clientIP, ','); index >= 0 {
@@ -232,7 +232,7 @@ func (c *Ctx) ClientIP() (clientIP string) {
 		}
 	}
 
-	clientIP, _, _ = net.SplitHostPort(strings.TrimSpace(c.Request().RemoteAddr))
+	clientIP, _, _ = net.SplitHostPort(strings.TrimSpace(c.request.RemoteAddr))
 
 	return
 }
@@ -244,7 +244,7 @@ func (c *Ctx) AcceptedLanguages(lowercase bool) []string {
 
 	var accepted string
 
-	if accepted = c.Request().Header.Get(AcceptedLanguage); accepted == blank {
+	if accepted = c.request.Header.Get(AcceptedLanguage); accepted == blank {
 		return []string{}
 	}
 
@@ -307,9 +307,9 @@ func (c *Ctx) Stream(step func(w io.Writer) bool) {
 // to be downloaded, if you with to open inline see function
 func (c *Ctx) Attachment(r io.Reader, filename string) (err error) {
 
-	c.Response().Header().Set(ContentDisposition, "attachment;filename="+filename)
-	c.Response().Header().Set(ContentType, detectContentType(filename))
-	c.Response().WriteHeader(http.StatusOK)
+	c.response.Header().Set(ContentDisposition, "attachment;filename="+filename)
+	c.response.Header().Set(ContentType, detectContentType(filename))
+	c.response.WriteHeader(http.StatusOK)
 
 	_, err = io.Copy(c.response, r)
 
@@ -320,9 +320,9 @@ func (c *Ctx) Attachment(r io.Reader, filename string) (err error) {
 // be rendered/opened by the browser
 func (c *Ctx) Inline(r io.Reader, filename string) (err error) {
 
-	c.Response().Header().Set(ContentDisposition, "inline;filename="+filename)
-	c.Response().Header().Set(ContentType, detectContentType(filename))
-	c.Response().WriteHeader(http.StatusOK)
+	c.response.Header().Set(ContentDisposition, "inline;filename="+filename)
+	c.response.Header().Set(ContentType, detectContentType(filename))
+	c.response.WriteHeader(http.StatusOK)
 
 	_, err = io.Copy(c.response, r)
 

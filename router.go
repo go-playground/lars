@@ -196,7 +196,6 @@ MAIN:
 			}
 
 			//Check the node for existing star then throw a panic information
-			//if any
 			if cn.wild != nil {
 				panic("Wildcard already set by another path, current path '" + origPath + "' conflicts")
 			}

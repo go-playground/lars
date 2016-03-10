@@ -76,14 +76,6 @@ func calcMem(name string, load func()) {
 
 func larsHandler(c Context) {}
 
-// func larsHandlerWrite(c Context) {
-// 	io.WriteString(c.Response, c.Param("name"))
-// }
-
-// func larsHandlerTest(c Context) {
-// 	io.WriteString(c.Response, c.Request().RequestURI)
-// }
-
 func loadLARS(routes []route) http.Handler {
 
 	var h HandlerFunc = larsHandler
@@ -108,25 +100,6 @@ func loadLARS(routes []route) http.Handler {
 	}
 	return e.Serve()
 }
-
-// func loadLARSSingle(method, path string, h HandlerFunc) http.Handler {
-// 	e := New()
-// 	switch method {
-// 	case GET:
-// 		e.Get(path, h)
-// 	case POST:
-// 		e.Post(path, h)
-// 	case PUT:
-// 		e.Put(path, h)
-// 	case PATCH:
-// 		e.Patch(path, h)
-// 	case DELETE:
-// 		e.Delete(path, h)
-// 	default:
-// 		panic("Unknow HTTP method: " + method)
-// 	}
-// 	return e.Serve()
-// }
 
 func BenchmarkLARS_Param(b *testing.B) {
 	m := New()
