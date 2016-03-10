@@ -15,14 +15,14 @@ Have you ever been painted into a corner by a framework, **ya me too!** and I've
 
 Unique Features 
 --------------
-* Context is an interface allowing passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
-* Handles mutiple url patterns not supported by many other routers.
+- [x] Context is an interface allowing passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
+- [x] Handles mutiple url patterns not supported by many other routers.
   * the route algorithm was written from scratch and is **NOT** a modification of any other router.
-* Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
+- [x] Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
   * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
-* Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
-* Can register custom handlers for use as/in middleware + handlers; best part is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
-* Full support for standard/native http Handler + HandlerFunc [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
+- [x] Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
+- [x] Can register custom handlers for use as middleware + handlers; best part is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
+- [x] Full support for standard/native http Handler + HandlerFunc [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
   * When Parsing a form call Context's ParseForm amd ParseMulipartForm functions and the URL params will be added into the Form object, just like query parameters are, so no extra work
 
 
