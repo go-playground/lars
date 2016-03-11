@@ -311,31 +311,18 @@ func (l *LARS) PrintRoutes() {
 		}
 
 		if p.prefix == "/" {
-			fmt.Printf("%s %s %d\n", r.Path[1:], r.Method, p.pad)
-			// fmt.Printf("%s%s %s %d\n", treeTail, r.Path[1:], r.Method, p.pad)
-			// fmt.Printf("%s%s %s %d\n", treeTail, strings.TrimLeft(r.Path, p.prefix), r.Method, p.pad)
+			fmt.Printf("%s %s %d\n", treeTail+" "+r.Path[1:], r.Method, p.pad)
 			continue
 		}
 
-		padding -= 1
-		// padding -= treeLen
-		// padding += len(r.Path[len(p.prefix):]) - 1
-		// padding += r.Depth
-		// padding += (r.Depth - 2) * treeLen
-		// if p.prefix
+		padding -= 1 * (r.Depth - 1)
+		padding += 4 * (r.Depth - 1)
 
-		// padding = int(math.Max(0.0, float64(padding)))
-
-		// fmt.Println(r.Path, p.prefix)
-		// fmt.Printf("%s%s %s %d\n", strings.Repeat(" ", padding), r.Path[len(p.prefix):], r.Method, p.pad)
-		// fmt.Printf("%s%s%s %s %d\n", strings.Repeat(" ", padding), treeTail, r.Path[len(p.prefix):], r.Method, padding)
-		fmt.Printf("%s%s %s %d\n", strings.Repeat(" ", padding), r.Path[len(p.prefix):], r.Method, padding)
+		fmt.Printf("%s%s %s\n", strings.Repeat(" ", padding), treeTail+r.Path[len(p.prefix):], r.Method)
 	}
 }
 
 func findParent(path string, parents []printParent) ([]printParent, printParent) {
-
-	// fmt.Println(path)
 
 	var pp printParent
 
@@ -382,10 +369,6 @@ func findParent(path string, parents []printParent) ([]printParent, printParent)
 		prefix: ppp.path,
 		path:   path,
 	}
-
-	// if ppp.path == "/" {
-	// 	pp.pad++
-	// }
 
 	parents = append(parents, pp)
 
@@ -448,7 +431,7 @@ func parseTree(n *node, prefix string, depth int) []*RouteMap {
 				}
 			}
 
-			pResults = parseTree(pn, pPrefix+"/", depth+1)
+			pResults = parseTree(pn, pPrefix+"/", depth+2)
 			if pResults != nil && len(pResults) > 0 {
 				routes = append(routes, pResults...)
 			}
