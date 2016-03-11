@@ -271,87 +271,6 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	l.pool.Put(c)
 }
 
-// RouteMap contains a single routes full path
-// and other information
-type RouteMap struct {
-	Path   string `json:"path"`
-	Method string `json:"method"`
-	// handlerName string
-}
-
-func parseTree(n *node, prefix string) []*RouteMap {
-
-	routes := make([]*RouteMap, 0)
-	i := 0
-	ordered := make([]string, len(n.static))
-
-	for k := range n.static {
-		ordered[i] = k
-		i++
-	}
-
-	sort.Strings(ordered)
-
-	var key string
-	var nn *node
-	var newPrefix string
-
-	for i = 0; i < len(ordered); i++ {
-		key = ordered[i]
-		nn = n.static[ordered[i]]
-		newPrefix = prefix + key
-
-		// static
-		results := getNodeRoutes(nn, newPrefix)
-		if results != nil && len(results) > 0 {
-			routes = append(routes, results...)
-		}
-
-		//params + params wild
-		if nn.params != nil {
-
-			pn := nn.params
-			pPrefix := newPrefix + ":" + pn.param
-
-			pResults := getNodeRoutes(pn, pPrefix)
-			if pResults != nil && len(pResults) > 0 {
-				routes = append(routes, pResults...)
-			}
-
-			if pn.wild != nil {
-
-				wResults := getNodeRoutes(pn.wild, pPrefix+"/*")
-				if wResults != nil && len(wResults) > 0 {
-					routes = append(routes, wResults...)
-				}
-			}
-
-			pResults = parseTree(pn, pPrefix+"/")
-			if pResults != nil && len(pResults) > 0 {
-				routes = append(routes, pResults...)
-			}
-
-		}
-
-		// wild
-		if nn.wild != nil {
-			wPrefix := newPrefix + "*"
-
-			wResults := getNodeRoutes(nn.wild, wPrefix)
-			if wResults != nil && len(wResults) > 0 {
-				routes = append(routes, wResults...)
-			}
-		}
-
-		results = parseTree(nn, newPrefix)
-		if results != nil && len(results) > 0 {
-			routes = append(routes, results...)
-		}
-	}
-
-	return routes
-}
-
 const (
 	treeTail = "└── "
 	tree     = "├── "
@@ -379,16 +298,44 @@ func (l *LARS) PrintRoutes() {
 
 	parents := []printParent{}
 	routes := l.GetRouteMap()
+	var padding int
 
 	for _, r := range routes {
 
 		parents, p = findParent(r.Path, parents)
+		padding = p.pad
 
-		fmt.Printf("%s%s %s %d\n", strings.Repeat(" ", p.pad), r.Path, r.Method, p.pad)
+		if padding == 0 {
+			fmt.Printf("%s %s %d\n", r.Path, r.Method, p.pad)
+			continue
+		}
+
+		if p.prefix == "/" {
+			fmt.Printf("%s %s %d\n", r.Path[1:], r.Method, p.pad)
+			// fmt.Printf("%s%s %s %d\n", treeTail, r.Path[1:], r.Method, p.pad)
+			// fmt.Printf("%s%s %s %d\n", treeTail, strings.TrimLeft(r.Path, p.prefix), r.Method, p.pad)
+			continue
+		}
+
+		padding -= 1
+		// padding -= treeLen
+		// padding += len(r.Path[len(p.prefix):]) - 1
+		// padding += r.Depth
+		// padding += (r.Depth - 2) * treeLen
+		// if p.prefix
+
+		// padding = int(math.Max(0.0, float64(padding)))
+
+		// fmt.Println(r.Path, p.prefix)
+		// fmt.Printf("%s%s %s %d\n", strings.Repeat(" ", padding), r.Path[len(p.prefix):], r.Method, p.pad)
+		// fmt.Printf("%s%s%s %s %d\n", strings.Repeat(" ", padding), treeTail, r.Path[len(p.prefix):], r.Method, padding)
+		fmt.Printf("%s%s %s %d\n", strings.Repeat(" ", padding), r.Path[len(p.prefix):], r.Method, padding)
 	}
 }
 
 func findParent(path string, parents []printParent) ([]printParent, printParent) {
+
+	// fmt.Println(path)
 
 	var pp printParent
 
@@ -415,9 +362,10 @@ func findParent(path string, parents []printParent) ([]printParent, printParent)
 
 		for i := len(parents) - 1; i >= 0; i-- {
 			if strings.HasPrefix(path, parents[i].path) {
+
 				// found direct parent
 				pp = printParent{
-					pad:    parents[i].pad + (len(parents[i].path) - len(parents[i].prefix)),
+					pad:    parents[i].pad + len(parents[i].path) - len(parents[i].prefix),
 					prefix: parents[i].path,
 					path:   path,
 				}
@@ -430,14 +378,100 @@ func findParent(path string, parents []printParent) ([]printParent, printParent)
 	}
 
 	pp = printParent{
-		pad:    ppp.pad + len(ppp.path) - 1,
+		pad:    ppp.pad + len(ppp.path) - len(ppp.prefix),
 		prefix: ppp.path,
 		path:   path,
 	}
 
+	// if ppp.path == "/" {
+	// 	pp.pad++
+	// }
+
 	parents = append(parents, pp)
 
 	return parents, pp
+}
+
+// RouteMap contains a single routes full path
+// and other information
+type RouteMap struct {
+	Depth  int    `json:"depth"`
+	Path   string `json:"path"`
+	Method string `json:"method"`
+	// handlerName string
+}
+
+func parseTree(n *node, prefix string, depth int) []*RouteMap {
+
+	routes := make([]*RouteMap, 0)
+	i := 0
+	ordered := make([]string, len(n.static))
+
+	for k := range n.static {
+		ordered[i] = k
+		i++
+	}
+
+	sort.Strings(ordered)
+
+	var key string
+	var nn *node
+	var newPrefix string
+
+	for i = 0; i < len(ordered); i++ {
+		key = ordered[i]
+		nn = n.static[ordered[i]]
+		newPrefix = prefix + key
+
+		// static
+		results := getNodeRoutes(nn, newPrefix, depth)
+		if results != nil && len(results) > 0 {
+			routes = append(routes, results...)
+		}
+
+		//params + params wild
+		if nn.params != nil {
+
+			pn := nn.params
+			pPrefix := newPrefix + ":" + pn.param
+
+			pResults := getNodeRoutes(pn, pPrefix, depth+1)
+			if pResults != nil && len(pResults) > 0 {
+				routes = append(routes, pResults...)
+			}
+
+			if pn.wild != nil {
+
+				wResults := getNodeRoutes(pn.wild, pPrefix+"/*", depth+2)
+				if wResults != nil && len(wResults) > 0 {
+					routes = append(routes, wResults...)
+				}
+			}
+
+			pResults = parseTree(pn, pPrefix+"/", depth+1)
+			if pResults != nil && len(pResults) > 0 {
+				routes = append(routes, pResults...)
+			}
+
+		}
+
+		// wild
+		if nn.wild != nil {
+			wPrefix := newPrefix + "*"
+
+			wResults := getNodeRoutes(nn.wild, wPrefix, depth+1)
+			if wResults != nil && len(wResults) > 0 {
+				routes = append(routes, wResults...)
+			}
+		}
+
+		results = parseTree(nn, newPrefix, depth+1)
+		if results != nil && len(results) > 0 {
+			routes = append(routes, results...)
+		}
+	}
+
+	return routes
 }
 
 // GetRouteMap returns an array of all registered routes
@@ -446,7 +480,7 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 	cn := l.router.tree
 	routes := make([]*RouteMap, 0)
 
-	results := getNodeRoutes(cn, "/")
+	results := getNodeRoutes(cn, "/", 0)
 	if results != nil && len(results) > 0 {
 		routes = append(routes, results...)
 	}
@@ -456,7 +490,7 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 		pn := cn.params
 		pPrefix := "/" + ":" + pn.param
 
-		pResults := getNodeRoutes(pn, pPrefix)
+		pResults := getNodeRoutes(pn, pPrefix, 0)
 		if pResults != nil && len(pResults) > 0 {
 
 			routes = append(routes, pResults...)
@@ -464,14 +498,14 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 
 		if pn.wild != nil {
 
-			wResults := getNodeRoutes(pn.wild, pPrefix+"/*")
+			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 0)
 			if wResults != nil && len(wResults) > 0 {
 
 				routes = append(routes, wResults...)
 			}
 		}
 
-		pResults = parseTree(pn, pPrefix+"/")
+		pResults = parseTree(pn, pPrefix+"/", 1)
 		if pResults != nil && len(pResults) > 0 {
 			routes = append(routes, pResults...)
 		}
@@ -481,13 +515,13 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 	if cn.wild != nil {
 		wPrefix := "/" + "*"
 
-		wResults := getNodeRoutes(cn.wild, wPrefix)
+		wResults := getNodeRoutes(cn.wild, wPrefix, 0)
 		if wResults != nil && len(wResults) > 0 {
 			routes = append(routes, wResults...)
 		}
 	}
 
-	children := parseTree(cn, "/")
+	children := parseTree(cn, "/", 1)
 	if children != nil && len(children) > 0 {
 		routes = append(routes, children...)
 	}
@@ -495,12 +529,13 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 	return routes
 }
 
-func getNodeRoutes(n *node, path string) []*RouteMap {
+func getNodeRoutes(n *node, path string, depth int) []*RouteMap {
 
 	routes := make([]*RouteMap, 0)
 
 	for _, r := range n.chains {
 		routes = append(routes, &RouteMap{
+			Depth:  depth,
 			Path:   path,
 			Method: r.method,
 		})
@@ -508,6 +543,7 @@ func getNodeRoutes(n *node, path string) []*RouteMap {
 
 	for _, r := range n.parmsSlashChains {
 		routes = append(routes, &RouteMap{
+			Depth:  depth,
 			Path:   path + "/",
 			Method: r.method,
 		})
