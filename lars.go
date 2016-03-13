@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
-	"strings"
 	"sync"
 )
 
@@ -269,110 +268,6 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 	c.parent.RequestComplete()
 	l.pool.Put(c)
-}
-
-const (
-	treeTail = "└── "
-	tree     = "├── "
-	treeLen  = 7
-)
-
-// for i, r := range results {
-// 	if i == 0 {
-// 		fmt.Printf("%"+strconv.Itoa(padding)+"s%s %s\n", treeTail, r.path, r.method)
-// 	} else {
-// 		fmt.Printf("%"+strconv.Itoa(padding)+"s%s %s\n", tree, r.path, r.method)
-// 	}
-// }
-
-type printParent struct {
-	pad    int
-	prefix string
-	path   string
-}
-
-// PrintRoutes prints the route tree
-func (l *LARS) PrintRoutes() {
-
-	var p printParent
-
-	parents := []printParent{}
-	routes := l.GetRouteMap()
-	var padding int
-
-	for _, r := range routes {
-
-		parents, p = findParent(r.Path, parents)
-		padding = p.pad
-
-		if padding == 0 {
-			fmt.Printf("%s %s %d\n", r.Path, r.Method, p.pad)
-			continue
-		}
-
-		if p.prefix == "/" {
-			fmt.Printf("%s %s %d\n", treeTail+" "+r.Path[1:], r.Method, p.pad)
-			continue
-		}
-
-		padding -= 1 * (r.Depth - 1)
-		padding += 4 * (r.Depth - 1)
-
-		fmt.Printf("%s%s %s\n", strings.Repeat(" ", padding), treeTail+r.Path[len(p.prefix):], r.Method)
-	}
-}
-
-func findParent(path string, parents []printParent) ([]printParent, printParent) {
-
-	var pp printParent
-
-	if len(parents) == 0 {
-		pp = printParent{
-			pad:    0,
-			prefix: "",
-			path:   path,
-		}
-		parents = append(parents, pp)
-
-		return parents, pp
-	}
-
-	ppp := parents[len(parents)-1]
-
-	// paths are same with different methods, same level...don't duplicate
-	if ppp.path == path {
-		return parents, ppp
-	}
-
-	// if parent path not part of current then parent may be higher up the chain
-	if !strings.HasPrefix(path, ppp.path) {
-
-		for i := len(parents) - 1; i >= 0; i-- {
-			if strings.HasPrefix(path, parents[i].path) {
-
-				// found direct parent
-				pp = printParent{
-					pad:    parents[i].pad + len(parents[i].path) - len(parents[i].prefix),
-					prefix: parents[i].path,
-					path:   path,
-				}
-
-				parents = append(parents, pp)
-
-				return parents, pp
-			}
-		}
-	}
-
-	pp = printParent{
-		pad:    ppp.pad + len(ppp.path) - len(ppp.prefix),
-		prefix: ppp.path,
-		path:   path,
-	}
-
-	parents = append(parents, pp)
-
-	return parents, pp
 }
 
 // RouteMap contains a single routes full path
