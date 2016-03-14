@@ -295,7 +295,7 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 		pn := cn.params
 		pPrefix := "/" + ":" + pn.param
 
-		pResults := getNodeRoutes(pn, pPrefix, 0)
+		pResults := getNodeRoutes(pn, pPrefix, 1)
 		if pResults != nil && len(pResults) > 0 {
 
 			routes = append(routes, pResults...)
@@ -303,14 +303,14 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 
 		if pn.wild != nil {
 
-			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 0)
+			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 2)
 			if wResults != nil && len(wResults) > 0 {
 
 				routes = append(routes, wResults...)
 			}
 		}
 
-		pResults = parseTree(pn, pPrefix+"/", 1)
+		pResults = parseTree(pn, pPrefix+"/", 2)
 		if pResults != nil && len(pResults) > 0 {
 			routes = append(routes, pResults...)
 		}
@@ -320,7 +320,7 @@ func (l *LARS) GetRouteMap() []*RouteMap {
 	if cn.wild != nil {
 		wPrefix := "/" + "*"
 
-		wResults := getNodeRoutes(cn.wild, wPrefix, 0)
+		wResults := getNodeRoutes(cn.wild, wPrefix, 1)
 		if wResults != nil && len(wResults) > 0 {
 			routes = append(routes, wResults...)
 		}
