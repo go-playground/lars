@@ -296,29 +296,29 @@ small hit now will save you on the flip side in real world usage.
 
 ```go
 go test -bench=. -benchmem=true
-   githubAPI: 47008 Bytes
-   gplusAPI: 3744 Bytes
-   parseAPI: 4744 Bytes
-   staticAPI: 31120 Bytes
+
+   githubAPI: 50864 Bytes
+   gplusAPI: 3968 Bytes
+   parseAPI: 5032 Bytes
+   staticAPI: 33856 Bytes
 
 PASS
-BenchmarkLARS_GithubStatic-8	20000000	       105 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam-8 	10000000	       157 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll-8   	   50000	     38815 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic-8 	20000000	        73.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam-8  	20000000	       103 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params-8	10000000	       147 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll-8    	 1000000	      1915 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic-8 	20000000	        95.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam-8  	20000000	       114 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params-8	10000000	       136 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll-8    	  500000	      3941 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll-8   	   50000	     24865 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param-8       	20000000	        93.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5-8      	10000000	       148 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20-8     	 5000000	       394 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite-8  	20000000	        95.4 ns/op	       0 B/op	       0 allocs/op
-
+BenchmarkLARS_GithubStatic-8	20000000	       107 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubParam-8 	10000000	       159 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubAll-8   	   30000	     38937 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusStatic-8 	20000000	        76.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusParam-8  	20000000	       105 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlus2Params-8	10000000	       146 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusAll-8    	 1000000	      1947 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseStatic-8 	20000000	        97.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseParam-8  	10000000	       120 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Parse2Params-8	10000000	       130 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseAll-8    	  300000	      3879 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_StaticAll-8   	   50000	     24417 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param-8       	20000000	        94.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param5-8      	10000000	       160 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param20-8     	 3000000	       405 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParamWrite-8  	20000000	        95.2 ns/op	       0 B/op	       0 allocs/op
 ```
 
 Package Versioning
