@@ -4,8 +4,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"reflect"
-	"runtime"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -56,6 +54,7 @@ type Ctx struct {
 	websocket           *websocket.Conn
 	params              Params
 	handlers            HandlersChain
+	handlerName         string
 	store               store
 	index               int
 	formParsed          bool
@@ -270,18 +269,9 @@ func (c *Ctx) AcceptedLanguages(lowercase bool) []string {
 	return language
 }
 
-// HandlerName returns the current Contexts final handler name
-// NOTE: this only works for lars HandlerFunc i.e. func(Context)
-// as native middleware functions are wrapped
+// HandlerName returns the current Contexts final handler's name
 func (c *Ctx) HandlerName() string {
-
-	if c.handlers == nil || len(c.handlers) == 0 {
-		return blank
-	}
-
-	handler := c.handlers[len(c.handlers)-1]
-
-	return runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name()
+	return c.handlerName
 }
 
 // Stream provides HTTP Streaming

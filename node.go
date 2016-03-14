@@ -3,8 +3,9 @@ package lars
 type nodes map[string]*node
 
 type methodChain struct {
-	method string
-	chain  HandlersChain
+	method      string
+	handlerName string
+	chain       HandlersChain
 }
 
 type chainMethods []methodChain
@@ -28,40 +29,40 @@ type node struct {
 	param string
 }
 
-func (m chainMethods) find(method string) HandlersChain {
+func (m chainMethods) find(method string) (HandlersChain, string) {
 
 	l := len(m)
 	for i := 0; i < l; i++ {
 		if m[i].method == method {
-			return m[i].chain
+			return m[i].chain, m[i].handlerName
 		}
 	}
 
-	return nil
+	return nil, blank
 }
 
-func (n *node) addChain(origPath string, method string, chain HandlersChain) {
+func (n *node) addChain(origPath string, method string, chain HandlersChain, handlerName string) {
 
 	if n.chains == nil {
 		n.chains = make(chainMethods, 0)
 	}
 
-	if n.chains.find(method) != nil {
+	if c, _ := n.chains.find(method); c != nil {
 		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
 	}
 
-	n.chains = append(n.chains, methodChain{method: method, chain: chain})
+	n.chains = append(n.chains, methodChain{method: method, chain: chain, handlerName: handlerName})
 }
 
-func (n *node) addSlashChain(origPath, method string, chain HandlersChain) {
+func (n *node) addSlashChain(origPath, method string, chain HandlersChain, handlerName string) {
 
 	if n.parmsSlashChains == nil {
 		n.parmsSlashChains = make(chainMethods, 0)
 	}
 
-	if n.parmsSlashChains.find(method) != nil {
+	if c, _ := n.parmsSlashChains.find(method); c != nil {
 		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
 	}
 
-	n.parmsSlashChains = append(n.parmsSlashChains, methodChain{method: method, chain: chain})
+	n.parmsSlashChains = append(n.parmsSlashChains, methodChain{method: method, chain: chain, handlerName: handlerName})
 }

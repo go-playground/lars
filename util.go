@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"reflect"
+	"runtime"
 )
 
 // NativeChainHandler is used in native handler chains
@@ -40,8 +41,10 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 	switch h := h.(type) {
 	case HandlerFunc:
 		return h
+
 	case func(Context):
 		return h
+
 	case http.Handler, http.HandlerFunc:
 		return func(c Context) {
 
@@ -55,6 +58,7 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 				c.Next()
 			}
 		}
+
 	case func(http.ResponseWriter, *http.Request):
 		return func(c Context) {
 
@@ -68,6 +72,7 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 				c.Next()
 			}
 		}
+
 	case func(handler http.Handler) http.Handler:
 
 		hf := h(NativeChainHandler)
@@ -77,6 +82,7 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 
 			hf.ServeHTTP(ctx.response, ctx.request)
 		}
+
 	default:
 		if fn, ok := l.customHandlersFuncs[reflect.TypeOf(h)]; ok {
 			return func(c Context) {
@@ -86,4 +92,12 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 
 		panic("unknown handler")
 	}
+}
+
+// wrapHandlerWithName wraps Handler type and returns it including it's name before wrapping
+func (l *LARS) wrapHandlerWithName(h Handler) (chain HandlerFunc, handlerName string) {
+
+	chain = l.wrapHandler(h)
+	handlerName = runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
+	return
 }

@@ -40,12 +40,18 @@ var _ IRouteGroup = &routeGroup{}
 func (g *routeGroup) handle(method string, path string, handlers []Handler) {
 
 	chain := make(HandlersChain, len(handlers))
+	name := ""
 
 	for i, h := range handlers {
-		chain[i] = g.lars.wrapHandler(h)
+
+		if i == len(handlers)-1 {
+			chain[i], name = g.lars.wrapHandlerWithName(h)
+		} else {
+			chain[i] = g.lars.wrapHandler(h)
+		}
 	}
 
-	g.lars.router.add(method, g.prefix+path, g, chain)
+	g.lars.router.add(method, g.prefix+path, g, chain, name)
 }
 
 // Use adds a middleware handler to the group middleware chain.

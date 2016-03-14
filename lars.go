@@ -273,15 +273,70 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 // RouteMap contains a single routes full path
 // and other information
 type RouteMap struct {
-	Depth  int    `json:"depth"`
-	Path   string `json:"path"`
-	Method string `json:"method"`
-	// handlerName string
+	Depth   int    `json:"depth"`
+	Path    string `json:"path"`
+	Method  string `json:"method"`
+	Handler string `json:"handler"`
+}
+
+// GetRouteMap returns an array of all registered routes
+func (l *LARS) GetRouteMap() []*RouteMap {
+
+	cn := l.router.tree
+	var routes []*RouteMap
+
+	results := getNodeRoutes(cn, "/", 0)
+	if results != nil && len(results) > 0 {
+		routes = append(routes, results...)
+	}
+
+	if cn.params != nil {
+
+		pn := cn.params
+		pPrefix := "/" + ":" + pn.param
+
+		pResults := getNodeRoutes(pn, pPrefix, 0)
+		if pResults != nil && len(pResults) > 0 {
+
+			routes = append(routes, pResults...)
+		}
+
+		if pn.wild != nil {
+
+			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 0)
+			if wResults != nil && len(wResults) > 0 {
+
+				routes = append(routes, wResults...)
+			}
+		}
+
+		pResults = parseTree(pn, pPrefix+"/", 1)
+		if pResults != nil && len(pResults) > 0 {
+			routes = append(routes, pResults...)
+		}
+
+	}
+
+	if cn.wild != nil {
+		wPrefix := "/" + "*"
+
+		wResults := getNodeRoutes(cn.wild, wPrefix, 0)
+		if wResults != nil && len(wResults) > 0 {
+			routes = append(routes, wResults...)
+		}
+	}
+
+	children := parseTree(cn, "/", 1)
+	if children != nil && len(children) > 0 {
+		routes = append(routes, children...)
+	}
+
+	return routes
 }
 
 func parseTree(n *node, prefix string, depth int) []*RouteMap {
 
-	routes := make([]*RouteMap, 0)
+	var routes []*RouteMap
 	i := 0
 	ordered := make([]string, len(n.static))
 
@@ -352,78 +407,32 @@ func parseTree(n *node, prefix string, depth int) []*RouteMap {
 	return routes
 }
 
-// GetRouteMap returns an array of all registered routes
-func (l *LARS) GetRouteMap() []*RouteMap {
-
-	cn := l.router.tree
-	routes := make([]*RouteMap, 0)
-
-	results := getNodeRoutes(cn, "/", 0)
-	if results != nil && len(results) > 0 {
-		routes = append(routes, results...)
-	}
-
-	if cn.params != nil {
-
-		pn := cn.params
-		pPrefix := "/" + ":" + pn.param
-
-		pResults := getNodeRoutes(pn, pPrefix, 0)
-		if pResults != nil && len(pResults) > 0 {
-
-			routes = append(routes, pResults...)
-		}
-
-		if pn.wild != nil {
-
-			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 0)
-			if wResults != nil && len(wResults) > 0 {
-
-				routes = append(routes, wResults...)
-			}
-		}
-
-		pResults = parseTree(pn, pPrefix+"/", 1)
-		if pResults != nil && len(pResults) > 0 {
-			routes = append(routes, pResults...)
-		}
-
-	}
-
-	if cn.wild != nil {
-		wPrefix := "/" + "*"
-
-		wResults := getNodeRoutes(cn.wild, wPrefix, 0)
-		if wResults != nil && len(wResults) > 0 {
-			routes = append(routes, wResults...)
-		}
-	}
-
-	children := parseTree(cn, "/", 1)
-	if children != nil && len(children) > 0 {
-		routes = append(routes, children...)
-	}
-
-	return routes
-}
-
 func getNodeRoutes(n *node, path string, depth int) []*RouteMap {
 
-	routes := make([]*RouteMap, 0)
+	var routes []*RouteMap
+	var name string
 
 	for _, r := range n.chains {
+
+		_, name = n.chains.find(r.method)
+
 		routes = append(routes, &RouteMap{
-			Depth:  depth,
-			Path:   path,
-			Method: r.method,
+			Depth:   depth,
+			Path:    path,
+			Method:  r.method,
+			Handler: name,
 		})
 	}
 
 	for _, r := range n.parmsSlashChains {
+
+		_, name = n.parmsSlashChains.find(r.method)
+
 		routes = append(routes, &RouteMap{
-			Depth:  depth,
-			Path:   path + "/",
-			Method: r.method,
+			Depth:   depth,
+			Path:    path + "/",
+			Method:  r.method,
+			Handler: name,
 		})
 	}
 
