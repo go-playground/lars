@@ -3,6 +3,7 @@ package lars
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -25,6 +26,14 @@ func newRouter(l *LARS) *Router {
 
 // Add parses a route and adds it to the tree
 func (r *Router) add(method string, path string, rg *routeGroup, h HandlersChain, handlerName string) {
+
+	if len(h) == 0 {
+		panic("No handler mapped to path:" + path)
+	}
+
+	if i := strings.Index(path, "//"); i != -1 {
+		panic("Bad path '" + path + "' contains duplicate // at index:" + strconv.Itoa(i))
+	}
 
 	origPath := path
 	cn := r.tree

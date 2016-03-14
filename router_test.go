@@ -44,3 +44,10 @@ func TestWildcardParam(t *testing.T) {
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "testwildslash/")
 }
+
+func TestBadRoutes(t *testing.T) {
+	l := New()
+
+	PanicMatches(t, func() { l.Get("/refewrfewf/fefef") }, "No handler mapped to path:/refewrfewf/fefef")
+	PanicMatches(t, func() { l.Get("/users//:id", basicHandler) }, "Bad path '/users//:id' contains duplicate // at index:6")
+}

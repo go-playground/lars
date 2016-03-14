@@ -145,6 +145,15 @@ type LARS struct {
 	handleMethodNotAllowed bool
 }
 
+// RouteMap contains a single routes full path
+// and other information
+type RouteMap struct {
+	Depth   int    `json:"depth"`
+	Path    string `json:"path"`
+	Method  string `json:"method"`
+	Handler string `json:"handler"`
+}
+
 var (
 	default404Handler = func(c Context) {
 		http.Error(c.Response(), http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -268,15 +277,6 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 	c.parent.RequestComplete()
 	l.pool.Put(c)
-}
-
-// RouteMap contains a single routes full path
-// and other information
-type RouteMap struct {
-	Depth   int    `json:"depth"`
-	Path    string `json:"path"`
-	Method  string `json:"method"`
-	Handler string `json:"handler"`
 }
 
 // GetRouteMap returns an array of all registered routes

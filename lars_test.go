@@ -71,7 +71,7 @@ func TestFindOneOffs(t *testing.T) {
 	Equal(t, code, http.StatusMovedPermanently)
 	Equal(t, body, "<a href=\"/zombies/10/\">Moved Permanently</a>.\n\n")
 
-	PanicMatches(t, func() { l.Get("/zombies/:id/") }, "Duplicate Handler for method 'GET' with path '/zombies/:id/'")
+	PanicMatches(t, func() { l.Get("/zombies/:id/", basicHandler) }, "Duplicate Handler for method 'GET' with path '/zombies/:id/'")
 }
 
 func Testlars(t *testing.T) {
