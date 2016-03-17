@@ -81,7 +81,7 @@ const (
 	blank    = ""
 
 	slashByte = '/'
-	colonByte = ':'
+	paramByte = ':'
 	wildByte  = '*'
 )
 
@@ -273,7 +273,7 @@ func (l *LARS) Serve() http.Handler {
 func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Ctx)
 
-	c.parent.Reset(w, r)
+	c.parent.RequestStart(w, r)
 
 	if root := l.trees[r.Method]; root != nil {
 
@@ -281,7 +281,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 			c.params = c.params[0:0]
 
-			if l.redirectTrailingSlash && len(r.URL.Path) > 0 {
+			if l.redirectTrailingSlash {
 
 				// find again all lowercase
 				lc := strings.ToLower(r.URL.Path)
@@ -365,7 +365,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 END:
 
 	c.parent.Next()
+	c.parent.RequestEnd()
 
-	c.parent.RequestComplete()
 	l.pool.Put(c)
 }

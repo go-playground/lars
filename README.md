@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-1.2-green.svg)
+![Project status](https://img.shields.io/badge/version-2.0-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -16,16 +16,16 @@ Have you ever been painted into a corner by a framework, **ya me too!** and I've
 Unique Features 
 --------------
 - [x] Context is an interface allowing passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
-- [x] Handles mutiple url patterns not supported by many other routers.
-  * the route algorithm was written from scratch and is **NOT** a modification of any other router.
 - [x] Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
   * i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
 - [x] Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
-- [x] Can register custom handlers for use as middleware + handlers; best part is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
+- [x] Can register custom handlers for making other middleware + handler patterns usable with this router
+  * best part about this is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
 - [x] Full support for standard/native http Handler + HandlerFunc [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
   * When Parsing a form call Context's ParseForm amd ParseMulipartForm functions and the URL params will be added into the Form object, just like query parameters are, so no extra work
 
 
+**Note:** Since this router has only explicit matches, you can not register static routes and parameters for the same path segment. For example you can not register the patterns /user/new and /user/:user for the same request method at the same time. The routing of different request methods is independent from each other. I was initially against this, and this router allowed it in a previous version, however it nearly cost me in a big app where the dynamic param value say :type actually could have matched another static route and that's just too dangerous, so it is no longer allowed.
 
 Installation
 -----------
@@ -113,17 +113,18 @@ type MyContext struct {
 	AppContext *ApplicationGlobals
 }
 
-// Reset overriding
-func (mc *MyContext) Reset(w http.ResponseWriter, r *http.Request) {
+// RequestStart overriding
+func (mc *MyContext) RequestStart(w http.ResponseWriter, r *http.Request) {
 
 	// call lars context reset, must be done
-	mc.Ctx.Reset(w, r)
+	mc.Ctx.RequestStart(w, r)
 	mc.AppContext.Reset()
 }
 
-// RequestComplete overriding
-func (mc *MyContext) RequestComplete() {
+// RequestEnd overriding
+func (mc *MyContext) RequestEnd() {
 	mc.AppContext.Done()
+	mc.Ctx.RequestEnd()
 }
 
 func newContext(l *lars.LARS) lars.Context {
@@ -133,10 +134,20 @@ func newContext(l *lars.LARS) lars.Context {
 	}
 }
 
+func castCustomContext(c lars.Context, handler lars.Handler) {
+
+	// could do it in all one statement, but in long form for readability
+	h := handler.(func(*MyContext))
+	ctx := c.(*MyContext)
+
+	h(ctx)
+}
+
 func main() {
 
 	l := lars.New()
 	l.RegisterContext(newContext) // all gets cached in pools for you
+	l.RegisterCustomHandler(func(*MyContext) {}, castCustomContext)
 	l.Use(Logger)
 
 	l.Get("/", Home)
@@ -154,57 +165,49 @@ func main() {
 }
 
 // Home ...
-func Home(c lars.Context) {
-
-	ctx := c.(*MyContext)
+func Home(c *MyContext) {
 
 	var username string
 
-	// username = ctx.AppContext.DB.find(user by .....)
+	// username = c.AppContext.DB.find(user by .....)
 
-	ctx.AppContext.Log.Println("Found User")
+	c.AppContext.Log.Println("Found User")
 
 	c.Response().Write([]byte("Welcome Home " + username))
 }
 
 // Users ...
-func Users(c lars.Context) {
+func Users(c *MyContext) {
 
-	ctx := c.(*MyContext)
-
-	ctx.AppContext.Log.Println("In Users Function")
+	c.AppContext.Log.Println("In Users Function")
 
 	c.Response().Write([]byte("Users"))
 }
 
 // User ...
-func User(c lars.Context) {
-
-	ctx := c.(*MyContext)
+func User(c *MyContext) {
 
 	id := c.Param("id")
 
 	var username string
 
-	// username = ctx.AppContext.DB.find(user by id.....)
+	// username = c.AppContext.DB.find(user by id.....)
 
-	ctx.AppContext.Log.Println("Found User")
+	c.AppContext.Log.Println("Found User")
 
 	c.Response().Write([]byte("Welcome " + username + " with id " + id))
 }
 
 // UserProfile ...
-func UserProfile(c lars.Context) {
-
-	ctx := c.(*MyContext)
+func UserProfile(c *MyContext) {
 
 	id := c.Param("id")
 
 	var profile string
 
-	// profile = ctx.AppContext.DB.find(user profile by .....)
+	// profile = c.AppContext.DB.find(user profile by .....)
 
-	ctx.AppContext.Log.Println("Found User Profile")
+	c.AppContext.Log.Println("Found User Profile")
 
 	c.Response().Write([]byte("Here's your profile " + profile + " user " + id))
 }
@@ -297,28 +300,28 @@ small hit now will save you on the flip side in real world usage.
 ```go
 go test -bench=. -benchmem=true
 
-   githubAPI: 50864 Bytes
-   gplusAPI: 3968 Bytes
-   parseAPI: 5032 Bytes
-   staticAPI: 33856 Bytes
+   githubAPI: 52600 Bytes
+   gplusAPI: 3624 Bytes
+   parseAPI: 6616 Bytes
+   staticAPI: 30104 Bytes
 
 PASS
-BenchmarkLARS_GithubStatic-8	20000000	       107 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam-8 	10000000	       159 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll-8   	   30000	     38937 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic-8 	20000000	        76.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam-8  	20000000	       105 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params-8	10000000	       146 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll-8    	 1000000	      1947 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic-8 	20000000	        97.7 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam-8  	10000000	       120 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params-8	10000000	       130 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll-8    	  300000	      3879 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll-8   	   50000	     24417 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param-8       	20000000	        94.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5-8      	10000000	       160 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20-8     	 3000000	       405 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite-8  	20000000	        95.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubStatic-8	20000000	        96.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubParam-8 	10000000	       160 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubAll-8   	   50000	     34821 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusStatic-8 	20000000	        73.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusParam-8  	20000000	       101 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlus2Params-8	10000000	       127 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusAll-8    	 1000000	      1705 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseStatic-8 	20000000	        75.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseParam-8  	20000000	        81.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Parse2Params-8	20000000	        98.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseAll-8    	  500000	      3290 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_StaticAll-8   	  100000	     22990 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param-8       	20000000	        81.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param5-8      	10000000	       138 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param20-8     	 5000000	       312 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParamWrite-8  	20000000	        85.0 ns/op	       0 B/op	       0 allocs/op
 ```
 
 Package Versioning

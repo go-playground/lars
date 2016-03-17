@@ -48,10 +48,36 @@ func TestBadWildcard(t *testing.T) {
 
 	code, _ = request(GET, "/testers/13/test", l3)
 	Equal(t, code, http.StatusNotFound)
+}
 
-	l4 := New()
-	l4.Get("/*", basicHandler)
+func TestDuplicateParams(t *testing.T) {
 
-	code, _ = request(GET, "", l4)
-	Equal(t, code, http.StatusNotFound)
+	l := New()
+	l.Get("/store/:id", basicHandler)
+	PanicMatches(t, func() { l.Get("/store/:id/employee/:id", basicHandler) }, "Duplicate param name ':id' detected for route '/store/:id/employee/:id'")
+
+	l.Get("/company/:id/", basicHandler)
+	PanicMatches(t, func() { l.Get("/company/:id/employee/:id/", basicHandler) }, "Duplicate param name ':id' detected for route '/company/:id/employee/:id/'")
+}
+
+func TestWildcardParam(t *testing.T) {
+	l := New()
+	l.Get("/users/*", func(c Context) {
+		c.Response().Write([]byte(c.Param(WildcardParam)))
+	})
+
+	code, body := request(GET, "/users/testwild", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "testwild")
+
+	code, body = request(GET, "/users/testwildslash/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "testwildslash/")
+}
+
+func TestBadRoutes(t *testing.T) {
+	l := New()
+
+	PanicMatches(t, func() { l.Get("/refewrfewf/fefef") }, "No handler mapped to path:/refewrfewf/fefef")
+	PanicMatches(t, func() { l.Get("/users//:id", basicHandler) }, "Bad path '/users//:id' contains duplicate // at index:6")
 }

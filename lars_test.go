@@ -662,12 +662,12 @@ func (c *myContext) BaseContext() *Ctx {
 	return c.Ctx
 }
 
-func (c *myContext) Reset(w http.ResponseWriter, r *http.Request) {
-	c.Ctx.Reset(w, r)
+func (c *myContext) RequestStart(w http.ResponseWriter, r *http.Request) {
+	c.Ctx.RequestStart(w, r)
 	c.text = "test"
 }
 
-func (c *myContext) RequestComplete() {
+func (c *myContext) RequestEnd() {
 	c.text = ""
 }
 

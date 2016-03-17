@@ -35,8 +35,8 @@ type Context interface {
 	Set(key string, value interface{})
 	Get(key string) (value interface{}, exists bool)
 	Next()
-	Reset(w http.ResponseWriter, r *http.Request)
-	RequestComplete()
+	RequestStart(w http.ResponseWriter, r *http.Request)
+	RequestEnd()
 	ClientIP() (clientIP string)
 	AcceptedLanguages(lowercase bool) []string
 	HandlerName() string
@@ -97,15 +97,14 @@ func (c *Ctx) WebSocket() *websocket.Conn {
 	return c.websocket
 }
 
-// RequestComplete fires after request completes and just before
+// RequestEnd fires after request completes and just before
 // the *Ctx object gets put back into the pool.
 // Used to close DB connections and such on a custom context
-func (c *Ctx) RequestComplete() {
-	// nothing will ever be put here so feel free to override and not call
+func (c *Ctx) RequestEnd() {
 }
 
-// Reset resets the Context to it's default request state
-func (c *Ctx) Reset(w http.ResponseWriter, r *http.Request) {
+// RequestStart resets the Context to it's default request state
+func (c *Ctx) RequestStart(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
 	c.params = c.params[0:0]

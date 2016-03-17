@@ -8,13 +8,10 @@ const (
 	isStatic nodeType = iota // default
 	isRoot
 	hasParams
-	matchEverything
+	matchesAny
 )
 
-// type nodes map[string]*node
-
 type methodChain struct {
-	// method      string
 	handlerName string
 	chain       HandlersChain
 }
@@ -94,11 +91,6 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 	if len(n.path) > 0 || len(n.children) > 0 {
 	walk:
 		for {
-			// Update maxParams of the current node
-			// if numParams > n.maxParams {
-			// 	n.maxParams = numParams
-			// }
-
 			// Find the longest common prefix.
 			// This also implies that the common prefix contains no : or *
 			// since the existing key can't contain those chars.
@@ -119,15 +111,8 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 					priority:  n.priority - 1,
 				}
 
-				// Update maxParams (max of all children)
-				// for i := range child.children {
-				// 	if child.children[i].maxParams > child.maxParams {
-				// 		child.maxParams = child.children[i].maxParams
-				// 	}
-				// }
-
 				n.children = []*node{&child}
-				// []byte for proper unicode char conversion, see #65
+				// []byte for proper unicode char conversion, see httprouter #65
 				n.indices = string([]byte{n.path[i]})
 				n.path = path[:i]
 				n.handler = nil
@@ -141,19 +126,13 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 				if n.wildChild {
 					n = n.children[0]
 					n.priority++
-
-					// // Update maxParams of the child node
-					// if numParams > n.maxParams {
-					// 	n.maxParams = numParams
-					// }
 					numParams--
-
-					// fmt.Println("PARAM A:", n.path)
 
 					existing.Check(n.path, fullPath)
 
 					// Check if the wildcard matches
 					if len(path) >= len(n.path) && n.path == path[:len(n.path)] {
+
 						// check for longer wildcard, e.g. :name and :names
 						if len(n.path) >= len(path) || path[len(n.path)] == '/' {
 							continue walk
@@ -163,17 +142,6 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 					panic("path segment '" + path +
 						"' conflicts with existing wildcard '" + n.path +
 						"' in path '" + fullPath + "'")
-
-					// badParam := path
-					// bpi := strings.Index(path, "/")
-
-					// if bpi != -1 {
-					// 	badParam = path[:bpi]
-					// }
-
-					// fmt.Println(path)
-
-					// panic("Different param names defined for path '" + fullPath + "', param '" + badParam + "'' should be '" + n.path + "'")
 				}
 
 				c := path[0]
@@ -195,12 +163,11 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 				}
 
 				// Otherwise insert it
-				if c != colonByte && c != wildByte {
-					// []byte for proper unicode char conversion, see #65
+				if c != paramByte && c != wildByte {
+
+					// []byte for proper unicode char conversion, see httprouter #65
 					n.indices += string([]byte{c})
-					child := &node{
-					// maxParams: numParams,
-					}
+					child := &node{}
 					n.children = append(n.children, child)
 					n.incrementChildPrio(len(n.indices) - 1)
 					n = child
@@ -229,15 +196,13 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 
 func (n *node) insertChild(numParams uint8, existing existingParams, path string, fullPath string, handlerName string, handler HandlersChain) {
 
-	// fmt.Println(path)
-
 	var offset int // already handled bytes of the path
 
-	// find prefix until first wildcard (beginning with colonByte' or wildByte')
+	// find prefix until first wildcard (beginning with paramByte' or wildByte')
 	for i, max := 0, len(path); numParams > 0; i++ {
-		// fmt.Println(path, numParams, i)
+
 		c := path[i]
-		if c != colonByte && c != wildByte {
+		if c != paramByte && c != wildByte {
 			continue
 		}
 
@@ -246,7 +211,7 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 		for end < max && path[end] != '/' {
 			switch path[end] {
 			// the wildcard name must not contain ':' and '*'
-			case colonByte, wildByte:
+			case paramByte, wildByte:
 				panic("only one wildcard per path segment is allowed, has: '" +
 					path[i:] + "' in path '" + fullPath + "'")
 			default:
@@ -261,12 +226,7 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 				"' conflicts with existing children in path '" + fullPath + "'")
 		}
 
-		// // check if the wildcard has a name
-		// if end-i < 2 {
-		// 	panic("wildcards must be named with a non-empty name in path '" + fullPath + "'")
-		// }
-
-		if c == colonByte { // param
+		if c == paramByte { // param
 
 			// check if the wildcard has a name
 			if end-i < 2 {
@@ -275,14 +235,12 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 
 			// split path at the beginning of the wildcard
 			if i > 0 {
-				// fmt.Println("ADD PARAM 1:", path[offset:i])
 				n.path = path[offset:i]
 				offset = i
 			}
 
 			child := &node{
 				nType: hasParams,
-				// maxParams: numParams,
 			}
 			n.children = []*node{child}
 			n.wildChild = true
@@ -295,13 +253,11 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 			if end < max {
 
 				existing.Check(path[offset:end], fullPath)
-				// fmt.Println("ADD PARAM 2:", path[offset:end])
 
 				n.path = path[offset:end]
 				offset = end
 
 				child := &node{
-					// maxParams: numParams,
 					priority: 1,
 				}
 				n.children = []*node{child}
@@ -328,8 +284,7 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 			// first node: catchAll node with empty path
 			child := &node{
 				wildChild: true,
-				nType:     matchEverything,
-				// maxParams: 1,
+				nType:     matchesAny,
 			}
 			n.children = []*node{child}
 			n.indices = string(path[i])
@@ -338,9 +293,8 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 
 			// second node: node holding the variable
 			child = &node{
-				path:  path[i:],
-				nType: matchEverything,
-				// maxParams: 1,
+				path:     path[i:],
+				nType:    matchesAny,
 				handler:  &methodChain{handlerName: handlerName, chain: handler},
 				priority: 1,
 			}
@@ -349,8 +303,6 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 			return
 		}
 	}
-
-	// fmt.Println("PARAM C:", path[offset:], n.nType == hasParams, n.nType)
 
 	if n.nType == hasParams {
 		existing.Check(path[offset:], fullPath)
@@ -361,14 +313,9 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 	n.handler = &methodChain{handlerName: handlerName, chain: handler}
 }
 
-// Returns the handle registered with the given path (key). The values of
-// wildcards are saved to a map.
-// If no handle can be found, a TSR (trailing slash redirect) recommendation is
-// made if a handle exists with an extra (without the) trailing slash for the
-// given path.
+// Returns the handle registered with the given path (key).
 func (n *node) find(path string, po Params) (handler HandlersChain, p Params, handlerName string) {
 
-	// origPath := path
 	p = po
 
 walk: // Outer loop for walking the tree
@@ -390,10 +337,6 @@ walk: // Outer loop for walking the tree
 						}
 					}
 
-					// Nothing found.
-					// We can recommend to redirect to the same URL without a
-					// trailing slash if a leaf exists for that path.
-					// tsr = (path == "/" && n.handler != nil)
 					return
 				}
 
@@ -401,6 +344,7 @@ walk: // Outer loop for walking the tree
 				n = n.children[0]
 				switch n.nType {
 				case hasParams:
+
 					// find param end (either '/' or path end)
 					end := 0
 					for end < len(path) && path[end] != '/' {
@@ -408,9 +352,6 @@ walk: // Outer loop for walking the tree
 					}
 
 					// save param value
-					// if cap(p) < int(n.maxParams) {
-					// 	p = make(PathParameters, 0, n.maxParams)
-					// }
 					i := len(p)
 					p = p[:i+1] // expand slice within preallocated capacity
 					p[i].Key = n.path[1:]
@@ -424,8 +365,6 @@ walk: // Outer loop for walking the tree
 							continue walk
 						}
 
-						// ... but we can't
-						// tsr = (len(path) == end+1)
 						return
 					}
 
@@ -437,22 +376,17 @@ walk: // Outer loop for walking the tree
 					if handler != nil {
 						return
 					} else if len(n.children) == 1 {
-						// No handle found. Check if a handle for this path + a
-						// trailing slash exists for TSR recommendation
+						// No handle found. Check if a handle for this path
 						n = n.children[0]
-						// tsr = (n.path == "/" && n.handler != nil)
 					}
 
 					return
 
-				case matchEverything:
+				case matchesAny:
+
 					// save param value
-					// if cap(p) < int(n.maxParams) {
-					// 	p = make(PathParameters, 0, n.maxParams)
-					// }
 					i := len(p)
 					p = p[:i+1] // expand slice within preallocated capacity
-					// p[i].Key = n.path[2:]
 					p[i].Key = WildcardParam
 					p[i].Value = path[1:]
 
@@ -470,11 +404,8 @@ walk: // Outer loop for walking the tree
 
 			// We should have reached the node containing the handle.
 			// Check if this node has a handle registered.
-
-			if n.handler != nil {
-				if handler, handlerName = n.handler.chain, n.handler.handlerName; handler != nil {
-					return
-				}
+			if handler, handlerName = n.handler.chain, n.handler.handlerName; handler != nil {
+				return
 			}
 		}
 
@@ -482,29 +413,3 @@ walk: // Outer loop for walking the tree
 		return
 	}
 }
-
-// func (n *node) addChain(origPath string, method string, chain HandlersChain, handlerName string) {
-
-// 	if n.chains == nil {
-// 		n.chains = make(chainMethods, 0)
-// 	}
-
-// 	if c, _ := n.chains.find(method); c != nil {
-// 		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
-// 	}
-
-// 	n.chains = append(n.chains, methodChain{method: method, chain: chain, handlerName: handlerName})
-// }
-
-// func (n *node) addSlashChain(origPath, method string, chain HandlersChain, handlerName string) {
-
-// 	if n.parmsSlashChains == nil {
-// 		n.parmsSlashChains = make(chainMethods, 0)
-// 	}
-
-// 	if c, _ := n.parmsSlashChains.find(method); c != nil {
-// 		panic("Duplicate Handler for method '" + method + "' with path '" + origPath + "'")
-// 	}
-
-// 	n.parmsSlashChains = append(n.parmsSlashChains, methodChain{method: method, chain: chain, handlerName: handlerName})
-// }
