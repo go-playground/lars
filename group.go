@@ -2,6 +2,8 @@ package lars
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"golang.org/x/net/websocket"
 )
@@ -39,6 +41,14 @@ var _ IRouteGroup = &routeGroup{}
 
 func (g *routeGroup) handle(method string, path string, handlers []Handler) {
 
+	if len(handlers) == 0 {
+		panic("No handler mapped to path:" + path)
+	}
+
+	if i := strings.Index(path, "//"); i != -1 {
+		panic("Bad path '" + path + "' contains duplicate // at index:" + strconv.Itoa(i))
+	}
+
 	chain := make(HandlersChain, len(handlers))
 	name := ""
 
@@ -51,7 +61,22 @@ func (g *routeGroup) handle(method string, path string, handlers []Handler) {
 		}
 	}
 
-	g.lars.router.add(method, g.prefix+path, g, chain, name)
+	tree := g.lars.trees[method]
+	if tree == nil {
+		tree = new(node)
+		g.lars.trees[method] = tree
+	}
+
+	combined := make(HandlersChain, len(g.middleware)+len(chain))
+	copy(combined, g.middleware)
+	copy(combined[len(g.middleware):], chain)
+
+	pCount := tree.add(g.prefix+path, name, combined)
+	pCount++
+
+	if pCount > g.lars.mostParams {
+		g.lars.mostParams = pCount
+	}
 }
 
 // Use adds a middleware handler to the group middleware chain.

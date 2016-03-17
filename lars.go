@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"sort"
+	"strings"
 	"sync"
 )
 
@@ -82,7 +82,7 @@ const (
 
 	slashByte = '/'
 	colonByte = ':'
-	startByte = '*'
+	wildByte  = '*'
 )
 
 // Handler is the type used in registering handlers.
@@ -110,7 +110,8 @@ type customHandlers map[reflect.Type]CustomHandlerFunc
 // LARS is the main routing instance
 type LARS struct {
 	routeGroup
-	router *Router
+	trees map[string]*node
+	// router *Router
 
 	// mostParams used to keep track of the most amount of
 	// params in any URL and this will set the default capacity
@@ -161,13 +162,13 @@ var (
 
 	methodNotAllowedHandler = func(c Context) {
 
-		m, _ := c.Get("methods")
-		methods := m.(chainMethods)
+		mth, _ := c.Get("methods")
+		methods := mth.([]string)
 
 		res := c.Response()
 
-		for _, k := range methods {
-			res.Header().Add("Allow", k.method)
+		for _, m := range methods {
+			res.Header().Add("Allow", m)
 		}
 
 		res.WriteHeader(http.StatusMethodNotAllowed)
@@ -181,6 +182,7 @@ func New() *LARS {
 		routeGroup: routeGroup{
 			middleware: make(HandlersChain, 0),
 		},
+		trees: make(map[string]*node),
 		contextFunc: func(l *LARS) Context {
 			return NewContext(l)
 		},
@@ -192,7 +194,7 @@ func New() *LARS {
 	}
 
 	l.routeGroup.lars = l
-	l.router = newRouter(l)
+	// l.router = newRouter(l)
 	l.pool.New = func() interface{} {
 
 		c := l.contextFunc(l)
@@ -272,169 +274,264 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Ctx)
 
 	c.parent.Reset(w, r)
-	l.router.find(c, true)
+
+	if root := l.trees[r.Method]; root != nil {
+
+		if c.handlers, c.params, c.handlerName = root.find(r.URL.Path, c.params); c.handlers == nil {
+
+			// fmt.Println("not found", r.URL.Path, r.Method, l.handleMethodNotAllowed)
+			c.params = c.params[0:0]
+
+			if l.redirectTrailingSlash {
+
+				// find again all lowercase
+				lc := strings.ToLower(r.URL.Path)
+
+				if lc != r.URL.Path {
+
+					r.URL.Path = lc
+
+					if c.handlers, _, _ = root.find(r.URL.Path, c.params); c.handlers != nil {
+						c.handlers = l.redirect(r.Method)
+						goto END
+					}
+				}
+
+				// 			ctx.params = ctx.params[0:0]
+
+				if r.URL.Path[len(r.URL.Path)-1:] == basePath {
+					r.URL.Path = r.URL.Path[:len(r.URL.Path)-1]
+				} else {
+					r.URL.Path = r.URL.Path + basePath
+				}
+
+				if c.handlers, _, _ = root.find(r.URL.Path, c.params); c.handlers != nil {
+					c.handlers = l.redirect(r.Method)
+					goto END
+				}
+
+				// slow, but get's the job done
+				if l.handleMethodNotAllowed {
+
+					// fmt.Println("405:", r.URL.Path)
+					var methods []string
+
+					for m, tree := range l.trees {
+
+						if m != r.Method {
+							if c.handlers, _, _ = tree.find(r.URL.Path, c.params); c.handlers != nil {
+								// add methods
+								methods = append(methods, m)
+							}
+						}
+					}
+
+					if len(methods) > 0 {
+						c.Set("methods", methods)
+						c.handlers = l.http405
+						goto END
+					}
+				}
+			}
+
+			// lowercase, fix trailing 405....
+			c.handlers = l.notFound
+		} else {
+			// fmt.Println("found", r.URL.Path, r.Method, l.handleMethodNotAllowed)
+		}
+	} else {
+
+		// slow, but get's the job done
+		if l.handleMethodNotAllowed {
+
+			// fmt.Println("405:", r.URL.Path)
+			var methods []string
+
+			for m, tree := range l.trees {
+
+				if m != r.Method {
+					if c.handlers, _, _ = tree.find(r.URL.Path, c.params); c.handlers != nil {
+						// add methods
+						methods = append(methods, m)
+					}
+				}
+			}
+
+			if len(methods) > 0 {
+				c.Set("methods", methods)
+				c.handlers = l.http405
+				goto END
+			}
+		}
+
+		c.handlers = l.notFound
+	}
+
+END:
+
+	// fmt.Println("NEXT:", r.URL.Path, c.handlers == nil, c.handlers)
 	c.parent.Next()
 
 	c.parent.RequestComplete()
 	l.pool.Put(c)
 }
 
-// GetRouteMap returns an array of all registered routes
-func (l *LARS) GetRouteMap() []*RouteMap {
+// // GetRouteMap returns an array of all registered routes
+// func (l *LARS) GetRouteMap() []*RouteMap {
 
-	cn := l.router.tree
-	var routes []*RouteMap
+// 	cn := l.router.tree
+// 	var routes []*RouteMap
 
-	results := getNodeRoutes(cn, "/", 0)
-	if results != nil && len(results) > 0 {
-		routes = append(routes, results...)
-	}
+// 	results := getNodeRoutes(cn, "/", 0)
+// 	if results != nil && len(results) > 0 {
+// 		routes = append(routes, results...)
+// 	}
 
-	if cn.params != nil {
+// 	if cn.params != nil {
 
-		pn := cn.params
-		pPrefix := "/" + ":" + pn.param
+// 		pn := cn.params
+// 		pPrefix := "/" + ":" + pn.param
 
-		pResults := getNodeRoutes(pn, pPrefix, 1)
-		if pResults != nil && len(pResults) > 0 {
+// 		pResults := getNodeRoutes(pn, pPrefix, 1)
+// 		if pResults != nil && len(pResults) > 0 {
 
-			routes = append(routes, pResults...)
-		}
+// 			routes = append(routes, pResults...)
+// 		}
 
-		if pn.wild != nil {
+// 		if pn.wild != nil {
 
-			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 2)
-			if wResults != nil && len(wResults) > 0 {
+// 			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 2)
+// 			if wResults != nil && len(wResults) > 0 {
 
-				routes = append(routes, wResults...)
-			}
-		}
+// 				routes = append(routes, wResults...)
+// 			}
+// 		}
 
-		pResults = parseTree(pn, pPrefix+"/", 2)
-		if pResults != nil && len(pResults) > 0 {
-			routes = append(routes, pResults...)
-		}
+// 		pResults = parseTree(pn, pPrefix+"/", 2)
+// 		if pResults != nil && len(pResults) > 0 {
+// 			routes = append(routes, pResults...)
+// 		}
 
-	}
+// 	}
 
-	if cn.wild != nil {
-		wPrefix := "/" + "*"
+// 	if cn.wild != nil {
+// 		wPrefix := "/" + "*"
 
-		wResults := getNodeRoutes(cn.wild, wPrefix, 1)
-		if wResults != nil && len(wResults) > 0 {
-			routes = append(routes, wResults...)
-		}
-	}
+// 		wResults := getNodeRoutes(cn.wild, wPrefix, 1)
+// 		if wResults != nil && len(wResults) > 0 {
+// 			routes = append(routes, wResults...)
+// 		}
+// 	}
 
-	children := parseTree(cn, "/", 1)
-	if children != nil && len(children) > 0 {
-		routes = append(routes, children...)
-	}
+// 	children := parseTree(cn, "/", 1)
+// 	if children != nil && len(children) > 0 {
+// 		routes = append(routes, children...)
+// 	}
 
-	return routes
-}
+// 	return routes
+// }
 
-func parseTree(n *node, prefix string, depth int) []*RouteMap {
+// func parseTree(n *node, prefix string, depth int) []*RouteMap {
 
-	var routes []*RouteMap
-	i := 0
-	ordered := make([]string, len(n.static))
+// 	var routes []*RouteMap
+// 	i := 0
+// 	ordered := make([]string, len(n.static))
 
-	for k := range n.static {
-		ordered[i] = k
-		i++
-	}
+// 	for k := range n.static {
+// 		ordered[i] = k
+// 		i++
+// 	}
 
-	sort.Strings(ordered)
+// 	sort.Strings(ordered)
 
-	var key string
-	var nn *node
-	var newPrefix string
+// 	var key string
+// 	var nn *node
+// 	var newPrefix string
 
-	for i = 0; i < len(ordered); i++ {
-		key = ordered[i]
-		nn = n.static[ordered[i]]
-		newPrefix = prefix + key
+// 	for i = 0; i < len(ordered); i++ {
+// 		key = ordered[i]
+// 		nn = n.static[ordered[i]]
+// 		newPrefix = prefix + key
 
-		// static
-		results := getNodeRoutes(nn, newPrefix, depth)
-		if results != nil && len(results) > 0 {
-			routes = append(routes, results...)
-		}
+// 		// static
+// 		results := getNodeRoutes(nn, newPrefix, depth)
+// 		if results != nil && len(results) > 0 {
+// 			routes = append(routes, results...)
+// 		}
 
-		//params + params wild
-		if nn.params != nil {
+// 		//params + params wild
+// 		if nn.params != nil {
 
-			pn := nn.params
-			pPrefix := newPrefix + ":" + pn.param
+// 			pn := nn.params
+// 			pPrefix := newPrefix + ":" + pn.param
 
-			pResults := getNodeRoutes(pn, pPrefix, depth+1)
-			if pResults != nil && len(pResults) > 0 {
-				routes = append(routes, pResults...)
-			}
+// 			pResults := getNodeRoutes(pn, pPrefix, depth+1)
+// 			if pResults != nil && len(pResults) > 0 {
+// 				routes = append(routes, pResults...)
+// 			}
 
-			if pn.wild != nil {
+// 			if pn.wild != nil {
 
-				wResults := getNodeRoutes(pn.wild, pPrefix+"/*", depth+2)
-				if wResults != nil && len(wResults) > 0 {
-					routes = append(routes, wResults...)
-				}
-			}
+// 				wResults := getNodeRoutes(pn.wild, pPrefix+"/*", depth+2)
+// 				if wResults != nil && len(wResults) > 0 {
+// 					routes = append(routes, wResults...)
+// 				}
+// 			}
 
-			pResults = parseTree(pn, pPrefix+"/", depth+2)
-			if pResults != nil && len(pResults) > 0 {
-				routes = append(routes, pResults...)
-			}
+// 			pResults = parseTree(pn, pPrefix+"/", depth+2)
+// 			if pResults != nil && len(pResults) > 0 {
+// 				routes = append(routes, pResults...)
+// 			}
 
-		}
+// 		}
 
-		// wild
-		if nn.wild != nil {
-			wPrefix := newPrefix + "*"
+// 		// wild
+// 		if nn.wild != nil {
+// 			wPrefix := newPrefix + "*"
 
-			wResults := getNodeRoutes(nn.wild, wPrefix, depth+1)
-			if wResults != nil && len(wResults) > 0 {
-				routes = append(routes, wResults...)
-			}
-		}
+// 			wResults := getNodeRoutes(nn.wild, wPrefix, depth+1)
+// 			if wResults != nil && len(wResults) > 0 {
+// 				routes = append(routes, wResults...)
+// 			}
+// 		}
 
-		results = parseTree(nn, newPrefix, depth+1)
-		if results != nil && len(results) > 0 {
-			routes = append(routes, results...)
-		}
-	}
+// 		results = parseTree(nn, newPrefix, depth+1)
+// 		if results != nil && len(results) > 0 {
+// 			routes = append(routes, results...)
+// 		}
+// 	}
 
-	return routes
-}
+// 	return routes
+// }
 
-func getNodeRoutes(n *node, path string, depth int) []*RouteMap {
+// func getNodeRoutes(n *node, path string, depth int) []*RouteMap {
 
-	var routes []*RouteMap
-	var name string
+// 	var routes []*RouteMap
+// 	var name string
 
-	for _, r := range n.chains {
+// 	for _, r := range n.chains {
 
-		_, name = n.chains.find(r.method)
+// 		_, name = n.chains.find(r.method)
 
-		routes = append(routes, &RouteMap{
-			Depth:   depth,
-			Path:    path,
-			Method:  r.method,
-			Handler: name,
-		})
-	}
+// 		routes = append(routes, &RouteMap{
+// 			Depth:   depth,
+// 			Path:    path,
+// 			Method:  r.method,
+// 			Handler: name,
+// 		})
+// 	}
 
-	for _, r := range n.parmsSlashChains {
+// 	for _, r := range n.parmsSlashChains {
 
-		_, name = n.parmsSlashChains.find(r.method)
+// 		_, name = n.parmsSlashChains.find(r.method)
 
-		routes = append(routes, &RouteMap{
-			Depth:   depth,
-			Path:    path + "/",
-			Method:  r.method,
-			Handler: name,
-		})
-	}
+// 		routes = append(routes, &RouteMap{
+// 			Depth:   depth,
+// 			Path:    path + "/",
+// 			Method:  r.method,
+// 			Handler: name,
+// 		})
+// 	}
 
-	return routes
-}
+// 	return routes
+// }

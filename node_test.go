@@ -22,5 +22,5 @@ func TestAddChain(t *testing.T) {
 
 	l.Get("/home", func(Context) {})
 
-	PanicMatches(t, func() { l.Get("/home", func(Context) {}) }, "Duplicate Handler for method 'GET' with path '/home'")
+	PanicMatches(t, func() { l.Get("/home", func(Context) {}) }, "handlers are already registered for path '/home'")
 }

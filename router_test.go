@@ -7,8 +7,6 @@ import (
 	. "gopkg.in/go-playground/assert.v1"
 )
 
-// . "gopkg.in/go-playground/assert.v1"
-
 // NOTES:
 // - Run "go test" to run tests
 // - Run "gocov test | gocov report" to report on test converage by file
@@ -24,10 +22,10 @@ func TestDuplicateParams(t *testing.T) {
 
 	l := New()
 	l.Get("/store/:id", basicHandler)
-	PanicMatches(t, func() { l.Get("/store/:id/employee/:id", basicHandler) }, "Duplicate param name 'id' detected for route '/store/:id/employee/:id'")
+	PanicMatches(t, func() { l.Get("/store/:id/employee/:id", basicHandler) }, "Duplicate param name ':id' detected for route '/store/:id/employee/:id'")
 
 	l.Get("/company/:id/", basicHandler)
-	PanicMatches(t, func() { l.Get("/company/:id/employee/:id/", basicHandler) }, "Duplicate param name 'id' detected for route '/company/:id/employee/:id/'")
+	PanicMatches(t, func() { l.Get("/company/:id/employee/:id/", basicHandler) }, "Duplicate param name ':id' detected for route '/company/:id/employee/:id/'")
 }
 
 func TestWildcardParam(t *testing.T) {
