@@ -314,7 +314,6 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 			}
 
 			if len(n.path) > 0 && n.path[len(n.path)-1] == '/' {
-				// fmt.Println(n.path)
 				panic("catch-all conflicts with existing handle for the path segment root in path '" + fullPath + "'")
 			}
 
@@ -369,6 +368,7 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 // given path.
 func (n *node) find(path string, po Params) (handler HandlersChain, p Params, handlerName string) {
 
+	// origPath := path
 	p = po
 
 walk: // Outer loop for walking the tree
@@ -412,7 +412,6 @@ walk: // Outer loop for walking the tree
 					// 	p = make(PathParameters, 0, n.maxParams)
 					// }
 					i := len(p)
-					// fmt.Println(i, n.path[1:])
 					p = p[:i+1] // expand slice within preallocated capacity
 					p[i].Key = n.path[1:]
 					p[i].Value = path[:end]
@@ -461,8 +460,9 @@ walk: // Outer loop for walking the tree
 					handlerName = n.handler.handlerName
 					return
 
-				default:
-					panic("invalid node type")
+					// can't happen, but left here in case I'm wrong
+					// default:
+					// 	panic("invalid node type")
 				}
 			}
 
@@ -470,34 +470,15 @@ walk: // Outer loop for walking the tree
 
 			// We should have reached the node containing the handle.
 			// Check if this node has a handle registered.
-			if handler, handlerName = n.handler.chain, n.handler.handlerName; handler != nil {
-				return
-			}
 
-			if path == "/" && n.wildChild && n.nType != isRoot {
-				// tsr = true
-				return
-			}
-
-			// No handle found. Check if a handle for this path + a
-			// trailing slash exists for trailing slash recommendation
-			for i := 0; i < len(n.indices); i++ {
-				if n.indices[i] == '/' {
-					n = n.children[i]
-					// tsr = (len(n.path) == 1 && n.handler != nil) ||
-					// 	(n.nType == matchEverything && n.children[0].handler != nil)
+			if n.handler != nil {
+				if handler, handlerName = n.handler.chain, n.handler.handlerName; handler != nil {
 					return
 				}
 			}
-
-			return
 		}
 
-		// Nothing found. We can recommend to redirect to the same URL with an
-		// extra trailing slash if a leaf exists for that path
-		// tsr = (path == "/") ||
-		// 	(len(n.path) == len(path)+1 && n.path[len(path)] == '/' &&
-		// 		path == n.path[:len(n.path)-1] && n.handler != nil)
+		// Nothing found
 		return
 	}
 }

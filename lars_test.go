@@ -812,6 +812,38 @@ func TestMethodNotAllowed(t *testing.T) {
 
 	code, _ = request(POST, "/home/", l)
 	Equal(t, code, http.StatusNotFound)
+
+	l2 := New()
+	l2.SetHandle405MethodNotAllowed(true)
+
+	l2.Get("/user/", basicHandler)
+	l2.Head("/home/", basicHandler)
+
+	r, _ = http.NewRequest(GET, "/home/", nil)
+	w = httptest.NewRecorder()
+	l2.serveHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusMethodNotAllowed)
+
+	allow, ok = w.Header()["Allow"]
+
+	Equal(t, allow[0], HEAD)
+
+	// // Sometimes this array is out of order for whatever reason?
+	// if allow[0] == GET {
+	// 	Equal(t, ok, true)
+	// 	Equal(t, allow[0], GET)
+	// 	Equal(t, allow[1], HEAD)
+	// } else {
+	// 	Equal(t, ok, true)
+	// 	Equal(t, allow[1], GET)
+	// 	Equal(t, allow[0], HEAD)
+	// }
+
+	l2.SetHandle405MethodNotAllowed(false)
+
+	code, _ = request(GET, "/home/", l2)
+	Equal(t, code, http.StatusNotFound)
 }
 
 var mRoutes = map[string]int{
