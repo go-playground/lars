@@ -829,70 +829,10 @@ func TestMethodNotAllowed(t *testing.T) {
 
 	Equal(t, allow[0], HEAD)
 
-	// // Sometimes this array is out of order for whatever reason?
-	// if allow[0] == GET {
-	// 	Equal(t, ok, true)
-	// 	Equal(t, allow[0], GET)
-	// 	Equal(t, allow[1], HEAD)
-	// } else {
-	// 	Equal(t, ok, true)
-	// 	Equal(t, allow[1], GET)
-	// 	Equal(t, allow[0], HEAD)
-	// }
-
 	l2.SetHandle405MethodNotAllowed(false)
 
 	code, _ = request(GET, "/home/", l2)
 	Equal(t, code, http.StatusNotFound)
-}
-
-var mRoutes = map[string]int{
-	"/":                        0,
-	"/:id":                     1,
-	"/:id/test":                2,
-	"/:id/*":                   2,
-	"/user":                    1,
-	"/user/:id":                2,
-	"/admin/":                  1,
-	"/admin/:id/":              2,
-	"/admin/:id/*":             3,
-	"/assets/*":                2,
-	"/home/user":               2,
-	"/home/user/:id":           3,
-	"/home/user/:id/profile/*": 5,
-}
-
-func TestRouteMap(t *testing.T) {
-	// l := New()
-
-	// for k := range mRoutes {
-	// 	l.Get(k, basicHandler)
-	// }
-
-	// routes := l.GetRouteMap()
-	// var ok bool
-
-	// for _, r := range routes {
-
-	// 	_, ok = mRoutes[r.Path]
-
-	// 	Equal(t, ok, true)
-	// 	Equal(t, r.Depth, mRoutes[r.Path])
-	// 	Equal(t, r.Method, GET)
-	// 	MatchRegex(t, r.Handler, "^(.*/vendor/)?github.com/go-playground/lars.glob.func4$")
-	// }
-
-	// // next test must be separate, don't know why anyone would do this but it is possible
-	// l2 := New()
-	// l2.Get("/*", basicHandler)
-
-	// routes = l2.GetRouteMap()
-	// Equal(t, len(routes), 1)
-	// Equal(t, ok, true)
-	// Equal(t, routes[0].Path, "/*")
-	// Equal(t, routes[0].Depth, 1)
-	// Equal(t, routes[0].Method, GET)
-	// MatchRegex(t, routes[0].Handler, "^(.*/vendor/)?github.com/go-playground/lars.glob.func4$")
 }
 
 func TestRedirect(t *testing.T) {

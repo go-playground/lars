@@ -312,21 +312,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 					r.URL.Path = lc
 
-					var methods []string
-
-					for m, tree := range l.trees {
-
-						if m != r.Method {
-							if c.handlers, _, _ = tree.find(r.URL.Path, c.params); c.handlers != nil {
-								// add methods
-								methods = append(methods, m)
-							}
-						}
-					}
-
-					if len(methods) > 0 {
-						c.Set("methods", methods)
-						c.handlers = l.http405
+					if l.checkMethodNotAllowed(c) {
 						goto END
 					}
 				}
@@ -340,21 +326,7 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		// slow, but get's the job done
 		if l.handleMethodNotAllowed {
 
-			var methods []string
-
-			for m, tree := range l.trees {
-
-				if m != r.Method {
-					if c.handlers, _, _ = tree.find(r.URL.Path, c.params); c.handlers != nil {
-						// add methods
-						methods = append(methods, m)
-					}
-				}
-			}
-
-			if len(methods) > 0 {
-				c.Set("methods", methods)
-				c.handlers = l.http405
+			if l.checkMethodNotAllowed(c) {
 				goto END
 			}
 		}
@@ -368,4 +340,27 @@ END:
 	c.parent.RequestEnd()
 
 	l.pool.Put(c)
+}
+
+func (l *LARS) checkMethodNotAllowed(c *Ctx) (found bool) {
+
+	var methods []string
+
+	for m, tree := range l.trees {
+
+		if m != c.request.Method {
+			if c.handlers, _, _ = tree.find(c.request.URL.Path, c.params); c.handlers != nil {
+				// add methods
+				methods = append(methods, m)
+			}
+		}
+	}
+
+	if len(methods) > 0 {
+		c.Set("methods", methods)
+		c.handlers = l.http405
+		found = true
+	}
+
+	return
 }
