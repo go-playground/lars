@@ -404,8 +404,10 @@ walk: // Outer loop for walking the tree
 
 			// We should have reached the node containing the handle.
 			// Check if this node has a handle registered.
-			if handler, handlerName = n.handler.chain, n.handler.handlerName; handler != nil {
-				return
+			if n.handler != nil {
+				if handler, handlerName = n.handler.chain, n.handler.handlerName; handler != nil {
+					return
+				}
 			}
 		}
 
