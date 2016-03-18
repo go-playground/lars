@@ -101,3 +101,49 @@ func (l *LARS) wrapHandlerWithName(h Handler) (chain HandlerFunc, handlerName st
 	handlerName = runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
 	return
 }
+
+func (l *LARS) redirect(method string) (handlers HandlersChain) {
+
+	code := http.StatusMovedPermanently
+
+	if method != GET {
+		code = http.StatusTemporaryRedirect
+	}
+
+	fn := func(c Context) {
+		inCtx := c.BaseContext()
+		http.Redirect(inCtx.response, inCtx.request, inCtx.request.URL.String(), code)
+	}
+
+	hndlrs := make(HandlersChain, len(l.routeGroup.middleware)+1)
+	copy(hndlrs, l.routeGroup.middleware)
+	hndlrs[len(l.routeGroup.middleware)] = fn
+
+	handlers = hndlrs
+	return
+}
+
+func min(a, b int) int {
+
+	if a <= b {
+		return a
+	}
+	return b
+}
+
+func countParams(path string) uint8 {
+
+	var n uint // add one just as a buffer
+
+	for i := 0; i < len(path); i++ {
+		if path[i] == paramByte || path[i] == wildByte {
+			n++
+		}
+	}
+
+	if n >= 255 {
+		panic("too many parameters defined in path, max is 255")
+	}
+
+	return uint8(n)
+}

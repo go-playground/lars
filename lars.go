@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"sort"
+	"strings"
 	"sync"
 )
 
@@ -81,8 +81,8 @@ const (
 	blank    = ""
 
 	slashByte = '/'
-	colonByte = ':'
-	startByte = '*'
+	paramByte = ':'
+	wildByte  = '*'
 )
 
 // Handler is the type used in registering handlers.
@@ -110,7 +110,8 @@ type customHandlers map[reflect.Type]CustomHandlerFunc
 // LARS is the main routing instance
 type LARS struct {
 	routeGroup
-	router *Router
+	trees map[string]*node
+	// router *Router
 
 	// mostParams used to keep track of the most amount of
 	// params in any URL and this will set the default capacity
@@ -161,13 +162,13 @@ var (
 
 	methodNotAllowedHandler = func(c Context) {
 
-		m, _ := c.Get("methods")
-		methods := m.(chainMethods)
+		mth, _ := c.Get("methods")
+		methods := mth.([]string)
 
 		res := c.Response()
 
-		for _, k := range methods {
-			res.Header().Add("Allow", k.method)
+		for _, m := range methods {
+			res.Header().Add("Allow", m)
 		}
 
 		res.WriteHeader(http.StatusMethodNotAllowed)
@@ -181,6 +182,7 @@ func New() *LARS {
 		routeGroup: routeGroup{
 			middleware: make(HandlersChain, 0),
 		},
+		trees: make(map[string]*node),
 		contextFunc: func(l *LARS) Context {
 			return NewContext(l)
 		},
@@ -192,7 +194,7 @@ func New() *LARS {
 	}
 
 	l.routeGroup.lars = l
-	l.router = newRouter(l)
+	// l.router = newRouter(l)
 	l.pool.New = func() interface{} {
 
 		c := l.contextFunc(l)
@@ -271,170 +273,94 @@ func (l *LARS) Serve() http.Handler {
 func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	c := l.pool.Get().(*Ctx)
 
-	c.parent.Reset(w, r)
-	l.router.find(c, true)
-	c.parent.Next()
+	c.parent.RequestStart(w, r)
 
-	c.parent.RequestComplete()
-	l.pool.Put(c)
-}
+	if root := l.trees[r.Method]; root != nil {
 
-// GetRouteMap returns an array of all registered routes
-func (l *LARS) GetRouteMap() []*RouteMap {
+		if c.handlers, c.params, c.handlerName = root.find(r.URL.Path, c.params); c.handlers == nil {
 
-	cn := l.router.tree
-	var routes []*RouteMap
+			c.params = c.params[0:0]
 
-	results := getNodeRoutes(cn, "/", 0)
-	if results != nil && len(results) > 0 {
-		routes = append(routes, results...)
-	}
+			if l.redirectTrailingSlash {
 
-	if cn.params != nil {
+				// find again all lowercase
+				lc := strings.ToLower(r.URL.Path)
 
-		pn := cn.params
-		pPrefix := "/" + ":" + pn.param
+				if lc != r.URL.Path {
 
-		pResults := getNodeRoutes(pn, pPrefix, 1)
-		if pResults != nil && len(pResults) > 0 {
+					r.URL.Path = lc
 
-			routes = append(routes, pResults...)
-		}
+					if c.handlers, _, _ = root.find(r.URL.Path, c.params); c.handlers != nil {
+						c.handlers = l.redirect(r.Method)
+						goto END
+					}
+				}
 
-		if pn.wild != nil {
+				if r.URL.Path[len(r.URL.Path)-1:] == basePath {
+					r.URL.Path = r.URL.Path[:len(r.URL.Path)-1]
+				} else {
+					r.URL.Path = r.URL.Path + basePath
+				}
 
-			wResults := getNodeRoutes(pn.wild, pPrefix+"/*", 2)
-			if wResults != nil && len(wResults) > 0 {
+				if c.handlers, _, _ = root.find(r.URL.Path, c.params); c.handlers != nil {
+					c.handlers = l.redirect(r.Method)
+					goto END
+				}
 
-				routes = append(routes, wResults...)
-			}
-		}
+				// slow, but get's the job done
+				if l.handleMethodNotAllowed {
 
-		pResults = parseTree(pn, pPrefix+"/", 2)
-		if pResults != nil && len(pResults) > 0 {
-			routes = append(routes, pResults...)
-		}
+					r.URL.Path = lc
 
-	}
-
-	if cn.wild != nil {
-		wPrefix := "/" + "*"
-
-		wResults := getNodeRoutes(cn.wild, wPrefix, 1)
-		if wResults != nil && len(wResults) > 0 {
-			routes = append(routes, wResults...)
-		}
-	}
-
-	children := parseTree(cn, "/", 1)
-	if children != nil && len(children) > 0 {
-		routes = append(routes, children...)
-	}
-
-	return routes
-}
-
-func parseTree(n *node, prefix string, depth int) []*RouteMap {
-
-	var routes []*RouteMap
-	i := 0
-	ordered := make([]string, len(n.static))
-
-	for k := range n.static {
-		ordered[i] = k
-		i++
-	}
-
-	sort.Strings(ordered)
-
-	var key string
-	var nn *node
-	var newPrefix string
-
-	for i = 0; i < len(ordered); i++ {
-		key = ordered[i]
-		nn = n.static[ordered[i]]
-		newPrefix = prefix + key
-
-		// static
-		results := getNodeRoutes(nn, newPrefix, depth)
-		if results != nil && len(results) > 0 {
-			routes = append(routes, results...)
-		}
-
-		//params + params wild
-		if nn.params != nil {
-
-			pn := nn.params
-			pPrefix := newPrefix + ":" + pn.param
-
-			pResults := getNodeRoutes(pn, pPrefix, depth+1)
-			if pResults != nil && len(pResults) > 0 {
-				routes = append(routes, pResults...)
-			}
-
-			if pn.wild != nil {
-
-				wResults := getNodeRoutes(pn.wild, pPrefix+"/*", depth+2)
-				if wResults != nil && len(wResults) > 0 {
-					routes = append(routes, wResults...)
+					if l.checkMethodNotAllowed(c) {
+						goto END
+					}
 				}
 			}
 
-			pResults = parseTree(pn, pPrefix+"/", depth+2)
-			if pResults != nil && len(pResults) > 0 {
-				routes = append(routes, pResults...)
-			}
-
+			// lowercase, fix trailing 405....
+			c.handlers = l.notFound
 		}
+	} else {
 
-		// wild
-		if nn.wild != nil {
-			wPrefix := newPrefix + "*"
+		// slow, but get's the job done
+		if l.handleMethodNotAllowed {
 
-			wResults := getNodeRoutes(nn.wild, wPrefix, depth+1)
-			if wResults != nil && len(wResults) > 0 {
-				routes = append(routes, wResults...)
+			if l.checkMethodNotAllowed(c) {
+				goto END
 			}
 		}
 
-		results = parseTree(nn, newPrefix, depth+1)
-		if results != nil && len(results) > 0 {
-			routes = append(routes, results...)
-		}
+		c.handlers = l.notFound
 	}
 
-	return routes
+END:
+
+	c.parent.Next()
+	c.parent.RequestEnd()
+
+	l.pool.Put(c)
 }
 
-func getNodeRoutes(n *node, path string, depth int) []*RouteMap {
+func (l *LARS) checkMethodNotAllowed(c *Ctx) (found bool) {
 
-	var routes []*RouteMap
-	var name string
+	var methods []string
 
-	for _, r := range n.chains {
+	for m, tree := range l.trees {
 
-		_, name = n.chains.find(r.method)
-
-		routes = append(routes, &RouteMap{
-			Depth:   depth,
-			Path:    path,
-			Method:  r.method,
-			Handler: name,
-		})
+		if m != c.request.Method {
+			if c.handlers, _, _ = tree.find(c.request.URL.Path, c.params); c.handlers != nil {
+				// add methods
+				methods = append(methods, m)
+			}
+		}
 	}
 
-	for _, r := range n.parmsSlashChains {
-
-		_, name = n.parmsSlashChains.find(r.method)
-
-		routes = append(routes, &RouteMap{
-			Depth:   depth,
-			Path:    path + "/",
-			Method:  r.method,
-			Handler: name,
-		})
+	if len(methods) > 0 {
+		c.Set("methods", methods)
+		c.handlers = l.http405
+		found = true
 	}
 
-	return routes
+	return
 }

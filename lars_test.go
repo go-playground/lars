@@ -71,7 +71,7 @@ func TestFindOneOffs(t *testing.T) {
 	Equal(t, code, http.StatusMovedPermanently)
 	Equal(t, body, "<a href=\"/zombies/10/\">Moved Permanently</a>.\n\n")
 
-	PanicMatches(t, func() { l.Get("/zombies/:id/", basicHandler) }, "Duplicate Handler for method 'GET' with path '/zombies/:id/'")
+	PanicMatches(t, func() { l.Get("/zombies/:id/", basicHandler) }, "handlers are already registered for path '/zombies/:id/'")
 }
 
 func Testlars(t *testing.T) {
@@ -129,7 +129,7 @@ func TestlarsTwoParam(t *testing.T) {
 func TestRouterMatchAny(t *testing.T) {
 
 	l := New()
-	path1 := "/github/"
+	path1 := "/github"
 	path2 := "/github/*"
 	path3 := "/users/*"
 
@@ -145,7 +145,7 @@ func TestRouterMatchAny(t *testing.T) {
 		c.Response().Write([]byte(c.Request().URL.Path))
 	})
 
-	code, body := request(GET, "/github/", l)
+	code, body := request(GET, "/github", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, path1)
 
@@ -388,22 +388,22 @@ func TestBadAdd(t *testing.T) {
 	// bad existing params
 
 	l.Get("/user/:id", fn)
-	PanicMatches(t, func() { l.Get("/user/:user_id/profile", fn) }, "Different param names defined for path '/user/:user_id/profile', param 'user_id'' should be 'id'")
+	PanicMatches(t, func() { l.Get("/user/:user_id/profile", fn) }, "path segment ':user_id/profile' conflicts with existing wildcard ':id' in path '/user/:user_id/profile'")
 	l.Get("/user/:id/profile", fn)
 
 	l.Get("/admin/:id/profile", fn)
-	PanicMatches(t, func() { l.Get("/admin/:admin_id", fn) }, "Different param names defined for path '/admin/:admin_id', param 'admin_id'' should be 'id'")
+	PanicMatches(t, func() { l.Get("/admin/:admin_id", fn) }, "path segment ':admin_id' conflicts with existing wildcard ':id' in path '/admin/:admin_id'")
 
 	PanicMatches(t, func() { l.Get("/assets/*/test", fn) }, "Character after the * symbol is not permitted, path '/assets/*/test'")
 
 	l.Get("/superhero/*", fn)
-	PanicMatches(t, func() { l.Get("/superhero/:id", fn) }, "Cannot add url param 'id' for path '/superhero/:id', a conflicting wildcard path exists")
-	PanicMatches(t, func() { l.Get("/superhero/*", fn) }, "Wildcard already set by another path, current path '/superhero/*' conflicts")
-	PanicMatches(t, func() { l.Get("/superhero/:id/", fn) }, "Cannot add url param 'id' for path '/superhero/:id/', a conflicting wildcard path exists")
+	PanicMatches(t, func() { l.Get("/superhero/:id", fn) }, "path segment '/:id' conflicts with existing wildcard '/*' in path '/superhero/:id'")
+	PanicMatches(t, func() { l.Get("/superhero/*", fn) }, "handlers are already registered for path '/superhero/*'")
+	PanicMatches(t, func() { l.Get("/superhero/:id/", fn) }, "path segment '/:id/' conflicts with existing wildcard '/*' in path '/superhero/:id/'")
 
 	l.Get("/supervillain/:id", fn)
-	PanicMatches(t, func() { l.Get("/supervillain/*", fn) }, "Cannot add wildcard for path '/supervillain/*', a conflicting param path exists with param 'id'")
-	PanicMatches(t, func() { l.Get("/supervillain/:id", fn) }, "Duplicate Handler for method 'GET' with path '/supervillain/:id'")
+	PanicMatches(t, func() { l.Get("/supervillain/*", fn) }, "path segment '*' conflicts with existing wildcard ':id' in path '/supervillain/*'")
+	PanicMatches(t, func() { l.Get("/supervillain/:id", fn) }, "handlers are already registered for path '/supervillain/:id'")
 }
 
 func TestAddAllMethods(t *testing.T) {
@@ -662,12 +662,12 @@ func (c *myContext) BaseContext() *Ctx {
 	return c.Ctx
 }
 
-func (c *myContext) Reset(w http.ResponseWriter, r *http.Request) {
-	c.Ctx.Reset(w, r)
+func (c *myContext) RequestStart(w http.ResponseWriter, r *http.Request) {
+	c.Ctx.RequestStart(w, r)
 	c.text = "test"
 }
 
-func (c *myContext) RequestComplete() {
+func (c *myContext) RequestEnd() {
 	c.text = ""
 }
 
@@ -812,55 +812,27 @@ func TestMethodNotAllowed(t *testing.T) {
 
 	code, _ = request(POST, "/home/", l)
 	Equal(t, code, http.StatusNotFound)
-}
 
-var mRoutes = map[string]int{
-	"/":                        0,
-	"/:id":                     1,
-	"/:id/test":                2,
-	"/:id/*":                   2,
-	"/user":                    1,
-	"/user/:id":                2,
-	"/admin/":                  1,
-	"/admin/:id/":              2,
-	"/admin/:id/*":             3,
-	"/assets/*":                2,
-	"/home/user":               2,
-	"/home/user/:id":           3,
-	"/home/user/:id/profile/*": 5,
-}
-
-func TestRouteMap(t *testing.T) {
-	l := New()
-
-	for k := range mRoutes {
-		l.Get(k, basicHandler)
-	}
-
-	routes := l.GetRouteMap()
-	var ok bool
-
-	for _, r := range routes {
-
-		_, ok = mRoutes[r.Path]
-
-		Equal(t, ok, true)
-		Equal(t, r.Depth, mRoutes[r.Path])
-		Equal(t, r.Method, GET)
-		MatchRegex(t, r.Handler, "^(.*/vendor/)?github.com/go-playground/lars.glob.func4$")
-	}
-
-	// next test must be separate, don't know why anyone would do this but it is possible
 	l2 := New()
-	l2.Get("/*", basicHandler)
+	l2.SetHandle405MethodNotAllowed(true)
 
-	routes = l2.GetRouteMap()
-	Equal(t, len(routes), 1)
-	Equal(t, ok, true)
-	Equal(t, routes[0].Path, "/*")
-	Equal(t, routes[0].Depth, 1)
-	Equal(t, routes[0].Method, GET)
-	MatchRegex(t, routes[0].Handler, "^(.*/vendor/)?github.com/go-playground/lars.glob.func4$")
+	l2.Get("/user/", basicHandler)
+	l2.Head("/home/", basicHandler)
+
+	r, _ = http.NewRequest(GET, "/home/", nil)
+	w = httptest.NewRecorder()
+	l2.serveHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusMethodNotAllowed)
+
+	allow, ok = w.Header()["Allow"]
+
+	Equal(t, allow[0], HEAD)
+
+	l2.SetHandle405MethodNotAllowed(false)
+
+	code, _ = request(GET, "/home/", l2)
+	Equal(t, code, http.StatusNotFound)
 }
 
 func TestRedirect(t *testing.T) {

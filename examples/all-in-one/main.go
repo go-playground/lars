@@ -59,17 +59,18 @@ type MyContext struct {
 	AppContext *ApplicationGlobals
 }
 
-// Reset overriding
-func (mc *MyContext) Reset(w http.ResponseWriter, r *http.Request) {
+// RequestStart overriding
+func (mc *MyContext) RequestStart(w http.ResponseWriter, r *http.Request) {
 
 	// call lars context reset, must be done
-	mc.Ctx.Reset(w, r)
+	mc.Ctx.RequestStart(w, r)
 	mc.AppContext.Reset()
 }
 
-// RequestComplete overriding
-func (mc *MyContext) RequestComplete() {
+// RequestEnd overriding
+func (mc *MyContext) RequestEnd() {
 	mc.AppContext.Done()
+	mc.Ctx.RequestEnd()
 }
 
 func newContext(l *lars.LARS) lars.Context {
@@ -79,10 +80,20 @@ func newContext(l *lars.LARS) lars.Context {
 	}
 }
 
+func castCustomContext(c lars.Context, handler lars.Handler) {
+
+	// could do it in all one statement, but in long form for readability
+	h := handler.(func(*MyContext))
+	ctx := c.(*MyContext)
+
+	h(ctx)
+}
+
 func main() {
 
 	l := lars.New()
 	l.RegisterContext(newContext) // all gets cached in pools for you
+	l.RegisterCustomHandler(func(*MyContext) {}, castCustomContext)
 	l.Use(Logger)
 
 	l.Get("/", Home)
@@ -100,57 +111,49 @@ func main() {
 }
 
 // Home ...
-func Home(c lars.Context) {
-
-	ctx := c.(*MyContext)
+func Home(c *MyContext) {
 
 	var username string
 
-	// username = ctx.AppContext.DB.find(user by .....)
+	// username = c.AppContext.DB.find(user by .....)
 
-	ctx.AppContext.Log.Println("Found User")
+	c.AppContext.Log.Println("Found User")
 
 	c.Response().Write([]byte("Welcome Home " + username))
 }
 
 // Users ...
-func Users(c lars.Context) {
+func Users(c *MyContext) {
 
-	ctx := c.(*MyContext)
-
-	ctx.AppContext.Log.Println("In Users Function")
+	c.AppContext.Log.Println("In Users Function")
 
 	c.Response().Write([]byte("Users"))
 }
 
 // User ...
-func User(c lars.Context) {
-
-	ctx := c.(*MyContext)
+func User(c *MyContext) {
 
 	id := c.Param("id")
 
 	var username string
 
-	// username = ctx.AppContext.DB.find(user by id.....)
+	// username = c.AppContext.DB.find(user by id.....)
 
-	ctx.AppContext.Log.Println("Found User")
+	c.AppContext.Log.Println("Found User")
 
 	c.Response().Write([]byte("Welcome " + username + " with id " + id))
 }
 
 // UserProfile ...
-func UserProfile(c lars.Context) {
-
-	ctx := c.(*MyContext)
+func UserProfile(c *MyContext) {
 
 	id := c.Param("id")
 
 	var profile string
 
-	// profile = ctx.AppContext.DB.find(user profile by .....)
+	// profile = c.AppContext.DB.find(user profile by .....)
 
-	ctx.AppContext.Log.Println("Found User Profile")
+	c.AppContext.Log.Println("Found User Profile")
 
 	c.Response().Write([]byte("Here's your profile " + profile + " user " + id))
 }

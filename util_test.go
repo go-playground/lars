@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 	"testing"
 
 	. "gopkg.in/go-playground/assert.v1"
@@ -77,4 +78,15 @@ func TestOverridingResponseWriterNative(t *testing.T) {
 	code, body := request(GET, "/test", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "*lars.logResponseWritter")
+}
+
+func TestTooManyParams(t *testing.T) {
+	s := "/"
+
+	for i := 0; i < 256; i++ {
+		s += ":id" + strconv.Itoa(i)
+	}
+
+	l := New()
+	PanicMatches(t, func() { l.Get(s, func(c Context) {}) }, "too many parameters defined in path, max is 255")
 }

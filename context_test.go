@@ -148,7 +148,7 @@ func TestContext(t *testing.T) {
 	Equal(t, "-74.005941", vString[3])
 
 	// Reset
-	c.Reset(w, r)
+	c.RequestStart(w, r)
 
 	//Request
 	NotEqual(t, c.request, nil)
