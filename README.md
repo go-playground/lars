@@ -341,7 +341,4 @@ This package is inspired by the following
 
 License 
 --------
-This project is licensed unter MIT, for more information look into the LICENSE file.
-Copyright (c) 2016 Go Playground
-
-
+All source code is licensed under the [BSD License](https://raw.githubusercontent.com/go-playground/lars/master/LICENSE).
