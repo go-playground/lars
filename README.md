@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-2.0-green.svg)
+![Project status](https://img.shields.io/badge/version-2.1-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -13,7 +13,7 @@ Why Another HTTP Router?
 ------------------------
 Have you ever been painted into a corner by a framework, **ya me too!** and I've noticed that allot of routers out there, IMHO, are adding so much functionality that they are turning into Web Frameworks, (which is fine, frameworks are important) however, not at the expense of flexibility and configurability. So with no further ado, introducing LARS an HTTP router that can be your launching pad in creating a framework for your needs. How? Context is an interface [see example here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go), where you can add as little or much as you want or need and most importantly...under your control. ( I will be creating a full example app in the near future that can be used as a starting point for any project. )
 
-Unique Features 
+Key & Unique Features 
 --------------
 - [x] Context is an interface allowing passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
 - [x] Contains helpful logic to help prevent adding bad routes, keeping your url's consistent.
@@ -23,6 +23,7 @@ Unique Features
   * best part about this is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
 - [x] Full support for standard/native http Handler + HandlerFunc [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
   * When Parsing a form call Context's ParseForm amd ParseMulipartForm functions and the URL params will be added into the Form object, just like query parameters are, so no extra work
+- [x] lars uses a custom version of [httprouter](https://github.com/julienschmidt/httprouter)
 
 
 **Note:** Since this router has only explicit matches, you can not register static routes and parameters for the same path segment. For example you can not register the patterns /user/new and /user/:user for the same request method at the same time. The routing of different request methods is independent from each other. I was initially against this, and this router allowed it in a previous version, however it nearly cost me in a big app where the dynamic param value say :type actually could have matched another static route and that's just too dangerous, so it is no longer allowed.
@@ -293,9 +294,7 @@ Benchmarks
 -----------
 Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.6 darwin/amd64
 
-NOTE: you may have noticed the benchmark get a tiny bit slower since turning Context into an interface, but in the real world when
-using your own Context ( even if only for passing around globals ), there is a single pool that your objects are stored in so the
-small hit now will save you on the flip side in real world usage.
+NOTICE: lars uses a custom version of [httprouter](https://github.com/julienschmidt/httprouter)
 
 ```go
 go test -bench=. -benchmem=true
@@ -339,6 +338,7 @@ This package is inspired by the following
 - [echo](https://github.com/labstack/echo)
 - [gin](https://github.com/gin-gonic/gin)
 
-License 
+Licenses
 --------
-All source code is licensed under the [BSD License](https://raw.githubusercontent.com/go-playground/lars/master/LICENSE).
+[MIT License](https://raw.githubusercontent.com/go-playground/lars/master/LICENSE) (MIT), Copyright (c) 2015 Dean Karn
+[BSD License](https://raw.githubusercontent.com/julienschmidt/httprouter/master/LICENSE), Copyright (c) 2013 Julien Schmidt. All rights reserved.
