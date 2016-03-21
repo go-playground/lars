@@ -271,6 +271,18 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	code, body = request(GET, "/chain-handler", l6)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, "aok")
+
+	l7 := New()
+	l7.Get("/chain-handler", func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		w.Write([]byte("a"))
+		next.ServeHTTP(w, r)
+	}, func(c Context) {
+		c.Response().Write([]byte("ok"))
+	})
+
+	code, body = request(GET, "/chain-handler", l7)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "aok")
 }
 
 func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"runtime"
 )
 
-// NativeChainHandler is used in native handler chains
-// example using nosurf crsf middleware nosurf.NewPure(lars.NativeChainHandlerFunc)
+// NativeChainHandler is used in native handler chain middleware
+// example using nosurf crsf middleware nosurf.NewPure(lars.NativeChainHandler)
 var NativeChainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	c := GetContext(w)
@@ -73,7 +73,15 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 			}
 		}
 
-	case func(handler http.Handler) http.Handler:
+	case func(http.ResponseWriter, *http.Request, http.Handler):
+
+		return func(c Context) {
+			ctx := c.BaseContext()
+
+			h(ctx.response, ctx.request, NativeChainHandler)
+		}
+
+	case func(http.Handler) http.Handler:
 
 		hf := h(NativeChainHandler)
 
