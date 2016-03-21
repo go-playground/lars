@@ -827,6 +827,7 @@ func TestMethodNotAllowed(t *testing.T) {
 
 	allow, ok = w.Header()["Allow"]
 
+	Equal(t, ok, true)
 	Equal(t, allow[0], HEAD)
 
 	l2.SetHandle405MethodNotAllowed(false)
