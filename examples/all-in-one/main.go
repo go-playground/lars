@@ -63,14 +63,15 @@ type MyContext struct {
 func (mc *MyContext) RequestStart(w http.ResponseWriter, r *http.Request) {
 
 	// call lars context reset, must be done
-	mc.Ctx.RequestStart(w, r)
+
+	mc.Ctx.RequestStart(w, r) // MUST be called!
 	mc.AppContext.Reset()
 }
 
 // RequestEnd overriding
 func (mc *MyContext) RequestEnd() {
 	mc.AppContext.Done()
-	mc.Ctx.RequestEnd()
+	mc.Ctx.RequestEnd() // MUST be called!
 }
 
 func newContext(l *lars.LARS) lars.Context {
