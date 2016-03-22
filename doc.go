@@ -1,6 +1,7 @@
 /*
 Package lars - Library Access/Retrieval System, is a fast radix-tree based, zero allocation, HTTP router for Go.
 
+
 Usage
 
 Below is a simple example, for a full example see here https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go
@@ -17,8 +18,8 @@ Below is a simple example, for a full example see here https://github.com/go-pla
 	func main() {
 
 		l := lars.New()
-		l.Use(mw.LoggingAndRecovery) // LoggingAndRecovery is just an example copy paste and modify to your needs
-
+		l.Use(mw.LoggingAndRecovery) // LoggingAndRecovery is just an example copy
+									 // paste and modify to your needs
 		l.Get("/", HelloWorld)
 
 		http.ListenAndServe(":3007", l.Serve())
@@ -34,18 +35,27 @@ Below is a simple example, for a full example see here https://github.com/go-pla
 
 URL Params
 
+example param usage
+
 	l := l.New()
 	l.Get("/user/:id", UserHandler)
-	l.Get("/static/*", http.FileServer(http.Dir("static/"))) // serve css, js etc.. c.Param(lars.WildcardParam) will return the
-								 // remaining path if you need to use it in a custom handler...
 
-	NOTE: Since this router has only explicit matches, you can not register static routes and parameters for the same path segment.
-	For example you can not register the patterns /user/new and /user/:user for the same request method at the same time.
-	The routing of different request methods is independent from each other. I was initially against this, and this router allowed
-	it in a previous version, however it nearly cost me in a big app where the dynamic param value say :type actually could have matched
-	another static route and that's just too dangerous, so it is no longer allowed.
+	// serve css, js etc.. c.Param(lars.WildcardParam) will return the
+	// remaining path if you need to use it in a custom handler...
+	l.Get("/static/*", http.FileServer(http.Dir("static/")))
+
+	NOTE: Since this router has only explicit matches, you can not register static routes
+	and parameters for the same path segment. For example you can not register the patterns
+	/user/new and /user/:user for the same request method at the same time. The routing of
+	different request methods is independent from each other. I was initially against this,
+	and this router allowed it in a previous version, however it nearly cost me in a big
+	app where the dynamic param value say :type actually could have matched another static
+	route and that's just too dangerous, so it is no longer allowed.
+
 
 Groups
+
+example group definitions
 
 	...
 	l.Use(LoggingAndRecovery)
@@ -61,7 +71,8 @@ Groups
 	contactInfo := user.Group("/contact-info/:ciid")
 	contactinfo.Delete("/delete", ...)
 
-	// creates a group for others + inherits all middleware registered using l.Use() + adds OtherHandler to middleware
+	// creates a group for others + inherits all middleware registered using l.Use() +
+	// adds OtherHandler to middleware
 	others := l.Group("/others", OtherHandler)
 
 	// creates a group for admin WITH NO MIDDLEWARE... more can be added using admin.Use()
@@ -69,7 +80,11 @@ Groups
 	admin.Use(SomeAdminSecurityMiddleware)
 	...
 
-Custom Context + Avoid Type Casting / Custom Handlers
+
+Custom Context - Avoid Type Casting - Custom Handlers
+
+
+example context + custom handlers
 
 	...
 	// MyContext is a custom context
@@ -92,7 +107,8 @@ Custom Context + Avoid Type Casting / Custom Handlers
 		mc.Ctx.RequestEnd() // MUST be called!
 	}
 
-	// CustomContextFunction is a function that is specific to your applications needs that you added
+	// CustomContextFunction is a function that is specific to your applications
+	// needs that you added
 	func (mc *MyContext) CustomContextFunction() {
 		// do something
 	}
@@ -105,7 +121,8 @@ Custom Context + Avoid Type Casting / Custom Handlers
 		}
 	}
 
-	// casts custom context and calls you custom handler so you don;t have to type cast lars.Context everywhere
+	// casts custom context and calls you custom handler so you don't have to
+	// type cast lars.Context everywhere
 	func castCustomContext(c lars.Context, handler lars.Handler) {
 
 		// could do it in all one statement, but in long form for readability
@@ -127,8 +144,8 @@ Custom Context + Avoid Type Casting / Custom Handlers
 		http.ListenAndServe(":3007", l.Serve())
 	}
 
-	// Home ...notice the receiver is *MyContext, castCustomContext handled the type casting for us
-	// quite the time saver if you ask me.
+	// Home ...notice the receiver is *MyContext, castCustomContext handled the
+	// type casting for us; quite the time saver if you ask me.
 	func Home(c *MyContext) {
 
 		c.CustomContextFunction()
@@ -137,9 +154,12 @@ Custom Context + Avoid Type Casting / Custom Handlers
 
 Misc
 
+misc examples and noteworthy features
+
 	...
-	// can register multiple handlers, the last is considered the last in the chain and others
-	// considered middleware, but just for this route and not added to middleware like l.Use() does.
+	// can register multiple handlers, the last is considered the last in the chain and
+	// others considered middleware, but just for this route and not added to middleware
+	// like l.Use() does.
 	l.Get(/"home", AdditionalHandler, HomeHandler)
 
 	// set custom 404 ( not Found ) handler
@@ -154,11 +174,21 @@ Misc
 	// register custom context
 	l.RegisterContext(ContextFunc)
 
-	// Register custom handler type, see util.go https://github.com/go-playground/lars/blob/master/util.go#L62 for example handler creation
+	// Register custom handler type, see util.go
+	// https://github.com/go-playground/lars/blob/master/util.go#L62 for example handler
+	// creation
 	l.RegisterCustomHandler(interface{}, CustomHandlerFunc)
 
-	// Context has 2 methods of which you should be aware of ParseForm and ParseMulipartForm, they just call the default http functions but
-	// provide one more additional feature, they copy the URL params to the request Forms variables, just like Query parameters would have been.
-	// The functions are for convenience and are totally optional.
+	// NativeChainHandler is used as a helper to create your own custom handlers, or use
+	// custom handlers that already exist an example usage can be found here
+	// https://github.com/go-playground/lars/blob/master/util.go#L86, below is an example
+	// using nosurf CSRF middleware
+	l.Use(nosurf.NewPure(lars.NativeChainHandler))
+
+	// Context has 2 methods of which you should be aware of ParseForm and
+	// ParseMulipartForm, they just call the default http functions but provide one more
+	// additional feature, they copy the URL params to the request Forms variables, just
+	// like Query parameters would have been. The functions are for convenience and are
+	// totally optional.
 */
 package lars
