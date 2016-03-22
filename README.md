@@ -193,6 +193,10 @@ l.RegisterContext(ContextFunc)
 
 // Register custom handler type, see [util.go](https://github.com/go-playground/lars/blob/master/util.go#L62) for example handler creation
 l.RegisterCustomHandler(interface{}, CustomHandlerFunc)
+
+// Context has 2 methods of which you should be aware of ParseForm and ParseMulipartForm, they just call the default http functions but
+// provide one more additional feature, they copy the URL params to the request Forms variables, just like Query parameters would have been.
+// The functions are for convenience and are totally optional.
 ```
 
 Middleware
