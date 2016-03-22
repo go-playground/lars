@@ -178,6 +178,21 @@ Misc
 // can register multiple handlers, the last is considered the last in the chain and others 
 // considered middleware, but just for this route and not added to middleware like l.Use() does.
 l.Get(/"home", AdditionalHandler, HomeHandler)
+
+// set custom 404 ( not Found ) handler
+l.Register404(404Handler)
+
+// Redirect to or from ending slash if route not found, default is true
+l.SetRedirectTrailingSlash(true)
+
+// Handle 405 ( Method Not allowed ), default is false
+l.SetHandle405MethodNotAllowed(false)
+
+// register custom context
+l.RegisterContext(ContextFunc)
+
+// Register custom handler type, see [util.go](https://github.com/go-playground/lars/blob/master/util.go#L62) for example handler creation
+l.RegisterCustomHandler(interface{}, CustomHandlerFunc)
 ```
 
 Middleware
