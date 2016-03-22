@@ -58,6 +58,9 @@ func main() {
 // HelloWorld ...
 func HelloWorld(c lars.Context) {
 	c.Response().Write([]byte("Hello World"))
+
+	// this will also work, Response() complies with http.ResponseWriter interface
+	fmt.Fprint(c.Response(), "Hello World")
 }
 ```
 
