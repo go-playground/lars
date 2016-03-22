@@ -171,6 +171,15 @@ func Home(c *MyContext) {
 }
 ```
 
+Misc
+-----
+```go
+...
+// can register multiple handlers, the last is considered the last in the chain and others 
+// considered middleware, but just for this route and not added to middleware like l.Use() does.
+l.Get(/"home", AdditionalHandler, HomeHandler)
+```
+
 Middleware
 -----------
 There are some pre-defined middlewares within the middleware folder; NOTE: that the middleware inside will
