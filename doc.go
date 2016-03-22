@@ -19,7 +19,7 @@ Below is a simple example, for a full example see here https://github.com/go-pla
 
 		l := lars.New()
 		l.Use(mw.LoggingAndRecovery) // LoggingAndRecovery is just an example copy
-									 // paste and modify to your needs
+					     // paste and modify to your needs
 		l.Get("/", HelloWorld)
 
 		http.ListenAndServe(":3007", l.Serve())
