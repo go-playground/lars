@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
@@ -60,6 +61,7 @@ type Ctx struct {
 	formParsed          bool
 	multipartFormParsed bool
 	parent              Context
+	m                   *sync.RWMutex
 }
 
 var _ context.Context = &Ctx{}
@@ -178,17 +180,26 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 // Set is used to store a new key/value pair exclusivelly for thisContext.
 // It also lazy initializes  c.Keys if it was not used previously.
 func (c *Ctx) Set(key string, value interface{}) {
+
 	if c.store == nil {
+		c.m = new(sync.RWMutex)
+		c.m.Lock()
 		c.store = make(store)
+	} else {
+		c.m.Lock()
 	}
+
 	c.store[key] = value
+	c.m.Unlock()
 }
 
 // Get returns the value for the given key, ie: (value, true).
 // If the value does not exists it returns (nil, false)
 func (c *Ctx) Get(key string) (value interface{}, exists bool) {
 	if c.store != nil {
+		c.m.RLock()
 		value, exists = c.store[key]
+		c.m.RUnlock()
 	}
 	return
 }

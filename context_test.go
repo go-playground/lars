@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync"
 	"testing"
 
 	. "gopkg.in/go-playground/assert.v1"
@@ -107,6 +108,7 @@ func TestContext(t *testing.T) {
 	}
 
 	c.params = varParams
+	c.m = new(sync.RWMutex)
 	c.store = storeMap
 	c.request = r
 
