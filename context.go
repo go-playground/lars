@@ -182,7 +182,11 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 func (c *Ctx) Set(key string, value interface{}) {
 
 	if c.store == nil {
-		c.m = new(sync.RWMutex)
+
+		if c.m == nil {
+			c.m = new(sync.RWMutex)
+		}
+
 		c.m.Lock()
 		c.store = make(store)
 	} else {
