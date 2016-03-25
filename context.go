@@ -1,6 +1,8 @@
 package lars
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"io"
 	"net"
 	"net/http"
@@ -42,6 +44,13 @@ type Context interface {
 	AcceptedLanguages(lowercase bool) []string
 	HandlerName() string
 	Stream(step func(w io.Writer) bool)
+	JSON(int, interface{}) error
+	JSONBytes(int, []byte) error
+	JSONP(int, interface{}, string) error
+	XML(int, interface{}) error
+	XMLBytes(int, []byte) error
+	Text(int, string) error
+	TextBytes(int, []byte) error
 	Attachment(r io.Reader, filename string) (err error)
 	Inline(r io.Reader, filename string) (err error)
 	BaseContext() *Ctx
@@ -214,6 +223,89 @@ func (c *Ctx) Get(key string) (value interface{}, exists bool) {
 func (c *Ctx) Next() {
 	c.index++
 	c.handlers[c.index](c.parent)
+}
+
+// http response helpers
+
+// JSON marshals provided interface + returns JSON + status code
+func (c *Ctx) JSON(code int, i interface{}) (err error) {
+
+	b, err := json.Marshal(i)
+	if err != nil {
+		return err
+	}
+
+	return c.JSONBytes(code, b)
+}
+
+// JSONBytes returns provided JSON response with status code
+func (c *Ctx) JSONBytes(code int, b []byte) (err error) {
+
+	c.response.Header().Set(ContentType, ApplicationJSONCharsetUTF8)
+	c.response.WriteHeader(code)
+	_, err = c.response.Write(b)
+	return
+}
+
+// JSONP sends a JSONP response with status code and uses `callback` to construct
+// the JSONP payload.
+func (c *Ctx) JSONP(code int, i interface{}, callback string) (err error) {
+
+	b, e := json.Marshal(i)
+	if e != nil {
+		err = e
+		return
+	}
+
+	c.response.Header().Set(ContentType, ApplicationJavaScriptCharsetUTF8)
+	c.response.WriteHeader(code)
+
+	if _, err = c.response.Write([]byte(callback + "(")); err == nil {
+
+		if _, err = c.response.Write(b); err == nil {
+			_, err = c.response.Write([]byte(");"))
+		}
+	}
+
+	return
+}
+
+// XML marshals provided interface + returns XML + status code
+func (c *Ctx) XML(code int, i interface{}) error {
+
+	b, err := xml.Marshal(i)
+	if err != nil {
+		return err
+	}
+
+	return c.XMLBytes(code, b)
+}
+
+// XMLBytes returns provided XML response with status code
+func (c *Ctx) XMLBytes(code int, b []byte) (err error) {
+
+	c.response.Header().Set(ContentType, ApplicationXMLCharsetUTF8)
+	c.response.WriteHeader(code)
+
+	if _, err = c.response.Write([]byte(xml.Header)); err == nil {
+		_, err = c.response.Write(b)
+	}
+
+	return
+}
+
+// Text returns the provided string with status code
+func (c *Ctx) Text(code int, s string) error {
+	return c.TextBytes(code, []byte(s))
+}
+
+// TextBytes returns the provided response with status code
+func (c *Ctx) TextBytes(code int, b []byte) (err error) {
+
+	c.response.Header().Set(ContentType, TextPlainCharsetUTF8)
+	c.response.WriteHeader(code)
+	_, err = c.response.Write(b)
+	return
 }
 
 // http request helpers

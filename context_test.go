@@ -1,6 +1,7 @@
 package lars
 
 import (
+	"encoding/xml"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -500,4 +501,117 @@ func TestAcceptedLanguages(t *testing.T) {
 	languages = c.AcceptedLanguages(false)
 
 	Equal(t, languages, []string{})
+}
+
+type zombie struct {
+	ID   int    `json:"id"   xml:"id"`
+	Name string `json:"name" xml:"name"`
+}
+
+func TestXML(t *testing.T) {
+	xmlData := `<zombie><id>1</id><name>Patient Zero</name></zombie>`
+
+	l := New()
+	l.Get("/xml", func(c Context) {
+		c.XML(http.StatusOK, zombie{1, "Patient Zero"})
+	})
+	l.Get("/badxml", func(c Context) {
+		if err := c.XML(http.StatusOK, func() {}); err != nil {
+			http.Error(c.Response(), err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	hf := l.Serve()
+
+	r, _ := http.NewRequest(GET, "/xml", nil)
+	w := httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentType), ApplicationXMLCharsetUTF8)
+	Equal(t, w.Body.String(), xml.Header+xmlData)
+
+	r, _ = http.NewRequest(GET, "/badxml", nil)
+	w = httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusInternalServerError)
+	Equal(t, w.Header().Get(ContentType), TextPlainCharsetUTF8)
+	Equal(t, w.Body.String(), "xml: unsupported type: func()\n")
+}
+
+func TestJSON(t *testing.T) {
+	jsonData := `{"id":1,"name":"Patient Zero"}`
+	callbackFunc := "CallbackFunc"
+
+	l := New()
+	l.Get("/json", func(c Context) {
+		c.JSON(http.StatusOK, zombie{1, "Patient Zero"})
+	})
+	l.Get("/badjson", func(c Context) {
+		if err := c.JSON(http.StatusOK, func() {}); err != nil {
+			http.Error(c.Response(), err.Error(), http.StatusInternalServerError)
+		}
+	})
+	l.Get("/jsonp", func(c Context) {
+		c.JSONP(http.StatusOK, zombie{1, "Patient Zero"}, callbackFunc)
+	})
+	l.Get("/badjsonp", func(c Context) {
+		if err := c.JSONP(http.StatusOK, func() {}, callbackFunc); err != nil {
+			http.Error(c.Response(), err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	hf := l.Serve()
+
+	r, _ := http.NewRequest(GET, "/json", nil)
+	w := httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentType), ApplicationJSONCharsetUTF8)
+	Equal(t, w.Body.String(), jsonData)
+
+	r, _ = http.NewRequest(GET, "/badjson", nil)
+	w = httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusInternalServerError)
+	Equal(t, w.Header().Get(ContentType), TextPlainCharsetUTF8)
+	Equal(t, w.Body.String(), "json: unsupported type: func()\n")
+
+	r, _ = http.NewRequest(GET, "/jsonp", nil)
+	w = httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentType), ApplicationJavaScriptCharsetUTF8)
+	Equal(t, w.Body.String(), callbackFunc+"("+jsonData+");")
+
+	r, _ = http.NewRequest(GET, "/badjsonp", nil)
+	w = httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusInternalServerError)
+	Equal(t, w.Header().Get(ContentType), TextPlainCharsetUTF8)
+	Equal(t, w.Body.String(), "json: unsupported type: func()\n")
+}
+
+func TestText(t *testing.T) {
+	txtData := `OMG I'm infected! #zombie`
+
+	l := New()
+	l.Get("/text", func(c Context) {
+		c.Text(http.StatusOK, txtData)
+	})
+
+	hf := l.Serve()
+
+	r, _ := http.NewRequest(GET, "/text", nil)
+	w := httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, w.Header().Get(ContentType), TextPlainCharsetUTF8)
+	Equal(t, w.Body.String(), txtData)
 }
