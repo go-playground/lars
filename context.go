@@ -146,7 +146,7 @@ func (c *Ctx) ParseForm() error {
 	}
 
 	for _, entry := range c.params {
-		c.request.Form[entry.Key] = []string{entry.Value}
+		c.request.Form.Add(entry.Key, entry.Value)
 	}
 
 	c.formParsed = true
@@ -169,7 +169,7 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 	}
 
 	for _, entry := range c.params {
-		c.request.Form[entry.Key] = []string{entry.Value}
+		c.request.Form.Add(entry.Key, entry.Value)
 	}
 
 	c.multipartFormParsed = true
