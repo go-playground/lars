@@ -894,6 +894,41 @@ func TestRedirect(t *testing.T) {
 	Equal(t, code, http.StatusNotFound)
 }
 
+func TestAutomaticallyHandleOPTIONS(t *testing.T) {
+
+	l := New()
+	l.SetAutomaticallyHandleOPTIONS(true)
+	l.Get("/home", func(c Context) {})
+	l.Post("/home", func(c Context) {})
+	l.Delete("/user", func(c Context) {})
+	l.Options("/other", func(c Context) {})
+
+	code, _ := request(GET, "/home", l)
+	Equal(t, code, http.StatusOK)
+
+	r, _ := http.NewRequest(OPTIONS, "/home", nil)
+	w := httptest.NewRecorder()
+	l.serveHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+
+	allow, ok := w.Header()["Allow"]
+
+	Equal(t, ok, true)
+	Equal(t, len(allow), 3)
+
+	r, _ = http.NewRequest(OPTIONS, "*", nil)
+	w = httptest.NewRecorder()
+	l.serveHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+
+	allow, ok = w.Header()["Allow"]
+
+	Equal(t, ok, true)
+	Equal(t, len(allow), 4)
+}
+
 type closeNotifyingRecorder struct {
 	*httptest.ResponseRecorder
 	closed chan bool

@@ -188,6 +188,10 @@ l.SetRedirectTrailingSlash(true)
 // Handle 405 ( Method Not allowed ), default is false
 l.SetHandle405MethodNotAllowed(false)
 
+// automatically handle OPTION requests; manually configured
+// OPTION handlers take precedence. default true
+l.SetAutomaticallyHandleOPTIONS(set bool)
+
 // register custom context
 l.RegisterContext(ContextFunc)
 
@@ -225,34 +229,34 @@ NOTICE: lars uses a custom version of [httprouter](https://github.com/julienschm
 ```go
 go test -bench=. -benchmem=true
 #GithubAPI Routes: 203
-   LARS: 49016 Bytes
+   LARS: 49040 Bytes
 
 #GPlusAPI Routes: 13
-   LARS: 3624 Bytes
+   LARS: 3648 Bytes
 
 #ParseAPI Routes: 26
-   LARS: 6616 Bytes
+   LARS: 6640 Bytes
 
 #Static Routes: 157
-   LARS: 30104 Bytes
+   LARS: 30128 Bytes
 
 PASS
-BenchmarkLARS_Param       	20000000	        75.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5      	10000000	       126 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20     	 5000000	       311 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite  	10000000	       144 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubStatic	20000000	       101 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam 	10000000	       154 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll   	   50000	     33295 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic 	20000000	        72.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam  	20000000	        99.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params	10000000	       124 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll    	 1000000	      1640 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic 	20000000	        73.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam  	20000000	        79.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params	20000000	        97.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll    	  500000	      2974 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll   	   50000	     23641 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param       	20000000	        77.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param5      	10000000	       134 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param20     	 5000000	       320 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParamWrite  	10000000	       142 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubStatic	20000000	        96.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubParam 	10000000	       156 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GithubAll   	   50000	     32952 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusStatic 	20000000	        72.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusParam  	20000000	        98.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlus2Params	10000000	       127 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_GPlusAll    	 1000000	      1619 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseStatic 	20000000	        72.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseParam  	20000000	        78.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Parse2Params	20000000	        96.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_ParseAll    	  500000	      2968 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_StaticAll   	  100000	     22810 ns/op	       0 B/op	       0 allocs/op
 ```
 
 Package Versioning

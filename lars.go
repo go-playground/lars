@@ -72,6 +72,7 @@ const (
 	WWWAuthenticate    = "WWW-Authenticate"
 	XForwardedFor      = "X-Forwarded-For"
 	XRealIP            = "X-Real-Ip"
+	Allow              = "Allow"
 
 	Gzip = "gzip"
 
@@ -126,7 +127,8 @@ type LARS struct {
 	http404 HandlersChain // 404 Not Found
 	http405 HandlersChain // 405 Method Not Allowed
 
-	notFound HandlersChain
+	automaticOPTIONS HandlersChain
+	notFound         HandlersChain
 
 	customHandlersFuncs customHandlers
 
@@ -144,6 +146,10 @@ type LARS struct {
 	// If no other Method is allowed, the request is delegated to the NotFound
 	// handler.
 	handleMethodNotAllowed bool
+
+	// if enabled automatically handles OPTION requests; manually configured OPTION
+	// handlers take precidence. default true
+	automaticallyHandleOPTIONS bool
 }
 
 // RouteMap contains a single routes full path
@@ -161,17 +167,11 @@ var (
 	}
 
 	methodNotAllowedHandler = func(c Context) {
+		c.Response().WriteHeader(http.StatusMethodNotAllowed)
+	}
 
-		mth, _ := c.Get("methods")
-		methods := mth.([]string)
-
-		res := c.Response()
-
-		for _, m := range methods {
-			res.Header().Add("Allow", m)
-		}
-
-		res.WriteHeader(http.StatusMethodNotAllowed)
+	automaticOPTIONSHandler = func(c Context) {
+		c.Response().WriteHeader(http.StatusOK)
 	}
 )
 
@@ -186,11 +186,12 @@ func New() *LARS {
 		contextFunc: func(l *LARS) Context {
 			return NewContext(l)
 		},
-		mostParams:             0,
-		http404:                []HandlerFunc{default404Handler},
-		http405:                []HandlerFunc{methodNotAllowedHandler},
-		redirectTrailingSlash:  true,
-		handleMethodNotAllowed: false,
+		mostParams:                 0,
+		http404:                    []HandlerFunc{default404Handler},
+		http405:                    []HandlerFunc{methodNotAllowedHandler},
+		redirectTrailingSlash:      true,
+		handleMethodNotAllowed:     false,
+		automaticallyHandleOPTIONS: true,
 	}
 
 	l.routeGroup.lars = l
@@ -241,6 +242,13 @@ func (l *LARS) Register404(notFound ...Handler) {
 	l.http404 = chain
 }
 
+// SetAutomaticallyHandleOPTIONS tells lars whether to
+// automatically handle OPTION requests; manually configured
+// OPTION handlers take precedence. default true
+func (l *LARS) SetAutomaticallyHandleOPTIONS(set bool) {
+	l.automaticallyHandleOPTIONS = set
+}
+
 // SetRedirectTrailingSlash tells lars whether to try
 // and fix a URL by trying to find it
 // lowercase -> with or without slash -> 404
@@ -265,6 +273,12 @@ func (l *LARS) Serve() http.Handler {
 	copy(l.notFound, l.middleware)
 	copy(l.notFound[len(l.middleware):], l.http404)
 
+	if l.automaticallyHandleOPTIONS {
+		l.automaticOPTIONS = make(HandlersChain, len(l.middleware)+1)
+		copy(l.automaticOPTIONS, l.middleware)
+		copy(l.automaticOPTIONS[len(l.middleware):], []HandlerFunc{automaticOPTIONSHandler})
+	}
+
 	return http.HandlerFunc(l.serveHTTP)
 }
 
@@ -280,58 +294,52 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 			c.params = c.params[0:0]
 
-			if l.redirectTrailingSlash {
+			if l.redirectTrailingSlash && len(r.URL.Path) > 1 {
 
 				// find again all lowercase
 				lc := strings.ToLower(r.URL.Path)
 
 				if lc != r.URL.Path {
 
-					r.URL.Path = lc
-
-					if c.handlers, _, _ = root.find(r.URL.Path, c.params); c.handlers != nil {
+					if c.handlers, _, _ = root.find(lc, c.params); c.handlers != nil {
+						r.URL.Path = lc
 						c.handlers = l.redirect(r.Method)
 						goto END
 					}
 				}
 
-				if r.URL.Path[len(r.URL.Path)-1:] == basePath {
-					r.URL.Path = r.URL.Path[:len(r.URL.Path)-1]
+				if lc[len(lc)-1:] == basePath {
+					lc = lc[:len(lc)-1]
 				} else {
-					r.URL.Path = r.URL.Path + basePath
+					lc = lc + basePath
 				}
 
-				if c.handlers, _, _ = root.find(r.URL.Path, c.params); c.handlers != nil {
+				if c.handlers, _, _ = root.find(lc, c.params); c.handlers != nil {
+					r.URL.Path = lc
 					c.handlers = l.redirect(r.Method)
 					goto END
 				}
-
-				// slow, but get's the job done
-				if l.handleMethodNotAllowed {
-
-					r.URL.Path = lc
-
-					if l.checkMethodNotAllowed(c) {
-						goto END
-					}
-				}
 			}
 
-			// lowercase, fix trailing 405....
-			c.handlers = l.notFound
+		} else {
+			goto END
 		}
-	} else {
-
-		// slow, but get's the job done
-		if l.handleMethodNotAllowed {
-
-			if l.checkMethodNotAllowed(c) {
-				goto END
-			}
-		}
-
-		c.handlers = l.notFound
 	}
+
+	if l.automaticallyHandleOPTIONS && r.Method == OPTIONS {
+		l.getOptions(c)
+		goto END
+	}
+
+	if l.handleMethodNotAllowed {
+
+		if l.checkMethodNotAllowed(c) {
+			goto END
+		}
+	}
+
+	// not found
+	c.handlers = l.notFound
 
 END:
 
@@ -341,24 +349,58 @@ END:
 	l.pool.Put(c)
 }
 
+func (l *LARS) getOptions(c *Ctx) {
+
+	res := c.Response()
+
+	if c.request.URL.Path == "*" { // check server-wide OPTIONS
+
+		for m := range l.trees {
+
+			if m == OPTIONS {
+				continue
+			}
+
+			res.Header().Add(Allow, m)
+		}
+
+	} else {
+		for m, tree := range l.trees {
+
+			if m == c.request.Method || m == OPTIONS {
+				continue
+			}
+
+			if c.handlers, _, _ = tree.find(c.request.URL.Path, c.params); c.handlers != nil {
+				res.Header().Add(Allow, m)
+			}
+		}
+
+	}
+
+	res.Header().Add(Allow, OPTIONS)
+	c.handlers = l.automaticOPTIONS
+
+	return
+}
+
 func (l *LARS) checkMethodNotAllowed(c *Ctx) (found bool) {
 
-	var methods []string
+	res := c.Response()
 
 	for m, tree := range l.trees {
 
 		if m != c.request.Method {
 			if c.handlers, _, _ = tree.find(c.request.URL.Path, c.params); c.handlers != nil {
 				// add methods
-				methods = append(methods, m)
+				res.Header().Add(Allow, m)
+				found = true
 			}
 		}
 	}
 
-	if len(methods) > 0 {
-		c.Set("methods", methods)
+	if found {
 		c.handlers = l.http405
-		found = true
 	}
 
 	return

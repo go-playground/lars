@@ -171,6 +171,10 @@ misc examples and noteworthy features
 	// Handle 405 ( Method Not allowed ), default is false
 	l.SetHandle405MethodNotAllowed(false)
 
+	// automatically handle OPTION requests; manually configured
+	// OPTION handlers take precedence. default true
+	l.SetAutomaticallyHandleOPTIONS(set bool)
+
 	// register custom context
 	l.RegisterContext(ContextFunc)
 
