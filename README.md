@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-2.5-green.svg)
+![Project status](https://img.shields.io/badge/version-2.6-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -15,13 +15,13 @@ Have you ever been painted into a corner by a framework, **ya me too!** and I've
 
 Key & Unique Features 
 --------------
-- [x] Context is an interface allowing passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
-- [x] Contains helpful logic to help prevent adding bad routes, keeping your url's consistent. i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
-- [x] Has an uber simple middleware + handler definitions!!! middleware and handlers actually have the exact same definition!
-- [x] Can register custom handlers for making other middleware + handler patterns usable with this router; the best part about this is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
-- [x] Full support for standard/native http Handler + HandlerFunc + some others [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
+- [x] **Context is an interface** - this allows passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
+- [x] **Smart Route Logic** - helpful logic to help prevent adding bad routes, keeping your url's consistent. i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
+- [x] **Uber simple middleware + handlers** - middleware and handlers actually have the exact same definition!
+- [x] **Custom Handlers** - can register custom handlers for making other middleware + handler patterns usable with this router; the best part about this is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
+- [x] **Diverse handler support** - Full support for standard/native http Handler + HandlerFunc + some others [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
   * When Parsing a form call Context's ParseForm amd ParseMulipartForm functions and the URL params will be added into the Form object, just like query parameters are, so no extra work
-- [x] lars uses a custom version of [httprouter](https://github.com/julienschmidt/httprouter) so incredibly fast and efficient.
+- [x] **Fast & Efficient** - lars uses a custom version of [httprouter](https://github.com/julienschmidt/httprouter) so incredibly fast and efficient.
 
 Installation
 -----------
@@ -48,7 +48,8 @@ import (
 func main() {
 
 	l := lars.New()
-	l.Use(mw.LoggingAndRecovery) // LoggingAndRecovery is just an example copy paste and modify to your needs
+	// LoggingAndRecovery is just an example copy paste and modify to your needs
+	l.Use(mw.LoggingAndRecovery)
 
 	l.Get("/", HelloWorld)
 
@@ -69,8 +70,13 @@ URL Params
 
 ```go
 l := l.New()
+
+// the matching param will be stored in the Context's params with name "id"
 l.Get("/user/:id", UserHandler)
-l.Get("/static/*", http.FileServer(http.Dir("static/"))) // serve css, js etc.. c.Param(lars.WildcardParam) will return the remaining path if you need to use it in a custom handler...
+
+// serve css, js etc.. c.Param(lars.WildcardParam) will return the remaining path if 
+// you need to use it in a custom handler...
+l.Get("/static/*", http.FileServer(http.Dir("static/"))) 
 
 ...
 ```
@@ -94,7 +100,8 @@ user.Delete("/delete", ...)
 contactInfo := user.Group("/contact-info/:ciid")
 contactinfo.Delete("/delete", ...)
 
-// creates a group for others + inherits all middleware registered using l.Use() + adds OtherHandler to middleware
+// creates a group for others + inherits all middleware registered using l.Use() + adds 
+// OtherHandler to middleware
 others := l.Group("/others", OtherHandler)
 
 // creates a group for admin WITH NO MIDDLEWARE... more can be added using admin.Use()
@@ -195,18 +202,20 @@ l.SetAutomaticallyHandleOPTIONS(set bool)
 // register custom context
 l.RegisterContext(ContextFunc)
 
-// Register custom handler type, see [util.go](https://github.com/go-playground/lars/blob/master/util.go#L62) for example handler creation
+// Register custom handler type, see https://github.com/go-playground/lars/blob/master/util.go#L62
+// for example handler creation
 l.RegisterCustomHandler(interface{}, CustomHandlerFunc)
 
-// NativeChainHandler is used as a helper to create your own custom handlers, or use custom handlers that already exist
-// an example usage can be found [here](https://github.com/go-playground/lars/blob/master/util.go#L86)
-// below is an example using nosurf CSRF middleware
+// NativeChainHandler is used as a helper to create your own custom handlers, or use custom handlers 
+// that already exist an example usage can be found here 
+// https://github.com/go-playground/lars/blob/master/util.go#L86, below is an example using nosurf CSRF middleware
 
 l.Use(nosurf.NewPure(lars.NativeChainHandler))
 
 
-// Context has 2 methods of which you should be aware of ParseForm and ParseMulipartForm, they just call the default http functions but
-// provide one more additional feature, they copy the URL params to the request Forms variables, just like Query parameters would have been.
+// Context has 2 methods of which you should be aware of ParseForm and ParseMulipartForm, they just call the 
+// default http functions but provide one more additional feature, they copy the URL params to the request 
+// Forms variables, just like Query parameters would have been.
 // The functions are for convenience and are totally optional.
 ```
 
@@ -277,5 +286,5 @@ This package is inspired by the following
 
 Licenses
 --------
-[MIT License](https://raw.githubusercontent.com/go-playground/lars/master/LICENSE) (MIT), Copyright (c) 2015 Dean Karn
-[BSD License](https://raw.githubusercontent.com/julienschmidt/httprouter/master/LICENSE), Copyright (c) 2013 Julien Schmidt. All rights reserved.
+- [MIT License](https://raw.githubusercontent.com/go-playground/lars/master/LICENSE) (MIT), Copyright (c) 2015 Dean Karn
+- [BSD License](https://raw.githubusercontent.com/julienschmidt/httprouter/master/LICENSE), Copyright (c) 2013 Julien Schmidt. All rights reserved.
