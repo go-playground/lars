@@ -39,6 +39,7 @@ Below is a simple example, for a full example [see here](https://github.com/go-p
 package main
 
 import (
+        "fmt"
 	"net/http"
 
 	"github.com/go-playground/lars"
