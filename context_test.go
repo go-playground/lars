@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"sync"
 	"testing"
+
+	"golang.org/x/net/context"
 
 	. "gopkg.in/go-playground/assert.v1"
 )
@@ -102,15 +103,16 @@ func TestContext(t *testing.T) {
 
 	varParams = append(varParams, param1)
 
-	//store
-	storeMap := store{
-		"User":        "Alice",
-		"Information": []string{"Alice", "Bob", "40.712784", "-74.005941"},
-	}
+	// //store
+	// storeMap := store{
+	// 	"User":        "Alice",
+	// 	"Information": []string{"Alice", "Bob", "40.712784", "-74.005941"},
+	// }
 
 	c.params = varParams
-	c.m = new(sync.RWMutex)
-	c.store = storeMap
+	c.Context = context.Background()
+	// c.m = new(sync.RWMutex)
+	// c.store = storeMap
 	c.request = r
 
 	//Request
@@ -133,6 +135,7 @@ func TestContext(t *testing.T) {
 	Equal(t, true, exists)
 	Equal(t, "U|ydN3SX)B(hI8SV1R;(", value)
 
+	c.Set("User", "Alice")
 	value, exists = c.Get("User")
 	Equal(t, true, exists)
 	Equal(t, "Alice", value)
@@ -140,6 +143,8 @@ func TestContext(t *testing.T) {
 	value, exists = c.Get("UserName")
 	NotEqual(t, true, exists)
 	NotEqual(t, "Alice", value)
+
+	c.Set("Information", []string{"Alice", "Bob", "40.712784", "-74.005941"})
 
 	value, exists = c.Get("Information")
 	Equal(t, true, exists)
@@ -160,7 +165,7 @@ func TestContext(t *testing.T) {
 	NotEqual(t, c.response, nil)
 
 	//Set
-	Equal(t, c.store, nil)
+	Equal(t, c.Context.Value("test"), nil)
 
 	// Index
 	Equal(t, c.index, -1)

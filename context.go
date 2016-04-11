@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
@@ -59,18 +58,18 @@ type Context interface {
 // Ctx encapsulates the http request, response context
 type Ctx struct {
 	context.Context
-	request             *http.Request
-	response            *Response
-	websocket           *websocket.Conn
-	params              Params
-	handlers            HandlersChain
-	handlerName         string
-	store               store
+	request     *http.Request
+	response    *Response
+	websocket   *websocket.Conn
+	params      Params
+	handlers    HandlersChain
+	handlerName string
+	// store               store
 	index               int
 	formParsed          bool
 	multipartFormParsed bool
 	parent              Context
-	m                   *sync.RWMutex
+	// m                   *sync.RWMutex
 }
 
 var _ context.Context = &Ctx{}
@@ -119,7 +118,8 @@ func (c *Ctx) RequestStart(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
 	c.params = c.params[0:0]
-	c.store = nil
+	c.Context = context.Background()
+	// c.store = nil
 	c.index = -1
 	c.handlers = nil
 	c.formParsed = false
@@ -190,31 +190,49 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 // It also lazy initializes  c.Keys if it was not used previously.
 func (c *Ctx) Set(key string, value interface{}) {
 
-	if c.store == nil {
+	// must double check this is thread safe
+	// if c.Context == nil {
+	// 	c.Context = context.Background()
+	// }
 
-		if c.m == nil {
-			c.m = new(sync.RWMutex)
-		}
+	c.Context = context.WithValue(c.Context, key, value)
+	// if c.store == nil {
 
-		c.m.Lock()
-		c.store = make(store)
-	} else {
-		c.m.Lock()
-	}
+	// 	if c.m == nil {
+	// 		c.m = new(sync.RWMutex)
+	// 	}
 
-	c.store[key] = value
-	c.m.Unlock()
+	// 	c.m.Lock()
+	// 	c.store = make(store)
+	// } else {
+	// 	c.m.Lock()
+	// }
+
+	// c.store[key] = value
+	// c.m.Unlock()
 }
 
 // Get returns the value for the given key, ie: (value, true).
 // If the value does not exists it returns (nil, false)
 func (c *Ctx) Get(key string) (value interface{}, exists bool) {
-	if c.store != nil {
-		c.m.RLock()
-		value, exists = c.store[key]
-		c.m.RUnlock()
+
+	value = c.Context.Value(key)
+
+	if value != nil {
+		exists = true
 	}
+
 	return
+	// must double check this is thread safe
+	// if c.Context == nil {
+	// 	c.Context = context.Background()
+	// }
+	// if c.store != nil {
+	// 	c.m.RLock()
+	// 	value, exists = c.store[key]
+	// 	c.m.RUnlock()
+	// }
+	// return
 }
 
 // Next should be used only inside middleware.
