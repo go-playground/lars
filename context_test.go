@@ -32,21 +32,22 @@ func TestStream(t *testing.T) {
 	l.Get("/stream/:id", func(c Context) {
 		c.Stream(func(w io.Writer) bool {
 
-			w.Write([]byte("a"))
-			count++
-
-			if count == 13 {
-				return false
+			if _, err := w.Write([]byte("a")); err != nil {
+				panic(err)
 			}
 
-			return true
+			count++
+			return count != 13
 		})
 	})
 
 	l.Get("/stream2/:id", func(c Context) {
 		c.Stream(func(w io.Writer) bool {
 
-			w.Write([]byte("a"))
+			if _, err := w.Write([]byte("a")); err != nil {
+				panic(err)
+			}
+
 			count++
 
 			if count == 5 {
@@ -74,7 +75,9 @@ func TestStream(t *testing.T) {
 }
 
 func HandlerForName(c Context) {
-	c.Response().Write([]byte(c.HandlerName()))
+	if _, err := c.Response().Write([]byte(c.HandlerName())); err != nil {
+		panic(err)
+	}
 }
 
 func TestHandlerName(t *testing.T) {
@@ -178,7 +181,9 @@ func TestQueryParams(t *testing.T) {
 	l := New()
 	l.Get("/home/:id", func(c Context) {
 		c.Param("nonexistant")
-		c.Response().Write([]byte(c.Request().URL.RawQuery))
+		if _, err := c.Response().Write([]byte(c.Request().URL.RawQuery)); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/home/13?test=true&test2=true", l)
@@ -196,7 +201,9 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 
 	})
 	l.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/users/13", l)
@@ -206,12 +213,16 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	l2 := New()
 	l2.Use(func(c Context) {
 		// to trigger the form parsing
-		c.ParseForm()
+		if err := c.ParseForm(); err != nil {
+			panic(err)
+		}
 		c.Next()
 
 	})
 	l2.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/users/14", l2)
@@ -222,9 +233,13 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	l3.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
 
 		c := GetContext(w)
-		c.ParseForm()
+		if err := c.ParseForm(); err != nil {
+			panic(err)
+		}
 
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/users/15", l3)
@@ -234,16 +249,22 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	l4 := New()
 	l4.Use(func(c Context) {
 		// to trigger the form parsing
-		c.ParseForm()
+		if err := c.ParseForm(); err != nil {
+			panic(err)
+		}
 		c.Next()
 
 	})
 	l4.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
 
 		c := GetContext(w)
-		c.ParseForm()
+		if err := c.ParseForm(); err != nil {
+			panic(err)
+		}
 
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/users/16", l4)
@@ -255,11 +276,15 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 
 		c := GetContext(w)
 		if err := c.ParseForm(); err != nil {
-			w.Write([]byte(err.Error()))
+			if _, errr := w.Write([]byte(err.Error())); errr != nil {
+				panic(err)
+			}
 			return
 		}
 
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/users/16?test=%2f%%efg", l5)
@@ -269,11 +294,15 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 	l6 := New()
 	l6.Get("/chain-handler", func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("a"))
+			if _, err := w.Write([]byte("a")); err != nil {
+				panic(err)
+			}
 			handler.ServeHTTP(w, r)
 		})
 	}, func(c Context) {
-		c.Response().Write([]byte("ok"))
+		if _, err := c.Response().Write([]byte("ok")); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/chain-handler", l6)
@@ -282,10 +311,14 @@ func TestNativeHandlersAndParseForm(t *testing.T) {
 
 	l7 := New()
 	l7.Get("/chain-handler", func(w http.ResponseWriter, r *http.Request, next http.Handler) {
-		w.Write([]byte("a"))
+		if _, err := w.Write([]byte("a")); err != nil {
+			panic(err)
+		}
 		next.ServeHTTP(w, r)
 	}, func(c Context) {
-		c.Response().Write([]byte("ok"))
+		if _, err := c.Response().Write([]byte("ok")); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/chain-handler", l7)
@@ -303,7 +336,9 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 
 	})
 	l.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/users/13", l)
@@ -313,11 +348,15 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 	l2 := New()
 	l2.Use(func(c Context) {
 		// to trigger the form parsing
-		c.ParseMultipartForm(10 << 5) // 5 MB
+		if err := c.ParseMultipartForm(10 << 5); err != nil {
+			panic(err)
+		} // 5 MB
 		c.Next()
 	})
 	l2.Post("/users/:id", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = requestMultiPart(POST, "/users/14", l2)
@@ -328,9 +367,13 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 	l3.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
 
 		c := GetContext(w)
-		c.ParseMultipartForm(10 << 5) // 5 MB
+		if err := c.ParseMultipartForm(10 << 5); err != nil {
+			panic(err)
+		} // 5 MB
 
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = requestMultiPart(GET, "/users/15", l3)
@@ -340,16 +383,22 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 	l4 := New()
 	l4.Use(func(c Context) {
 		// to trigger the form parsing
-		c.ParseMultipartForm(10 << 5) // 5 MB
+		if err := c.ParseMultipartForm(10 << 5); err != nil {
+			panic(err)
+		} // 5 MB
 		c.Next()
 
 	})
 	l4.Get("/users/:id", func(w http.ResponseWriter, r *http.Request) {
 
 		c := GetContext(w)
-		c.ParseMultipartForm(10 << 5) // 5 MB
+		if err := c.ParseMultipartForm(10 << 5); err != nil {
+			panic(err)
+		} // 5 MB
 
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = requestMultiPart(GET, "/users/16", l4)
@@ -361,11 +410,15 @@ func TestNativeHandlersAndParseMultiPartForm(t *testing.T) {
 
 		c := GetContext(w)
 		if err := c.ParseMultipartForm(10 << 5); err != nil {
-			w.Write([]byte(err.Error()))
+			if _, errr := w.Write([]byte(err.Error())); errr != nil {
+				panic(err)
+			}
 			return
 		}
 
-		w.Write([]byte(r.FormValue("id")))
+		if _, err := w.Write([]byte(r.FormValue("id"))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = requestMultiPart(GET, "/users/16?test=%2f%%efg", l5)
@@ -401,12 +454,16 @@ func TestAttachment(t *testing.T) {
 
 	l.Get("/dl", func(c Context) {
 		f, _ := os.Open("logo.png")
-		c.Attachment(f, "logo.png")
+		if err := c.Attachment(f, "logo.png"); err != nil {
+			panic(err)
+		}
 	})
 
 	l.Get("/dl-unknown-type", func(c Context) {
 		f, _ := os.Open("logo.png")
-		c.Attachment(f, "logo")
+		if err := c.Attachment(f, "logo"); err != nil {
+			panic(err)
+		}
 	})
 
 	r, _ := http.NewRequest(GET, "/dl", nil)
@@ -439,18 +496,21 @@ func TestAttachment(t *testing.T) {
 func TestInline(t *testing.T) {
 
 	l := New()
-
-	l.Get("/dl", func(c Context) {
+	l.Get("/dl-inline", func(c Context) {
 		f, _ := os.Open("logo.png")
-		c.Inline(f, "logo.png")
+		if err := c.Inline(f, "logo.png"); err != nil {
+			panic(err)
+		}
 	})
 
-	l.Get("/dl-unknown-type", func(c Context) {
+	l.Get("/dl-unknown-type-inline", func(c Context) {
 		f, _ := os.Open("logo.png")
-		c.Inline(f, "logo")
+		if err := c.Inline(f, "logo"); err != nil {
+			panic(err)
+		}
 	})
 
-	r, _ := http.NewRequest(GET, "/dl", nil)
+	r, _ := http.NewRequest(GET, "/dl-inline", nil)
 	w := &closeNotifyingRecorder{
 		httptest.NewRecorder(),
 		make(chan bool, 1),
@@ -463,7 +523,7 @@ func TestInline(t *testing.T) {
 	Equal(t, w.Header().Get(ContentType), "image/png")
 	Equal(t, w.Body.Len(), 3041)
 
-	r, _ = http.NewRequest(GET, "/dl-unknown-type", nil)
+	r, _ = http.NewRequest(GET, "/dl-unknown-type-inline", nil)
 	w = &closeNotifyingRecorder{
 		httptest.NewRecorder(),
 		make(chan bool, 1),
@@ -518,7 +578,9 @@ func TestXML(t *testing.T) {
 
 	l := New()
 	l.Get("/xml", func(c Context) {
-		c.XML(http.StatusOK, zombie{1, "Patient Zero"})
+		if err := c.XML(http.StatusOK, zombie{1, "Patient Zero"}); err != nil {
+			panic(err)
+		}
 	})
 	l.Get("/badxml", func(c Context) {
 		if err := c.XML(http.StatusOK, func() {}); err != nil {
@@ -551,7 +613,9 @@ func TestJSON(t *testing.T) {
 
 	l := New()
 	l.Get("/json", func(c Context) {
-		c.JSON(http.StatusOK, zombie{1, "Patient Zero"})
+		if err := c.JSON(http.StatusOK, zombie{1, "Patient Zero"}); err != nil {
+			panic(err)
+		}
 	})
 	l.Get("/badjson", func(c Context) {
 		if err := c.JSON(http.StatusOK, func() {}); err != nil {
@@ -559,7 +623,9 @@ func TestJSON(t *testing.T) {
 		}
 	})
 	l.Get("/jsonp", func(c Context) {
-		c.JSONP(http.StatusOK, zombie{1, "Patient Zero"}, callbackFunc)
+		if err := c.JSONP(http.StatusOK, zombie{1, "Patient Zero"}, callbackFunc); err != nil {
+			panic(err)
+		}
 	})
 	l.Get("/badjsonp", func(c Context) {
 		if err := c.JSONP(http.StatusOK, func() {}, callbackFunc); err != nil {
@@ -607,7 +673,9 @@ func TestText(t *testing.T) {
 
 	l := New()
 	l.Get("/text", func(c Context) {
-		c.Text(http.StatusOK, txtData)
+		if err := c.Text(http.StatusOK, txtData); err != nil {
+			panic(err)
+		}
 	})
 
 	hf := l.Serve()

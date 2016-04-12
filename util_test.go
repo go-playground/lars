@@ -72,7 +72,9 @@ func TestOverridingResponseWriterNative(t *testing.T) {
 	l := New()
 	l.Use(loggingRecoveryHandler)
 	l.Get("/test", func(c Context) {
-		c.Response().Write([]byte(fmt.Sprint(reflect.TypeOf(c.Response().ResponseWriter))))
+		if _, err := c.Response().Write([]byte(fmt.Sprint(reflect.TypeOf(c.Response().ResponseWriter)))); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/test", l)

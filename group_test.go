@@ -29,7 +29,10 @@ func TestWebsockets(t *testing.T) {
 
 		i, err := c.WebSocket().Read(recv)
 		if err == nil {
-			c.WebSocket().Write(recv[:i])
+			_, err := c.WebSocket().Write(recv[:i])
+			if err != nil {
+				panic(err)
+			}
 		}
 	})
 
@@ -45,10 +48,11 @@ func TestWebsockets(t *testing.T) {
 
 	defer ws.Close()
 
-	ws.Write([]byte("websockets in action!"))
+	_, err = ws.Write([]byte("websockets in action!"))
+	Equal(t, err, nil)
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(ws)
-
+	_, err = buf.ReadFrom(ws)
+	Equal(t, err, nil)
 	Equal(t, "websockets in action!", buf.String())
 }

@@ -71,7 +71,10 @@ func TestResponse(t *testing.T) {
 
 	panicStr := "interface conversion: *httptest.ResponseRecorder is not http.Hijacker: missing method Hijack"
 	fnPanic := func() {
-		r.Hijack()
+		_, _, err := r.Hijack()
+		if err != nil {
+			panic(err)
+		}
 	}
 	PanicMatches(t, fnPanic, panicStr)
 

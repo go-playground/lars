@@ -27,7 +27,10 @@ var basicHandler = func(Context) {}
 
 func TestFindOneOffs(t *testing.T) {
 	fn := func(c Context) {
-		c.Response().Write([]byte(c.Request().Method))
+		_, err := c.Response().Write([]byte(c.Request().Method))
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	l := New()
@@ -78,7 +81,9 @@ func Testlars(t *testing.T) {
 	l := New()
 
 	l.Get("/", func(c Context) {
-		c.Response().Write([]byte("home"))
+		if _, err := c.Response().Write([]byte("home")); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/", l)
@@ -100,7 +105,9 @@ func TestlarsParam(t *testing.T) {
 	path := "/github.com/go-playground/:id/"
 	l.Get(path, func(c Context) {
 		p := c.Param("id")
-		c.Response().Write([]byte(p))
+		if _, err := c.Response().Write([]byte(p)); err != nil {
+			panic(err)
+		}
 	})
 	code, body := request(GET, "/github.com/go-playground/808w70/", l)
 
@@ -134,15 +141,21 @@ func TestRouterMatchAny(t *testing.T) {
 	path3 := "/users/*"
 
 	l.Get(path1, func(c Context) {
-		c.Response().Write([]byte(c.Request().URL.Path))
+		if _, err := c.Response().Write([]byte(c.Request().URL.Path)); err != nil {
+			panic(err)
+		}
 	})
 
 	l.Get(path2, func(c Context) {
-		c.Response().Write([]byte(c.Request().URL.Path))
+		if _, err := c.Response().Write([]byte(c.Request().URL.Path)); err != nil {
+			panic(err)
+		}
 	})
 
 	l.Get(path3, func(c Context) {
-		c.Response().Write([]byte(c.Request().URL.Path))
+		if _, err := c.Response().Write([]byte(c.Request().URL.Path)); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/github", l)
@@ -195,7 +208,9 @@ func TestRouterMixParamMatchAny(t *testing.T) {
 
 	//Route
 	l.Get("/users/:id/*", func(c Context) {
-		c.Response().Write([]byte(c.Request().URL.Path))
+		if _, err := c.Response().Write([]byte(c.Request().URL.Path)); err != nil {
+			panic(err)
+		}
 		p = c.Param("id")
 	})
 	code, body := request(GET, "/users/joe/comments", l)
@@ -281,7 +296,9 @@ func TestRouterAPI(t *testing.T) {
 
 	for _, route := range githubAPI {
 		l.handle(route.method, route.path, []Handler{func(c Context) {
-			c.Response().Write([]byte(c.Request().URL.Path))
+			if _, err := c.Response().Write([]byte(c.Request().URL.Path)); err != nil {
+				panic(err)
+			}
 		}})
 	}
 
@@ -294,7 +311,9 @@ func TestRouterAPI(t *testing.T) {
 
 func TestUseAndGroup(t *testing.T) {
 	fn := func(c Context) {
-		c.Response().Write([]byte(c.Request().Method))
+		if _, err := c.Response().Write([]byte(c.Request().Method)); err != nil {
+			panic(err)
+		}
 	}
 
 	var log string
@@ -379,7 +398,9 @@ func TestUseAndGroup(t *testing.T) {
 
 func TestBadAdd(t *testing.T) {
 	fn := func(c Context) {
-		c.Response().Write([]byte(c.Request().Method))
+		if _, err := c.Response().Write([]byte(c.Request().Method)); err != nil {
+			panic(err)
+		}
 	}
 
 	l := New()
@@ -408,7 +429,9 @@ func TestBadAdd(t *testing.T) {
 
 func TestAddAllMethods(t *testing.T) {
 	fn := func(c Context) {
-		c.Response().Write([]byte(c.Request().Method))
+		if _, err := c.Response().Write([]byte(c.Request().Method)); err != nil {
+			panic(err)
+		}
 	}
 
 	l := New()
@@ -467,7 +490,9 @@ func TestAddAllMethods(t *testing.T) {
 
 func TestAddAllMethodsMatch(t *testing.T) {
 	fn := func(c Context) {
-		c.Response().Write([]byte(c.Request().Method))
+		if _, err := c.Response().Write([]byte(c.Request().Method)); err != nil {
+			panic(err)
+		}
 	}
 
 	l := New()
@@ -513,7 +538,9 @@ func TestAddAllMethodsMatch(t *testing.T) {
 
 func TestAddAllMethodsAny(t *testing.T) {
 	fn := func(c Context) {
-		c.Response().Write([]byte(c.Request().Method))
+		if _, err := c.Response().Write([]byte(c.Request().Method)); err != nil {
+			panic(err)
+		}
 	}
 
 	l := New()
@@ -562,19 +589,31 @@ func TestHandlerWrapping(t *testing.T) {
 
 	stdlinHandlerFunc := func() http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(r.URL.Path))
+			if _, err := w.Write([]byte(r.URL.Path)); err != nil {
+				panic(err)
+			}
 		}
 	}
 
 	stdLibRawHandlerFunc := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.URL.Path))
+		if _, err := w.Write([]byte(r.URL.Path)); err != nil {
+			panic(err)
+		}
 	}
 
-	fn := func(c Context) { c.Response().Write([]byte(c.Request().URL.Path)) }
+	fn := func(c Context) {
+		if _, err := c.Response().Write([]byte(c.Request().URL.Path)); err != nil {
+			panic(err)
+		}
+	}
 
 	var hf HandlerFunc
 
-	hf = func(c Context) { c.Response().Write([]byte(c.Request().URL.Path)) }
+	hf = func(c Context) {
+		if _, err := c.Response().Write([]byte(c.Request().URL.Path)); err != nil {
+			panic(err)
+		}
+	}
 
 	l.Get("/built-in-context-handler-func/", hf)
 	l.Get("/built-in-context-func/", fn)
@@ -601,13 +640,17 @@ func TestHandlerWrapping(t *testing.T) {
 
 	stdlinHandlerFunc2 := func() http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(r.URL.Path))
+			if _, err := w.Write([]byte(r.URL.Path)); err != nil {
+				panic(err)
+			}
 			w.WriteHeader(http.StatusOK)
 		}
 	}
 
 	stdLibRawHandlerFunc2 := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.URL.Path))
+		if _, err := w.Write([]byte(r.URL.Path)); err != nil {
+			panic(err)
+		}
 		w.WriteHeader(http.StatusOK)
 	}
 
@@ -687,7 +730,9 @@ func TestCustomContext(t *testing.T) {
 
 	l.Get("/home/", func(c Context) {
 		ctx = c.(*myContext)
-		c.Response().Write([]byte(ctx.text))
+		if _, err := c.Response().Write([]byte(ctx.text)); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/home/", l)
@@ -712,7 +757,9 @@ func TestCustomContextWrap(t *testing.T) {
 
 	l.Get("/home/", func(c *myContext) {
 		ctx = c
-		c.Response().Write([]byte(c.text))
+		if _, err := c.Response().Write([]byte(c.text)); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body := request(GET, "/home/", l)
@@ -730,7 +777,9 @@ func TestCustomContextWrap(t *testing.T) {
 
 	l2.Get("/home/", func(c *myContext) {
 		ctx = c
-		c.Response().Write([]byte(c.text))
+		if _, err := c.Response().Write([]byte(c.text)); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/home/", l2)
@@ -756,7 +805,9 @@ func TestCustomContextWrap(t *testing.T) {
 
 	l3.Get("/home/", func(c *myContext) {
 		ctx = c
-		c.Response().Write([]byte(c.text))
+		if _, err := c.Response().Write([]byte(c.text)); err != nil {
+			panic(err)
+		}
 	})
 
 	code, body = request(GET, "/home/", l3)
