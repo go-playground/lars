@@ -62,11 +62,11 @@ type Ctx struct {
 	websocket           *websocket.Conn
 	params              Params
 	handlers            HandlersChain
+	parent              Context
 	handlerName         string
 	index               int
 	formParsed          bool
 	multipartFormParsed bool
-	parent              Context
 }
 
 var _ context.Context = &Ctx{}

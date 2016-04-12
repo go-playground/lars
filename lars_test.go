@@ -969,7 +969,10 @@ func requestMultiPart(method string, url string, l *LARS) (int, string) {
 		fmt.Println("ERR COPY:", err)
 	}
 
-	writer.WriteField("username", "joeybloggs")
+	err = writer.WriteField("username", "joeybloggs")
+	if err != nil {
+		fmt.Println("ERR:", err)
+	}
 
 	err = writer.Close()
 	if err != nil {
