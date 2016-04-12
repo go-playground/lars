@@ -113,7 +113,7 @@ func (l *LARS) wrapHandlerWithName(h Handler) (chain HandlerFunc, handlerName st
 	return
 }
 
-func (l *LARS) redirect(method string) (handlers HandlersChain) {
+func (l *LARS) redirect(method string, to string) (handlers HandlersChain) {
 
 	code := http.StatusMovedPermanently
 
@@ -123,7 +123,7 @@ func (l *LARS) redirect(method string) (handlers HandlersChain) {
 
 	fn := func(c Context) {
 		inCtx := c.BaseContext()
-		http.Redirect(inCtx.response, inCtx.request, inCtx.request.URL.String(), code)
+		http.Redirect(inCtx.response, inCtx.request, to, code)
 	}
 
 	hndlrs := make(HandlersChain, len(l.routeGroup.middleware)+1)

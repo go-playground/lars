@@ -296,13 +296,15 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			if l.redirectTrailingSlash && len(r.URL.Path) > 1 {
 
 				// find again all lowercase
-				lc := strings.ToLower(r.URL.Path)
+				orig := r.URL.Path
+				lc := strings.ToLower(orig)
 
 				if lc != r.URL.Path {
 
 					if c.handlers, _, _ = root.find(lc, c.params); c.handlers != nil {
 						r.URL.Path = lc
-						c.handlers = l.redirect(r.Method)
+						c.handlers = l.redirect(r.Method, r.URL.String())
+						r.URL.Path = orig
 						goto END
 					}
 				}
@@ -315,7 +317,8 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 				if c.handlers, _, _ = root.find(lc, c.params); c.handlers != nil {
 					r.URL.Path = lc
-					c.handlers = l.redirect(r.Method)
+					c.handlers = l.redirect(r.Method, r.URL.String())
+					r.URL.Path = orig
 					goto END
 				}
 			}
