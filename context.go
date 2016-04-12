@@ -23,7 +23,7 @@ type Param struct {
 // It is therefore safe to read values by the index.
 type Params []Param
 
-type store map[string]interface{}
+// type store map[string]interface{}
 
 // Context is the context interface type
 type Context interface {
@@ -34,8 +34,8 @@ type Context interface {
 	Param(name string) string
 	ParseForm() error
 	ParseMultipartForm(maxMemory int64) error
-	Set(key string, value interface{})
-	Get(key string) (value interface{}, exists bool)
+	Set(key interface{}, value interface{})
+	Get(key interface{}) (value interface{}, exists bool)
 	Next()
 	RequestStart(w http.ResponseWriter, r *http.Request)
 	RequestEnd()
@@ -188,7 +188,7 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 
 // Set is used to store a new key/value pair exclusivelly for thisContext.
 // It also lazy initializes  c.Keys if it was not used previously.
-func (c *Ctx) Set(key string, value interface{}) {
+func (c *Ctx) Set(key interface{}, value interface{}) {
 
 	// must double check this is thread safe
 	// if c.Context == nil {
@@ -214,7 +214,7 @@ func (c *Ctx) Set(key string, value interface{}) {
 
 // Get returns the value for the given key, ie: (value, true).
 // If the value does not exists it returns (nil, false)
-func (c *Ctx) Get(key string) (value interface{}, exists bool) {
+func (c *Ctx) Get(key interface{}) (value interface{}, exists bool) {
 
 	value = c.Context.Value(key)
 
