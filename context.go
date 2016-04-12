@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
@@ -22,8 +23,6 @@ type Param struct {
 // The slice is ordered, the first URL parameter is also the first slice value.
 // It is therefore safe to read values by the index.
 type Params []Param
-
-// type store map[string]interface{}
 
 // Context is the context interface type
 type Context interface {
@@ -58,18 +57,16 @@ type Context interface {
 // Ctx encapsulates the http request, response context
 type Ctx struct {
 	context.Context
-	request     *http.Request
-	response    *Response
-	websocket   *websocket.Conn
-	params      Params
-	handlers    HandlersChain
-	handlerName string
-	// store               store
+	request             *http.Request
+	response            *Response
+	websocket           *websocket.Conn
+	params              Params
+	handlers            HandlersChain
+	handlerName         string
 	index               int
 	formParsed          bool
 	multipartFormParsed bool
 	parent              Context
-	// m                   *sync.RWMutex
 }
 
 var _ context.Context = &Ctx{}
@@ -186,53 +183,20 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 	return nil
 }
 
-// Set is used to store a new key/value pair exclusivelly for thisContext.
-// It also lazy initializes  c.Keys if it was not used previously.
+// Set is used to store a new key/value pair using the
+// golang.org/x/net/context contained on this Context.
+// It is a shortcut for context.WithValue(..., ...)
 func (c *Ctx) Set(key interface{}, value interface{}) {
-
-	// must double check this is thread safe
-	// if c.Context == nil {
-	// 	c.Context = context.Background()
-	// }
-
 	c.Context = context.WithValue(c.Context, key, value)
-	// if c.store == nil {
-
-	// 	if c.m == nil {
-	// 		c.m = new(sync.RWMutex)
-	// 	}
-
-	// 	c.m.Lock()
-	// 	c.store = make(store)
-	// } else {
-	// 	c.m.Lock()
-	// }
-
-	// c.store[key] = value
-	// c.m.Unlock()
 }
 
-// Get returns the value for the given key, ie: (value, true).
-// If the value does not exists it returns (nil, false)
+// Get returns the value for the given key and is a shortcut
+// for the golang.org/x/net/context context.Value(...) ... but it
+// also returns if the value was found or not.
 func (c *Ctx) Get(key interface{}) (value interface{}, exists bool) {
-
 	value = c.Context.Value(key)
-
-	if value != nil {
-		exists = true
-	}
-
+	exists = value != nil
 	return
-	// must double check this is thread safe
-	// if c.Context == nil {
-	// 	c.Context = context.Background()
-	// }
-	// if c.store != nil {
-	// 	c.m.RLock()
-	// 	value, exists = c.store[key]
-	// 	c.m.RUnlock()
-	// }
-	// return
 }
 
 // Next should be used only inside middleware.
@@ -441,4 +405,38 @@ func (c *Ctx) Inline(r io.Reader, filename string) (err error) {
 	_, err = io.Copy(c.response, r)
 
 	return
+}
+
+// golang.org/x/net/context Overrides to keep context update on lars.Context object
+
+// WithCancel calls embedded golang.org/x/net/context WithCancel and automatically
+// updates context on the containing las.Context object.
+func (c *Ctx) WithCancel(parent context.Context) (ctx context.Context, cf context.CancelFunc) {
+	c.Context, cf = context.WithCancel(parent)
+	ctx = c
+	return
+}
+
+// WithDeadline calls embedded golang.org/x/net/context WithDeadline and automatically
+// updates context on the containing las.Context object.
+func (c *Ctx) WithDeadline(parent context.Context, deadline time.Time) (ctx context.Context, cf context.CancelFunc) {
+	c.Context, cf = context.WithDeadline(parent, deadline)
+	ctx = c
+	return
+}
+
+// WithTimeout calls embedded golang.org/x/net/context WithTimeout and automatically
+// updates context on the containing las.Context object.
+func (c *Ctx) WithTimeout(parent context.Context, timeout time.Duration) (ctx context.Context, cf context.CancelFunc) {
+	c.Context, cf = context.WithTimeout(parent, timeout)
+	ctx = c
+	return
+}
+
+// WithValue calls embedded golang.org/x/net/context WithValue and automatically
+// updates context on the containing las.Context object.
+// Can also use Set() function on Context object (Recommended)
+func (c *Ctx) WithValue(parent context.Context, key interface{}, val interface{}) context.Context {
+	c.Context = context.WithValue(parent, key, val)
+	return c.Context
 }
