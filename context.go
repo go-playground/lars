@@ -56,7 +56,7 @@ type Context interface {
 
 // Ctx encapsulates the http request, response context
 type Ctx struct {
-	context.Context
+	netContext          context.Context
 	request             *http.Request
 	response            *Response
 	websocket           *websocket.Conn
@@ -115,8 +115,7 @@ func (c *Ctx) RequestStart(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
 	c.params = c.params[0:0]
-	c.Context = context.Background()
-	// c.store = nil
+	c.netContext = context.Background() // in go 1.7 will call r.Context(), netContext will go away and be replaced with the Request objects Context
 	c.index = -1
 	c.handlers = nil
 	c.formParsed = false
@@ -187,14 +186,14 @@ func (c *Ctx) ParseMultipartForm(maxMemory int64) error {
 // golang.org/x/net/context contained on this Context.
 // It is a shortcut for context.WithValue(..., ...)
 func (c *Ctx) Set(key interface{}, value interface{}) {
-	c.Context = context.WithValue(c.Context, key, value)
+	c.netContext = context.WithValue(c.netContext, key, value)
 }
 
 // Get returns the value for the given key and is a shortcut
 // for the golang.org/x/net/context context.Value(...) ... but it
 // also returns if the value was found or not.
 func (c *Ctx) Get(key interface{}) (value interface{}, exists bool) {
-	value = c.Context.Value(key)
+	value = c.netContext.Value(key)
 	exists = value != nil
 	return
 }
@@ -407,36 +406,66 @@ func (c *Ctx) Inline(r io.Reader, filename string) (err error) {
 	return
 }
 
-// golang.org/x/net/context Overrides to keep context update on lars.Context object
+// golang.org/x/net/context functions to comply with context.Context interface and keep context update on lars.Context object
 
-// WithCancel calls embedded golang.org/x/net/context WithCancel and automatically
+// Context returns the request's context. To change the context, use
+// WithContext.
+//
+// The returned context is always non-nil.
+func (c *Ctx) Context() context.Context {
+	return c.netContext // TODO: in go 1.7 return c.request.Context()
+}
+
+// WithContext updates the underlying request's context with to ctx
+// The provided ctx must be non-nil.
+func (c *Ctx) WithContext(ctx context.Context) {
+	c.netContext = ctx // TODO: in go 1.7 must update Request object after calling c.request.WithContext(...)
+}
+
+// Deadline calls the underlying golang.org/x/net/context Deadline()
+func (c *Ctx) Deadline() (deadline time.Time, ok bool) {
+	return c.netContext.Deadline()
+}
+
+// Done calls the underlying golang.org/x/net/context Done()
+func (c *Ctx) Done() <-chan struct{} {
+	return c.netContext.Done()
+}
+
+// Err calls the underlying golang.org/x/net/context Err()
+func (c *Ctx) Err() error {
+	return c.netContext.Err()
+}
+
+// Value calls the underlying golang.org/x/net/context Value()
+func (c *Ctx) Value(key interface{}) interface{} {
+	return c.netContext.Value(key)
+}
+
+// WithCancel calls golang.org/x/net/context WithCancel and automatically
 // updates context on the containing las.Context object.
-func (c *Ctx) WithCancel(parent context.Context) (ctx context.Context, cf context.CancelFunc) {
-	c.Context, cf = context.WithCancel(parent)
-	ctx = c
+func (c *Ctx) WithCancel() (cf context.CancelFunc) {
+	c.netContext, cf = context.WithCancel(c.netContext)
 	return
 }
 
-// WithDeadline calls embedded golang.org/x/net/context WithDeadline and automatically
+// WithDeadline calls golang.org/x/net/context WithDeadline and automatically
 // updates context on the containing las.Context object.
-func (c *Ctx) WithDeadline(parent context.Context, deadline time.Time) (ctx context.Context, cf context.CancelFunc) {
-	c.Context, cf = context.WithDeadline(parent, deadline)
-	ctx = c
+func (c *Ctx) WithDeadline(deadline time.Time) (cf context.CancelFunc) {
+	c.netContext, cf = context.WithDeadline(c.netContext, deadline)
 	return
 }
 
-// WithTimeout calls embedded golang.org/x/net/context WithTimeout and automatically
+// WithTimeout calls golang.org/x/net/context WithTimeout and automatically
 // updates context on the containing las.Context object.
-func (c *Ctx) WithTimeout(parent context.Context, timeout time.Duration) (ctx context.Context, cf context.CancelFunc) {
-	c.Context, cf = context.WithTimeout(parent, timeout)
-	ctx = c
+func (c *Ctx) WithTimeout(timeout time.Duration) (cf context.CancelFunc) {
+	c.netContext, cf = context.WithTimeout(c.netContext, timeout)
 	return
 }
 
-// WithValue calls embedded golang.org/x/net/context WithValue and automatically
+// WithValue calls golang.org/x/net/context WithValue and automatically
 // updates context on the containing las.Context object.
 // Can also use Set() function on Context object (Recommended)
-func (c *Ctx) WithValue(parent context.Context, key interface{}, val interface{}) context.Context {
-	c.Context = context.WithValue(parent, key, val)
-	return c.Context
+func (c *Ctx) WithValue(key interface{}, val interface{}) {
+	c.netContext = context.WithValue(c.netContext, key, val)
 }

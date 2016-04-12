@@ -110,7 +110,7 @@ func TestContext(t *testing.T) {
 	// }
 
 	c.params = varParams
-	c.Context = context.Background()
+	c.netContext = context.Background()
 	// c.m = new(sync.RWMutex)
 	// c.store = storeMap
 	c.request = r
@@ -165,7 +165,7 @@ func TestContext(t *testing.T) {
 	NotEqual(t, c.response, nil)
 
 	//Set
-	Equal(t, c.Context.Value("test"), nil)
+	Equal(t, c.netContext.Value("test"), nil)
 
 	// Index
 	Equal(t, c.index, -1)
