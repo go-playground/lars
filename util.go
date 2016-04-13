@@ -16,6 +16,7 @@ var NativeChainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	b := c.BaseContext()
 
 	if b.index+1 < len(b.handlers) {
+		// TODO: in go 1.7 make sure r is the same as c.request... request's context could have been updated in a native handler
 		c.Next()
 	}
 })
@@ -55,6 +56,7 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 			}
 
 			if ctx.index+1 < len(ctx.handlers) {
+				// TODO: in go 1.7 make sure r is the same as c.request... request's context could have been updated in a native handler
 				c.Next()
 			}
 		}
@@ -69,6 +71,7 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 			}
 
 			if ctx.index+1 < len(ctx.handlers) {
+				// TODO: in go 1.7 make sure r is the same as c.request... request's context could have been updated in a native handler
 				c.Next()
 			}
 		}
@@ -110,7 +113,7 @@ func (l *LARS) wrapHandlerWithName(h Handler) (chain HandlerFunc, handlerName st
 	return
 }
 
-func (l *LARS) redirect(method string) (handlers HandlersChain) {
+func (l *LARS) redirect(method string, to string) (handlers HandlersChain) {
 
 	code := http.StatusMovedPermanently
 
@@ -120,7 +123,7 @@ func (l *LARS) redirect(method string) (handlers HandlersChain) {
 
 	fn := func(c Context) {
 		inCtx := c.BaseContext()
-		http.Redirect(inCtx.response, inCtx.request, inCtx.request.URL.String(), code)
+		http.Redirect(inCtx.response, inCtx.request, to, code)
 	}
 
 	hndlrs := make(HandlersChain, len(l.routeGroup.middleware)+1)

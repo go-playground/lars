@@ -112,12 +112,6 @@ type customHandlers map[reflect.Type]CustomHandlerFunc
 type LARS struct {
 	routeGroup
 	trees map[string]*node
-	// router *Router
-
-	// mostParams used to keep track of the most amount of
-	// params in any URL and this will set the default capacity
-	// of eachContext Params
-	mostParams uint8
 
 	// function that gets called to create the context object... is total overridable using RegisterContext
 	contextFunc ContextFunc
@@ -131,6 +125,11 @@ type LARS struct {
 	notFound         HandlersChain
 
 	customHandlersFuncs customHandlers
+
+	// mostParams used to keep track of the most amount of
+	// params in any URL and this will set the default capacity
+	// of eachContext Params
+	mostParams uint8
 
 	// Enables automatic redirection if the current route can't be matched but a
 	// handler for the path with (without) the trailing slash exists.
@@ -297,13 +296,15 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			if l.redirectTrailingSlash && len(r.URL.Path) > 1 {
 
 				// find again all lowercase
-				lc := strings.ToLower(r.URL.Path)
+				orig := r.URL.Path
+				lc := strings.ToLower(orig)
 
 				if lc != r.URL.Path {
 
 					if c.handlers, _, _ = root.find(lc, c.params); c.handlers != nil {
 						r.URL.Path = lc
-						c.handlers = l.redirect(r.Method)
+						c.handlers = l.redirect(r.Method, r.URL.String())
+						r.URL.Path = orig
 						goto END
 					}
 				}
@@ -316,7 +317,8 @@ func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 				if c.handlers, _, _ = root.find(lc, c.params); c.handlers != nil {
 					r.URL.Path = lc
-					c.handlers = l.redirect(r.Method)
+					c.handlers = l.redirect(r.Method, r.URL.String())
+					r.URL.Path = orig
 					goto END
 				}
 			}
@@ -351,8 +353,6 @@ END:
 
 func (l *LARS) getOptions(c *Ctx) {
 
-	res := c.Response()
-
 	if c.request.URL.Path == "*" { // check server-wide OPTIONS
 
 		for m := range l.trees {
@@ -361,7 +361,7 @@ func (l *LARS) getOptions(c *Ctx) {
 				continue
 			}
 
-			res.Header().Add(Allow, m)
+			c.response.Header().Add(Allow, m)
 		}
 
 	} else {
@@ -372,13 +372,13 @@ func (l *LARS) getOptions(c *Ctx) {
 			}
 
 			if c.handlers, _, _ = tree.find(c.request.URL.Path, c.params); c.handlers != nil {
-				res.Header().Add(Allow, m)
+				c.response.Header().Add(Allow, m)
 			}
 		}
 
 	}
 
-	res.Header().Add(Allow, OPTIONS)
+	c.response.Header().Add(Allow, OPTIONS)
 	c.handlers = l.automaticOPTIONS
 
 	return
@@ -386,14 +386,12 @@ func (l *LARS) getOptions(c *Ctx) {
 
 func (l *LARS) checkMethodNotAllowed(c *Ctx) (found bool) {
 
-	res := c.Response()
-
 	for m, tree := range l.trees {
 
 		if m != c.request.Method {
 			if c.handlers, _, _ = tree.find(c.request.URL.Path, c.params); c.handlers != nil {
 				// add methods
-				res.Header().Add(Allow, m)
+				c.response.Header().Add(Allow, m)
 				found = true
 			}
 		}

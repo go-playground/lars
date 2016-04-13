@@ -11,8 +11,8 @@ import "net/url"
 type nodeType uint8
 
 const (
-	isStatic nodeType = iota // default
-	isRoot
+	// isStatic nodeType = iota // default
+	isRoot nodeType = iota + 1
 	hasParams
 	matchesAny
 )
@@ -26,12 +26,12 @@ type existingParams map[string]struct{}
 
 type node struct {
 	path      string
-	wildChild bool
-	nType     nodeType
 	indices   string
 	children  []*node
 	handler   *methodChain
 	priority  uint32
+	nType     nodeType
+	wildChild bool
 }
 
 func (e existingParams) Check(param string, path string) {
@@ -76,8 +76,8 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 
 	var err error
 
-	if path == "" {
-		path = "/"
+	if path == blank {
+		path = basePath
 	}
 
 	existing := make(existingParams)
@@ -140,7 +140,7 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 					if len(path) >= len(n.path) && n.path == path[:len(n.path)] {
 
 						// check for longer wildcard, e.g. :name and :names
-						if len(n.path) >= len(path) || path[len(n.path)] == '/' {
+						if len(n.path) >= len(path) || path[len(n.path)] == slashByte {
 							continue walk
 						}
 					}
@@ -153,7 +153,7 @@ func (n *node) add(path string, handlerName string, handler HandlersChain) (lp u
 				c := path[0]
 
 				// slash after param
-				if n.nType == hasParams && c == '/' && len(n.children) == 1 {
+				if n.nType == hasParams && c == slashByte && len(n.children) == 1 {
 					n = n.children[0]
 					n.priority++
 					continue walk
@@ -214,7 +214,7 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 
 		// find wildcard end (either '/' or path end)
 		end := i + 1
-		for end < max && path[end] != '/' {
+		for end < max && path[end] != slashByte {
 			switch path[end] {
 			// the wildcard name must not contain ':' and '*'
 			case paramByte, wildByte:
@@ -281,7 +281,7 @@ func (n *node) insertChild(numParams uint8, existing existingParams, path string
 
 			// currently fixed width 1 for '/'
 			i--
-			if path[i] != '/' {
+			if path[i] != slashByte {
 				panic("no / before catch-all in path '" + fullPath + "'")
 			}
 
@@ -353,7 +353,7 @@ walk: // Outer loop for walking the tree
 
 					// find param end (either '/' or path end)
 					end := 0
-					for end < len(path) && path[end] != '/' {
+					for end < len(path) && path[end] != slashByte {
 						end++
 					}
 
