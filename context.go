@@ -35,6 +35,12 @@ type Context interface {
 	ParseMultipartForm(maxMemory int64) error
 	Set(key interface{}, value interface{})
 	Get(key interface{}) (value interface{}, exists bool)
+	Context() context.Context
+	WithContext(context.Context)
+	WithCancel() context.CancelFunc
+	WithDeadline(time.Time) context.CancelFunc
+	WithTimeout(time.Duration) context.CancelFunc
+	WithValue(key interface{}, val interface{})
 	Next()
 	RequestStart(w http.ResponseWriter, r *http.Request)
 	RequestEnd()
