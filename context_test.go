@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -105,17 +107,8 @@ func TestContext(t *testing.T) {
 	}
 
 	varParams = append(varParams, param1)
-
-	// //store
-	// storeMap := store{
-	// 	"User":        "Alice",
-	// 	"Information": []string{"Alice", "Bob", "40.712784", "-74.005941"},
-	// }
-
 	c.params = varParams
 	c.netContext = context.Background()
-	// c.m = new(sync.RWMutex)
-	// c.store = storeMap
 	c.request = r
 
 	//Request
@@ -130,7 +123,9 @@ func TestContext(t *testing.T) {
 	Equal(t, "507f191e810c19729de860ea", bsonValue)
 
 	//Store
-	c.Set("publicKey", "U|ydN3SX)B(hI8SV1R;(")
+	ctx := c.Context()
+	ctx = context.WithValue(ctx, "publicKey", "U|ydN3SX)B(hI8SV1R;(")
+	c.WithContext(ctx)
 
 	value, exists := c.Get("publicKey")
 
@@ -138,8 +133,8 @@ func TestContext(t *testing.T) {
 	Equal(t, true, exists)
 	Equal(t, "U|ydN3SX)B(hI8SV1R;(", value)
 
-	c.Set("User", "Alice")
-	value, exists = c.Get("User")
+	c.WithValue("User", "Alice")
+	value, exists = c.Value("User").(string)
 	Equal(t, true, exists)
 	Equal(t, "Alice", value)
 
@@ -168,13 +163,33 @@ func TestContext(t *testing.T) {
 	NotEqual(t, c.response, nil)
 
 	//Set
-	Equal(t, c.netContext.Value("test"), nil)
+	Equal(t, c.Value("test"), nil)
 
 	// Index
 	Equal(t, c.index, -1)
 
 	// Handlers
 	Equal(t, c.handlers, nil)
+
+	cancelFunc := c.WithCancel()
+	Equal(t, reflect.TypeOf(cancelFunc).String(), "context.CancelFunc")
+
+	dt := time.Now().Add(time.Minute)
+	cancelFunc = c.WithDeadline(dt)
+	Equal(t, reflect.TypeOf(cancelFunc).String(), "context.CancelFunc")
+
+	cancelFunc = c.WithTimeout(time.Minute)
+	Equal(t, reflect.TypeOf(cancelFunc).String(), "context.CancelFunc")
+
+	deadline, ok := c.Deadline()
+	Equal(t, ok, true)
+	Equal(t, deadline, dt)
+
+	dc := c.Done()
+	Equal(t, reflect.TypeOf(dc).String(), "<-chan struct {}")
+
+	err := c.Err()
+	Equal(t, err, nil)
 }
 
 func TestQueryParams(t *testing.T) {
