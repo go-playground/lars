@@ -131,6 +131,13 @@ func (g *routeGroup) Trace(path string, h ...Handler) {
 	g.handle(TRACE, path, h)
 }
 
+// Handle allows for any method to be registered with the given
+// route & handler. Allows for non standard methods to be used
+// like CalDavs PROPFIND and so forth.
+func (g *routeGroup) Handle(method string, path string, h ...Handler) {
+	g.handle(method, path, h)
+}
+
 // Any adds a route & handler to the router for all HTTP methods.
 func (g *routeGroup) Any(path string, h ...Handler) {
 	g.Connect(path, h...)

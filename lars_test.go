@@ -428,6 +428,8 @@ func TestBadAdd(t *testing.T) {
 }
 
 func TestAddAllMethods(t *testing.T) {
+
+	propfind := "PROPFIND"
 	fn := func(c Context) {
 		if _, err := c.Response().Write([]byte(c.Request().Method)); err != nil {
 			panic(err)
@@ -446,6 +448,7 @@ func TestAddAllMethods(t *testing.T) {
 	l.Patch("/home/", fn)
 	l.Options("/home/", fn)
 	l.Connect("/home/", fn)
+	l.Handle(propfind, "/home/", fn)
 
 	code, body := request(GET, "/", l)
 	Equal(t, code, http.StatusOK)
@@ -486,6 +489,10 @@ func TestAddAllMethods(t *testing.T) {
 	code, body = request(CONNECT, "/home/", l)
 	Equal(t, code, http.StatusOK)
 	Equal(t, body, CONNECT)
+
+	code, body = request(propfind, "/home/", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, propfind)
 }
 
 func TestAddAllMethodsMatch(t *testing.T) {
