@@ -73,6 +73,7 @@ const (
 	XForwardedFor      = "X-Forwarded-For"
 	XRealIP            = "X-Real-Ip"
 	Allow              = "Allow"
+	Origin             = "Origin"
 
 	Gzip = "gzip"
 
