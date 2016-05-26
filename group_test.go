@@ -1,12 +1,13 @@
 package lars
 
 import (
-	"bytes"
 	"fmt"
+	"log"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 	. "gopkg.in/go-playground/assert.v1"
 )
 
@@ -22,14 +23,28 @@ import (
 //
 
 func TestWebsockets(t *testing.T) {
+
+	origin := "http://localhost"
+
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			o := r.Header.Get(Origin)
+			return o == origin
+		},
+	}
+
 	l := New()
-	l.WebSocket("/ws", func(c Context) {
+	l.WebSocket(upgrader, "/ws", func(c Context) {
 
-		recv := make([]byte, 1000)
+		messageType, b, err := c.WebSocket().ReadMessage()
+		if err != nil {
+			return
+		}
 
-		i, err := c.WebSocket().Read(recv)
 		if err == nil {
-			_, err := c.WebSocket().Write(recv[:i])
+			err := c.WebSocket().WriteMessage(messageType, b)
 			if err != nil {
 				panic(err)
 			}
@@ -40,19 +55,29 @@ func TestWebsockets(t *testing.T) {
 	defer server.Close()
 
 	addr := server.Listener.Addr().String()
-	origin := "http://localhost"
+
+	header := make(http.Header, 0)
+	header.Set(Origin, origin)
 
 	url := fmt.Sprintf("ws://%s/ws", addr)
-	ws, err := websocket.Dial(url, "", origin)
+	ws, _, err := websocket.DefaultDialer.Dial(url, header)
+	if err != nil {
+		log.Fatal("dial:", err)
+	}
 	Equal(t, err, nil)
 
 	defer ws.Close()
 
-	_, err = ws.Write([]byte("websockets in action!"))
+	err = ws.WriteMessage(websocket.TextMessage, []byte("websockets in action!"))
 	Equal(t, err, nil)
 
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(ws)
+	typ, b, err := ws.ReadMessage()
 	Equal(t, err, nil)
-	Equal(t, "websockets in action!", buf.String())
+	Equal(t, typ, websocket.TextMessage)
+	Equal(t, "websockets in action!", string(b))
+
+	wsBad, res, err := websocket.DefaultDialer.Dial(url, nil)
+	NotEqual(t, err, nil)
+	Equal(t, wsBad, nil)
+	Equal(t, res.StatusCode, http.StatusForbidden)
 }

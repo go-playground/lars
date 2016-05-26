@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
-	"golang.org/x/net/websocket"
 )
 
 // Param is a single URL parameter, consisting of a key and a value.

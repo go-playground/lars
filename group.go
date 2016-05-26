@@ -1,11 +1,10 @@
 package lars
 
 import (
-	"net/http"
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 // IRouteGroup interface for router group
@@ -27,7 +26,7 @@ type IRoutes interface {
 	Head(string, ...Handler)
 	Connect(string, ...Handler)
 	Trace(string, ...Handler)
-	WebSocket(string, Handler)
+	WebSocket(websocket.Upgrader, string, Handler)
 }
 
 // routeGroup struct containing all fields and methods for use.
@@ -159,22 +158,21 @@ func (g *routeGroup) Match(methods []string, path string, h ...Handler) {
 }
 
 // WebSocket adds a websocket route
-func (g *routeGroup) WebSocket(path string, h Handler) {
+func (g *routeGroup) WebSocket(upgrader websocket.Upgrader, path string, h Handler) {
 
 	handler := g.lars.wrapHandler(h)
 	g.Get(path, func(c Context) {
 
 		ctx := c.BaseContext()
+		var err error
 
-		wss := websocket.Server{
-			Handler: func(ws *websocket.Conn) {
-				ctx.websocket = ws
-				ctx.response.status = http.StatusSwitchingProtocols
-				ctx.Next()
-			},
+		ctx.websocket, err = upgrader.Upgrade(ctx.response, ctx.request, nil)
+		if err != nil {
+			return
 		}
 
-		wss.ServeHTTP(ctx.response, ctx.request)
+		defer ctx.websocket.Close()
+		c.Next()
 	}, handler)
 }
 
