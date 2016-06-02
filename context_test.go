@@ -49,6 +49,9 @@ func TestDecode(t *testing.T) {
 		err := c.Decode(false, 16<<10, test)
 		Equal(t, err, nil)
 	})
+
+	NotEqual(t, l.BuiltInFormDecoder(), nil)
+
 	hf := l.Serve()
 
 	form := url.Values{}

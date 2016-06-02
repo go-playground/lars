@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-playground/form"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 )
@@ -416,15 +415,13 @@ func (c *Ctx) Inline(r io.Reader, filename string) (err error) {
 	return
 }
 
-// Decode takes the request and attempts to discover it's type
-// via http headers and then unmarshal into the provided struct.
-// Example if header was "application/json" would unmarshal using
+// Decode takes the request and attempts to discover it's content type via
+// the http headers and then decode the request body into the provided struct.
+// Example if header was "application/json" would decode using
 // json.NewDecoder(io.LimitReader(c.request.Body, maxMemory)).Decode(v).
 func (c *Ctx) Decode(includeFormQueryParams bool, maxMemory int64, v interface{}) (err error) {
 
-	c.l.formDecoderInit.Do(func() {
-		c.l.formDecoder = form.NewDecoder()
-	})
+	c.l.initFormDecoder()
 
 	typ := c.request.Header.Get(ContentType)
 

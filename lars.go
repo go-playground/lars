@@ -213,6 +213,21 @@ func New() *LARS {
 	return l
 }
 
+// BuiltInFormDecoder returns the built in form decoder github.com/go-playground/form
+// in order for custom type to be registered.
+func (l *LARS) BuiltInFormDecoder() *form.Decoder {
+
+	l.initFormDecoder()
+
+	return l.formDecoder
+}
+
+func (l *LARS) initFormDecoder() {
+	l.formDecoderInit.Do(func() {
+		l.formDecoder = form.NewDecoder()
+	})
+}
+
 // RegisterCustomHandler registers a custom handler that gets wrapped by HandlerFunc
 func (l *LARS) RegisterCustomHandler(customType interface{}, fn CustomHandlerFunc) {
 
