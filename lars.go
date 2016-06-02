@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/go-playground/form"
 )
 
 // HTTP Constant Terms and Variables
@@ -150,6 +152,10 @@ type LARS struct {
 	// if enabled automatically handles OPTION requests; manually configured OPTION
 	// handlers take precidence. default true
 	automaticallyHandleOPTIONS bool
+
+	// form decoder + once initialization
+	formDecoder     *form.Decoder
+	formDecoderInit sync.Once
 }
 
 // RouteMap contains a single routes full path
