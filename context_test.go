@@ -1,12 +1,16 @@
 package lars
 
 import (
+	"bytes"
 	"encoding/xml"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,6 +29,127 @@ import (
 // -- may be a good idea to change to output path to somewherelike /tmp
 // go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
 //
+
+func TestDecode(t *testing.T) {
+
+	type TestStruct struct {
+		ID              int `form:"id"`
+		Posted          string
+		MultiPartPosted string
+	}
+
+	test := new(TestStruct)
+
+	l := New()
+	l.Post("/decode/:id", func(c Context) {
+		err := c.Decode(true, 16<<10, test)
+		Equal(t, err, nil)
+	})
+	l.Post("/decode2/:id", func(c Context) {
+		err := c.Decode(false, 16<<10, test)
+		Equal(t, err, nil)
+	})
+
+	NotEqual(t, l.BuiltInFormDecoder(), nil)
+
+	hf := l.Serve()
+
+	form := url.Values{}
+	form.Add("Posted", "value")
+
+	r, _ := http.NewRequest(POST, "/decode/13", strings.NewReader(form.Encode()))
+	r.Header.Set(ContentType, ApplicationForm)
+	w := httptest.NewRecorder()
+
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, test.ID, 13)
+	Equal(t, test.Posted, "value")
+	Equal(t, test.MultiPartPosted, "")
+
+	test = new(TestStruct)
+	r, _ = http.NewRequest(POST, "/decode2/13", strings.NewReader(form.Encode()))
+	r.Header.Set(ContentType, ApplicationForm)
+	w = httptest.NewRecorder()
+
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, test.ID, 0)
+	Equal(t, test.Posted, "value")
+	Equal(t, test.MultiPartPosted, "")
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	err := writer.WriteField("MultiPartPosted", "value")
+	Equal(t, err, nil)
+
+	// Don't forget to close the multipart writer.
+	// If you don't close it, your request will be missing the terminating boundary.
+	err = writer.Close()
+	Equal(t, err, nil)
+
+	test = new(TestStruct)
+	r, _ = http.NewRequest(POST, "/decode/13", body)
+	r.Header.Set(ContentType, writer.FormDataContentType())
+	w = httptest.NewRecorder()
+
+	hf.ServeHTTP(w, r)
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, test.ID, 13)
+	Equal(t, test.Posted, "")
+	Equal(t, test.MultiPartPosted, "value")
+
+	body = &bytes.Buffer{}
+	writer = multipart.NewWriter(body)
+
+	err = writer.WriteField("MultiPartPosted", "value")
+	Equal(t, err, nil)
+
+	// Don't forget to close the multipart writer.
+	// If you don't close it, your request will be missing the terminating boundary.
+	err = writer.Close()
+	Equal(t, err, nil)
+
+	test = new(TestStruct)
+	r, _ = http.NewRequest(POST, "/decode2/13", body)
+	r.Header.Set(ContentType, writer.FormDataContentType())
+	w = httptest.NewRecorder()
+
+	hf.ServeHTTP(w, r)
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, test.ID, 0)
+	Equal(t, test.Posted, "")
+	Equal(t, test.MultiPartPosted, "value")
+
+	jsonBody := `{"ID":13,"Posted":"value","MultiPartPosted":"value"}`
+	test = new(TestStruct)
+	r, _ = http.NewRequest(POST, "/decode/13", strings.NewReader(jsonBody))
+	r.Header.Set(ContentType, ApplicationJSON)
+	w = httptest.NewRecorder()
+
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, test.ID, 13)
+	Equal(t, test.Posted, "value")
+	Equal(t, test.MultiPartPosted, "value")
+
+	xmlBody := `<TestStruct><ID>13</ID><Posted>value</Posted><MultiPartPosted>value</MultiPartPosted></TestStruct>`
+	test = new(TestStruct)
+	r, _ = http.NewRequest(POST, "/decode/13", strings.NewReader(xmlBody))
+	r.Header.Set(ContentType, ApplicationXML)
+	w = httptest.NewRecorder()
+
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, test.ID, 13)
+	Equal(t, test.Posted, "value")
+	Equal(t, test.MultiPartPosted, "value")
+}
 
 func TestStream(t *testing.T) {
 	l := New()

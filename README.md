@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-3.0-green.svg)
+![Project status](https://img.shields.io/badge/version-3.1-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -177,6 +177,19 @@ func Home(c *MyContext) {
 	c.CustomContextFunction()
 	...
 }
+```
+
+Decoding Body
+-------------
+For full example see [here](https://github.com/go-playground/lars/blob/master/examples/decode/main.go).
+currently JSON, XML, FORM + Multipart Form's are support out of the box.
+```go
+	// first argument denotes yes or no I would like URL query parameter fields
+	// to be included. i.e. 'id' in route '/user/:id' should it be included.
+	// run, then change to false and you'll see user.ID is not populated.
+	if err := c.Decode(true, maxBytes, &user); err != nil {
+		log.Println(err)
+	}
 ```
 
 Misc

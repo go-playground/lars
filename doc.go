@@ -152,6 +152,19 @@ example context + custom handlers
 		...
 	}
 
+Decoding Body
+
+For full example see https://github.com/go-playground/lars/blob/master/examples/decode/main.go
+currently JSON, XML, FORM + Multipart Form's are support out of the box.
+
+	// first argument denotes yes or no I would like URL query parameter fields
+	// to be included. i.e. 'id' in route '/user/:id' should it be included.
+	// run, then change to false and you'll see user.ID is not populated.
+	if err := c.Decode(true, maxBytes, &user); err != nil {
+		log.Println(err)
+	}
+
+
 Misc
 
 misc examples and noteworthy features

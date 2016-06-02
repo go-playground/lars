@@ -57,6 +57,7 @@ type Context interface {
 	TextBytes(int, []byte) error
 	Attachment(r io.Reader, filename string) (err error)
 	Inline(r io.Reader, filename string) (err error)
+	Decode(includeFormQueryParams bool, maxMemory int64, v interface{}) (err error)
 	BaseContext() *Ctx
 }
 
@@ -73,6 +74,7 @@ type Ctx struct {
 	index               int
 	formParsed          bool
 	multipartFormParsed bool
+	l                   *LARS
 }
 
 var _ context.Context = &Ctx{}
@@ -82,6 +84,7 @@ func NewContext(l *LARS) *Ctx {
 
 	c := &Ctx{
 		params: make(Params, l.mostParams),
+		l:      l,
 	}
 
 	c.response = newResponse(nil, c)
@@ -409,6 +412,51 @@ func (c *Ctx) Inline(r io.Reader, filename string) (err error) {
 
 	_, err = io.Copy(c.response, r)
 
+	return
+}
+
+// Decode takes the request and attempts to discover it's content type via
+// the http headers and then decode the request body into the provided struct.
+// Example if header was "application/json" would decode using
+// json.NewDecoder(io.LimitReader(c.request.Body, maxMemory)).Decode(v).
+func (c *Ctx) Decode(includeFormQueryParams bool, maxMemory int64, v interface{}) (err error) {
+
+	c.l.initFormDecoder()
+
+	typ := c.request.Header.Get(ContentType)
+
+	if idx := strings.Index(typ, ";"); idx != -1 {
+		typ = typ[:idx]
+	}
+
+	switch typ {
+
+	case ApplicationJSON:
+		err = json.NewDecoder(io.LimitReader(c.request.Body, maxMemory)).Decode(v)
+
+	case ApplicationXML:
+		err = xml.NewDecoder(io.LimitReader(c.request.Body, maxMemory)).Decode(v)
+
+	case ApplicationForm:
+
+		if err = c.ParseForm(); err == nil {
+			if includeFormQueryParams {
+				err = c.l.formDecoder.Decode(v, c.request.Form)
+			} else {
+				err = c.l.formDecoder.Decode(v, c.request.PostForm)
+			}
+		}
+
+	case MultipartForm:
+
+		if err = c.ParseMultipartForm(maxMemory); err == nil {
+			if includeFormQueryParams {
+				err = c.l.formDecoder.Decode(v, c.request.Form)
+			} else {
+				err = c.l.formDecoder.Decode(v, c.request.MultipartForm.Value)
+			}
+		}
+	}
 	return
 }
 
