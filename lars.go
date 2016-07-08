@@ -150,7 +150,7 @@ type LARS struct {
 	handleMethodNotAllowed bool
 
 	// if enabled automatically handles OPTION requests; manually configured OPTION
-	// handlers take precidence. default true
+	// handlers take presidence. default true
 	automaticallyHandleOPTIONS bool
 }
 
