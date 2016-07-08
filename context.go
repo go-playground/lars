@@ -74,7 +74,6 @@ type Ctx struct {
 	index               int
 	formParsed          bool
 	multipartFormParsed bool
-	l                   *LARS
 }
 
 var _ context.Context = &Ctx{}
@@ -84,7 +83,6 @@ func NewContext(l *LARS) *Ctx {
 
 	c := &Ctx{
 		params: make(Params, l.mostParams),
-		l:      l,
 	}
 
 	c.response = newResponse(nil, c)
@@ -421,7 +419,7 @@ func (c *Ctx) Inline(r io.Reader, filename string) (err error) {
 // json.NewDecoder(io.LimitReader(c.request.Body, maxMemory)).Decode(v).
 func (c *Ctx) Decode(includeFormQueryParams bool, maxMemory int64, v interface{}) (err error) {
 
-	c.l.initFormDecoder()
+	initFormDecoder()
 
 	typ := c.request.Header.Get(ContentType)
 
@@ -441,9 +439,9 @@ func (c *Ctx) Decode(includeFormQueryParams bool, maxMemory int64, v interface{}
 
 		if err = c.ParseForm(); err == nil {
 			if includeFormQueryParams {
-				err = c.l.formDecoder.Decode(v, c.request.Form)
+				err = formDecoder.Decode(v, c.request.Form)
 			} else {
-				err = c.l.formDecoder.Decode(v, c.request.PostForm)
+				err = formDecoder.Decode(v, c.request.PostForm)
 			}
 		}
 
@@ -451,9 +449,9 @@ func (c *Ctx) Decode(includeFormQueryParams bool, maxMemory int64, v interface{}
 
 		if err = c.ParseMultipartForm(maxMemory); err == nil {
 			if includeFormQueryParams {
-				err = c.l.formDecoder.Decode(v, c.request.Form)
+				err = formDecoder.Decode(v, c.request.Form)
 			} else {
-				err = c.l.formDecoder.Decode(v, c.request.MultipartForm.Value)
+				err = formDecoder.Decode(v, c.request.MultipartForm.Value)
 			}
 		}
 	}

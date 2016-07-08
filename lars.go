@@ -152,10 +152,6 @@ type LARS struct {
 	// if enabled automatically handles OPTION requests; manually configured OPTION
 	// handlers take precidence. default true
 	automaticallyHandleOPTIONS bool
-
-	// form decoder + once initialization
-	formDecoder     *form.Decoder
-	formDecoderInit sync.Once
 }
 
 // RouteMap contains a single routes full path
@@ -179,6 +175,9 @@ var (
 	automaticOPTIONSHandler = func(c Context) {
 		c.Response().WriteHeader(http.StatusOK)
 	}
+
+	formDecoder     *form.Decoder
+	formDecoderInit sync.Once
 )
 
 // New Creates and returns a new lars instance
@@ -197,7 +196,7 @@ func New() *LARS {
 		http405:                    []HandlerFunc{methodNotAllowedHandler},
 		redirectTrailingSlash:      true,
 		handleMethodNotAllowed:     false,
-		automaticallyHandleOPTIONS: true,
+		automaticallyHandleOPTIONS: false,
 	}
 
 	l.routeGroup.lars = l
@@ -213,19 +212,19 @@ func New() *LARS {
 	return l
 }
 
+func initFormDecoder() {
+	formDecoderInit.Do(func() {
+		formDecoder = form.NewDecoder()
+	})
+}
+
 // BuiltInFormDecoder returns the built in form decoder github.com/go-playground/form
 // in order for custom type to be registered.
 func (l *LARS) BuiltInFormDecoder() *form.Decoder {
 
-	l.initFormDecoder()
+	initFormDecoder()
 
-	return l.formDecoder
-}
-
-func (l *LARS) initFormDecoder() {
-	l.formDecoderInit.Do(func() {
-		l.formDecoder = form.NewDecoder()
-	})
+	return formDecoder
 }
 
 // RegisterCustomHandler registers a custom handler that gets wrapped by HandlerFunc
@@ -305,6 +304,7 @@ func (l *LARS) Serve() http.Handler {
 
 // Conforms to the http.Handler interface.
 func (l *LARS) serveHTTP(w http.ResponseWriter, r *http.Request) {
+
 	c := l.pool.Get().(*Ctx)
 
 	c.parent.RequestStart(w, r)

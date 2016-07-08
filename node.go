@@ -377,9 +377,6 @@ walk: // Outer loop for walking the tree
 					if n.handler != nil {
 						handler = n.handler.chain
 						handlerName = n.handler.handlerName
-					}
-
-					if handler != nil {
 						return
 					} else if len(n.children) == 1 {
 						// No handle found. Check if a handle for this path
