@@ -1,14 +1,12 @@
 package lars
 
 import (
-	"context"
 	"encoding/json"
 	"encoding/xml"
 	"io"
 	"net"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -23,45 +21,6 @@ type Param struct {
 // The slice is ordered, the first URL parameter is also the first slice value.
 // It is therefore safe to read values by the index.
 type Params []Param
-
-// Context is the context interface type
-type Context interface {
-	context.Context
-	Request() *http.Request
-	Response() *Response
-	WebSocket() *websocket.Conn
-	Param(name string) string
-	ParseForm() error
-	ParseMultipartForm(maxMemory int64) error
-	Set(key interface{}, value interface{})
-	Get(key interface{}) (value interface{}, exists bool)
-	Context() context.Context
-	WithContext(context.Context)
-	WithCancel() context.CancelFunc
-	WithDeadline(time.Time) context.CancelFunc
-	WithTimeout(time.Duration) context.CancelFunc
-	WithValue(key interface{}, val interface{})
-	Next()
-	RequestStart(w http.ResponseWriter, r *http.Request)
-	RequestEnd()
-	ClientIP() (clientIP string)
-	AcceptedLanguages(lowercase bool) []string
-	HandlerName() string
-	Stream(step func(w io.Writer) bool)
-	JSON(int, interface{}) error
-	JSONBytes(int, []byte) error
-	JSONP(int, interface{}, string) error
-	XML(int, interface{}) error
-	XMLBytes(int, []byte) error
-	Text(int, string) error
-	TextBytes(int, []byte) error
-	Attachment(r io.Reader, filename string) (err error)
-	Inline(r io.Reader, filename string) (err error)
-	Decode(includeFormQueryParams bool, maxMemory int64, v interface{}) (err error)
-	BaseContext() *Ctx
-}
-
-var _ context.Context = &Ctx{}
 
 // NewContext returns a new default lars Context object.
 func NewContext(l *LARS) *Ctx {
