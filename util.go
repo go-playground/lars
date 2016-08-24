@@ -16,7 +16,6 @@ var NativeChainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	b := c.BaseContext()
 
 	if b.index+1 < len(b.handlers) {
-		// TODO: in go 1.7 make sure r is the same as c.request... request's context could have been updated in a native handler
 		c.Next()
 	}
 })
@@ -56,7 +55,6 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 			}
 
 			if ctx.index+1 < len(ctx.handlers) {
-				// TODO: in go 1.7 make sure r is the same as c.request... request's context could have been updated in a native handler
 				c.Next()
 			}
 		}
@@ -71,7 +69,6 @@ func (l *LARS) wrapHandler(h Handler) HandlerFunc {
 			}
 
 			if ctx.index+1 < len(ctx.handlers) {
-				// TODO: in go 1.7 make sure r is the same as c.request... request's context could have been updated in a native handler
 				c.Next()
 			}
 		}
