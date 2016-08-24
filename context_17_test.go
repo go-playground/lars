@@ -3,13 +3,12 @@
 package lars
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	. "gopkg.in/go-playground/assert.v1"
 )
