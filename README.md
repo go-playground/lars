@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-3.2.0-green.svg)
+![Project status](https://img.shields.io/badge/version-3.3.0-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -233,6 +233,26 @@ l.Use(nosurf.NewPure(lars.NativeChainHandler))
 // The functions are for convenience and are totally optional.
 ```
 
+Special Note
+-------------
+I don't know if it was an oversight or just an assumption about how middleware would be used with Go 1.7's new
+`context` integration into the `*http.Request` but there are a few quirks. As you know lars handles multiple handler
+types, including the native handler, this functionality is possible because of the way lar handles the middleware; lars
+does not `chain` the middleware in the normal way, but rather calles each in sequence; because of this all you have to 
+do is call c.Next() or it has already been wrapped to do so for you transparently. OK getting back to the point, if you
+are not using `lars.Context` to set the context information you will have to set the request object so that the information
+gets back to the calling package. eg.
+
+```go
+// because 'r' is a copy of a pointer to allow the information to get
+// back to the caller, need to set the value of 'r' as below with '*r'
+func(w http.ResponseWriter, r *http.Request) {
+	*r = *r.WithContext(context.WithValue(r.Context(), 0, "testval1"))
+}
+```
+
+this is not an issue specific to lars, but a quirk of the way `context` is tied to the `http.Request` object.
+
 Middleware
 -----------
 There are some pre-defined middlewares within the middleware folder; NOTE: that the middleware inside will
@@ -245,41 +265,40 @@ recovery middleware are very application dependent and therefore will be listed 
 
 Benchmarks
 -----------
-Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.6 darwin/amd64
+Run on MacBook Pro (Retina, 15-inch, Late 2013) 2.6 GHz Intel Core i7 16 GB 1600 MHz DDR3 using Go version go1.7 darwin/amd64
 
 NOTICE: lars uses a custom version of [httprouter](https://github.com/julienschmidt/httprouter), benchmarks can be found [here](https://github.com/joeybloggs/go-http-routing-benchmark/tree/lars-only)
 
 ```go
 go test -bench=. -benchmem=true
 #GithubAPI Routes: 203
-   LARS: 49040 Bytes
+   LARS: 49032 Bytes
 
 #GPlusAPI Routes: 13
-   LARS: 3648 Bytes
+   LARS: 3640 Bytes
 
 #ParseAPI Routes: 26
-   LARS: 6640 Bytes
+   LARS: 6632 Bytes
 
 #Static Routes: 157
-   LARS: 30128 Bytes
+   LARS: 30120 Bytes
 
-PASS
-BenchmarkLARS_Param       	20000000	        77.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param5      	10000000	       134 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Param20     	 5000000	       320 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParamWrite  	10000000	       142 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubStatic	20000000	        96.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubParam 	10000000	       156 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GithubAll   	   50000	     32952 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusStatic 	20000000	        72.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusParam  	20000000	        98.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlus2Params	10000000	       127 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_GPlusAll    	 1000000	      1619 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseStatic 	20000000	        72.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseParam  	20000000	        78.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_Parse2Params	20000000	        96.9 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_ParseAll    	  500000	      2968 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLARS_StaticAll   	  100000	     22810 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLARS_Param            	20000000       	        70.2 ns/op     	       0 B/op  	       0 allocs/op
+BenchmarkLARS_Param5           	20000000       	       104 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_Param20          	 5000000       	       248 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_ParamWrite       	10000000       	       134 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_GithubStatic     	20000000       	        84.2 ns/op     	       0 B/op  	       0 allocs/op
+BenchmarkLARS_GithubParam      	10000000       	       129 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_GithubAll        	   50000       	     25334 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_GPlusStatic      	20000000       	        67.0 ns/op     	       0 B/op  	       0 allocs/op
+BenchmarkLARS_GPlusParam       	20000000       	        84.5 ns/op     	       0 B/op  	       0 allocs/op
+BenchmarkLARS_GPlus2Params     	20000000       	       103 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_GPlusAll         	 1000000       	      1135 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_ParseStatic      	20000000       	        67.5 ns/op     	       0 B/op  	       0 allocs/op
+BenchmarkLARS_ParseParam       	20000000       	        74.0 ns/op     	       0 B/op  	       0 allocs/op
+BenchmarkLARS_Parse2Params     	20000000       	        86.9 ns/op     	       0 B/op  	       0 allocs/op
+BenchmarkLARS_ParseAll         	 1000000       	      2029 ns/op       	       0 B/op  	       0 allocs/op
+BenchmarkLARS_StaticAll        	  100000       	     18157 ns/op       	       0 B/op  	       0 allocs/op
 ```
 
 Package Versioning
