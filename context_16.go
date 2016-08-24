@@ -3,11 +3,11 @@
 package lars
 
 import (
-	"context"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"golang.org/x/net/context"
 )
 
 // Ctx encapsulates the http request, response context
