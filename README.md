@@ -6,6 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
 [![GoDoc](https://godoc.org/github.com/go-playground/lars?status.svg)](https://godoc.org/github.com/go-playground/lars)
 ![License](https://img.shields.io/dub/l/vibe-d.svg)
+[![Gitter](https://badges.gitter.im/go-playground/lars.svg)](https://gitter.im/go-playground/lars?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view examples](https://github.com/go-playground/lars/tree/master/examples)
 
