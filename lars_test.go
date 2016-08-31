@@ -77,7 +77,7 @@ func TestFindOneOffs(t *testing.T) {
 	PanicMatches(t, func() { l.Get("/zombies/:id/", basicHandler) }, "handlers are already registered for path '/zombies/:id/'")
 }
 
-func Testlars(t *testing.T) {
+func TestLARS(t *testing.T) {
 	l := New()
 
 	l.Get("/", func(c Context) {
@@ -91,7 +91,7 @@ func Testlars(t *testing.T) {
 	Equal(t, body, "home")
 }
 
-func TestlarsStatic(t *testing.T) {
+func TestLARSStatic(t *testing.T) {
 	l := New()
 	path := "/github.com/go-playground/:id"
 	l.Get(path, basicHandler)
@@ -100,7 +100,7 @@ func TestlarsStatic(t *testing.T) {
 	Equal(t, body, "")
 }
 
-func TestlarsParam(t *testing.T) {
+func TestLARSParam(t *testing.T) {
 	l := New()
 	path := "/github.com/go-playground/:id/"
 	l.Get(path, func(c Context) {
@@ -115,7 +115,7 @@ func TestlarsParam(t *testing.T) {
 	Equal(t, body, "808w70")
 }
 
-func TestlarsTwoParam(t *testing.T) {
+func TestLARSTwoParam(t *testing.T) {
 	var p1 string
 	var p2 string
 

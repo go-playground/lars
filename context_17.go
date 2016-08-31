@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -18,6 +19,7 @@ type Context interface {
 	Response() *Response
 	WebSocket() *websocket.Conn
 	Param(name string) string
+	QueryParams() url.Values
 	ParseForm() error
 	ParseMultipartForm(maxMemory int64) error
 	Set(key interface{}, value interface{})
@@ -56,6 +58,7 @@ type Ctx struct {
 	response            *Response
 	websocket           *websocket.Conn
 	params              Params
+	queryParams         url.Values
 	handlers            HandlersChain
 	parent              Context
 	handlerName         string
@@ -69,6 +72,7 @@ func (c *Ctx) RequestStart(w http.ResponseWriter, r *http.Request) {
 	c.request = r
 	c.response.reset(w)
 	c.params = c.params[0:0]
+	c.queryParams = nil
 	c.index = -1
 	c.handlers = nil
 	c.formParsed = false

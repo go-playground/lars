@@ -723,3 +723,28 @@ func TestText(t *testing.T) {
 	Equal(t, w.Header().Get(ContentType), TextPlainCharsetUTF8)
 	Equal(t, w.Body.String(), txtData)
 }
+
+func TestCachedQueryParams(t *testing.T) {
+
+	var val1, val2 string
+
+	l := New()
+	l.Use(func(c Context) {
+		val1 = c.QueryParams()["key1"][0]
+
+		c.Next()
+	})
+	l.Get("/test", func(c Context) {
+		val2 = c.QueryParams()["key2"][0]
+	})
+
+	hf := l.Serve()
+
+	r, _ := http.NewRequest(GET, "/test?key1=val1&key2=val2", nil)
+	w := httptest.NewRecorder()
+	hf.ServeHTTP(w, r)
+
+	Equal(t, w.Code, http.StatusOK)
+	Equal(t, val1, "val1")
+	Equal(t, val2, "val2")
+}

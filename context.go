@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gorilla/websocket"
@@ -72,6 +73,22 @@ func (c *Ctx) Param(name string) string {
 	}
 
 	return blank
+}
+
+// QueryParams returns the http.Request.URL.Query() values
+// this function is not for convenience, but rather performance
+// URL.Query() reparses the RawQuery every time it's called, but this
+// function will cache the initial parsing so it doesn't have to reparse;
+// which is useful if when accessing these Params from multiple middleware.
+func (c *Ctx) QueryParams() url.Values {
+
+	if c.queryParams != nil {
+		return c.queryParams
+	}
+
+	c.queryParams = c.request.URL.Query()
+
+	return c.queryParams
 }
 
 // ParseForm calls the underlying http.Request ParseForm
