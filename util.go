@@ -15,6 +15,8 @@ var NativeChainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	c := GetContext(w)
 	b := c.BaseContext()
 
+	*b.request = *r
+
 	if b.index+1 < len(b.handlers) {
 		c.Next()
 	}
