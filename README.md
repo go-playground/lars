@@ -30,7 +30,7 @@ Installation
 Use go get 
 
 ```go
-go get github.com/go-playground/lars
+go -u get github.com/go-playground/lars
 ```
 
 Usage
@@ -40,7 +40,7 @@ Below is a simple example, for a full example [see here](https://github.com/go-p
 package main
 
 import (
-        "fmt"
+	"fmt"
 	"net/http"
 
 	"github.com/go-playground/lars"
@@ -48,7 +48,6 @@ import (
 )
 
 func main() {
-
 	l := lars.New()
 	// LoggingAndRecovery is just an example copy paste and modify to your needs
 	l.Use(mw.LoggingAndRecovery)
@@ -130,7 +129,6 @@ func (mc *MyContext) RequestStart(w http.ResponseWriter, r *http.Request) {
 
 // RequestEnd overriding
 func (mc *MyContext) RequestEnd() {
-	
 	// do whatever you need on request finish, reset variables, db connections...
 	
 	mc.Ctx.RequestEnd() // MUST be called!
@@ -151,7 +149,6 @@ func newContext(l *lars.LARS) lars.Context {
 
 // casts custom context and calls you custom handler so you don;t have to type cast lars.Context everywhere
 func castCustomContext(c lars.Context, handler lars.Handler) {
-
 	// could do it in all one statement, but in long form for readability
 	h := handler.(func(*MyContext))
 	ctx := c.(*MyContext)
@@ -160,7 +157,6 @@ func castCustomContext(c lars.Context, handler lars.Handler) {
 }
 
 func main() {
-
 	l := lars.New()
 	l.RegisterContext(newContext) // all gets cached in pools for you
 	l.RegisterCustomHandler(func(*MyContext) {}, castCustomContext)
@@ -174,7 +170,6 @@ func main() {
 // Home ...notice the receiver is *MyContext, castCustomContext handled the type casting for us
 // quite the time saver if you ask me.
 func Home(c *MyContext) {
-
 	c.CustomContextFunction()
 	...
 }
