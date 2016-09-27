@@ -27,10 +27,8 @@ Key & Unique Features
 Installation
 -----------
 
-Use go get 
-
-```go
-go -u get github.com/go-playground/lars
+```shell
+go get -u github.com/go-playground/lars
 ```
 
 Usage
