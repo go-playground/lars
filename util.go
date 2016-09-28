@@ -117,7 +117,7 @@ func (l *LARS) redirect(method string, to string) (handlers HandlersChain) {
 	code := http.StatusMovedPermanently
 
 	if method != GET {
-		code = http.StatusTemporaryRedirect
+		code = http.StatusPermanentRedirect
 	}
 
 	fn := func(c Context) {

@@ -913,7 +913,7 @@ func TestRedirect(t *testing.T) {
 	Equal(t, code, http.StatusMovedPermanently)
 
 	code, _ = request(POST, "/home", l)
-	Equal(t, code, http.StatusTemporaryRedirect)
+	Equal(t, code, http.StatusPermanentRedirect)
 
 	l.SetRedirectTrailingSlash(false)
 
