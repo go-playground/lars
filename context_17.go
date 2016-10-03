@@ -83,7 +83,7 @@ func (c *Ctx) RequestStart(w http.ResponseWriter, r *http.Request) {
 // golang.org/x/net/context contained on this Context.
 // It is a shortcut for context.WithValue(..., ...)
 func (c *Ctx) Set(key interface{}, value interface{}) {
-	*c.request = *c.request.WithContext(context.WithValue(c.request.Context(), key, value)) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(context.WithValue(c.request.Context(), key, value)) // temporarily shallow copying to avoid problems with external libraries
 }
 
 // Get returns the value for the given key and is a shortcut
@@ -108,7 +108,7 @@ func (c *Ctx) Context() context.Context {
 // WithContext updates the underlying request's context with to ctx
 // The provided ctx must be non-nil.
 func (c *Ctx) WithContext(ctx context.Context) {
-	*c.request = *c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
 }
 
 // Deadline calls the underlying golang.org/x/net/context Deadline()
@@ -135,7 +135,7 @@ func (c *Ctx) Value(key interface{}) interface{} {
 // updates context on the containing las.Context object.
 func (c *Ctx) WithCancel() context.CancelFunc {
 	ctx, cf := context.WithCancel(c.request.Context())
-	*c.request = *c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
 	return cf
 }
 
@@ -143,7 +143,7 @@ func (c *Ctx) WithCancel() context.CancelFunc {
 // updates context on the containing las.Context object.
 func (c *Ctx) WithDeadline(deadline time.Time) context.CancelFunc {
 	ctx, cf := context.WithDeadline(c.request.Context(), deadline)
-	*c.request = *c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
 	return cf
 }
 
@@ -151,7 +151,7 @@ func (c *Ctx) WithDeadline(deadline time.Time) context.CancelFunc {
 // updates context on the containing las.Context object.
 func (c *Ctx) WithTimeout(timeout time.Duration) context.CancelFunc {
 	ctx, cf := context.WithTimeout(c.request.Context(), timeout)
-	*c.request = *c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
 	return cf
 }
 
@@ -159,5 +159,5 @@ func (c *Ctx) WithTimeout(timeout time.Duration) context.CancelFunc {
 // updates context on the containing las.Context object.
 // Can also use Set() function on Context object (Recommended)
 func (c *Ctx) WithValue(key interface{}, val interface{}) {
-	*c.request = *c.request.WithContext(context.WithValue(c.request.Context(), key, val)) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(context.WithValue(c.request.Context(), key, val)) // temporarily shallow copying to avoid problems with external libraries
 }
