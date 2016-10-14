@@ -11,7 +11,6 @@ import "net/url"
 type nodeType uint8
 
 const (
-	// isStatic nodeType = iota // default
 	isRoot nodeType = iota + 1
 	hasParams
 	matchesAny

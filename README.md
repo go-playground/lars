@@ -1,6 +1,6 @@
 ##LARS
 <img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">
-![Project status](https://img.shields.io/badge/version-3.6.0-green.svg)
+![Project status](https://img.shields.io/badge/version-3.7.0-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -8,7 +8,7 @@
 ![License](https://img.shields.io/dub/l/vibe-d.svg)
 [![Gitter](https://badges.gitter.im/go-playground/lars.svg)](https://gitter.im/go-playground/lars?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view examples](https://github.com/go-playground/lars/tree/master/examples)
+LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view examples](https://github.com/go-playground/lars/tree/master/examples). If looking for a more pure Go solution, be sure to check out [pure](https://github.com/go-playground/pure) which is essentially a pure version of lars
 
 Why Another HTTP Router?
 ------------------------

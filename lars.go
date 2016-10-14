@@ -13,23 +13,23 @@ import (
 // HTTP Constant Terms and Variables
 const (
 	// CONNECT HTTP method
-	CONNECT = "CONNECT"
+	CONNECT = http.MethodConnect
 	// DELETE HTTP method
-	DELETE = "DELETE"
+	DELETE = http.MethodDelete
 	// GET HTTP method
-	GET = "GET"
+	GET = http.MethodGet
 	// HEAD HTTP method
-	HEAD = "HEAD"
+	HEAD = http.MethodHead
 	// OPTIONS HTTP method
-	OPTIONS = "OPTIONS"
+	OPTIONS = http.MethodOptions
 	// PATCH HTTP method
-	PATCH = "PATCH"
+	PATCH = http.MethodPatch
 	// POST HTTP method
-	POST = "POST"
+	POST = http.MethodPost
 	// PUT HTTP method
-	PUT = "PUT"
+	PUT = http.MethodPut
 	// TRACE HTTP method
-	TRACE = "TRACE"
+	TRACE = http.MethodTrace
 
 	//-------------
 	// Media types
