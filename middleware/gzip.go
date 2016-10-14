@@ -19,23 +19,24 @@ type gzipWriter struct {
 	sniffComplete bool
 }
 
-func (w gzipWriter) Write(b []byte) (int, error) {
+func (w *gzipWriter) Write(b []byte) (int, error) {
 
 	if !w.sniffComplete {
 		if w.Header().Get(lars.ContentType) == "" {
 			w.Header().Set(lars.ContentType, http.DetectContentType(b))
 		}
+
 		w.sniffComplete = true
 	}
 
 	return w.Writer.Write(b)
 }
 
-func (w gzipWriter) Flush() error {
+func (w *gzipWriter) Flush() error {
 	return w.Writer.(*gzip.Writer).Flush()
 }
 
-func (w gzipWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w *gzipWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return w.ResponseWriter.(http.Hijacker).Hijack()
 }
 
@@ -45,7 +46,7 @@ func (w *gzipWriter) CloseNotify() <-chan bool {
 
 var writerPool = sync.Pool{
 	New: func() interface{} {
-		return gzip.NewWriter(ioutil.Discard)
+		return &gzipWriter{Writer: gzip.NewWriter(ioutil.Discard)}
 	},
 }
 
@@ -57,15 +58,25 @@ func Gzip(c lars.Context) {
 
 	if strings.Contains(c.Request().Header.Get(lars.AcceptEncoding), lars.Gzip) {
 
-		w := writerPool.Get().(*gzip.Writer)
+		gw := writerPool.Get().(*gzipWriter)
+		gw.sniffComplete = false
+		w := gw.Writer.(*gzip.Writer)
 		w.Reset(c.Response().Writer())
+		gw.ResponseWriter = c.Response().Writer()
 
 		defer func() {
+
+			if !gw.sniffComplete {
+				// We have to reset response to it's pristine state when
+				// nothing is written to body.
+				c.Response().Header().Del(lars.ContentEncoding)
+				w.Reset(ioutil.Discard)
+			}
+
 			w.Close()
-			writerPool.Put(w)
+			writerPool.Put(gw)
 		}()
 
-		gw := gzipWriter{Writer: w, ResponseWriter: c.Response().Writer()}
 		c.Response().Header().Set(lars.ContentEncoding, lars.Gzip)
 		c.Response().SetWriter(gw)
 	}
@@ -87,7 +98,8 @@ func GzipLevel(level int) lars.HandlerFunc {
 	var pool = sync.Pool{
 		New: func() interface{} {
 			z, _ := gzip.NewWriterLevel(ioutil.Discard, level)
-			return z
+
+			return &gzipWriter{Writer: z}
 		},
 	}
 
@@ -96,15 +108,25 @@ func GzipLevel(level int) lars.HandlerFunc {
 
 		if strings.Contains(c.Request().Header.Get(lars.AcceptEncoding), lars.Gzip) {
 
-			w := pool.Get().(*gzip.Writer)
+			gw := pool.Get().(*gzipWriter)
+			gw.sniffComplete = false
+			w := gw.Writer.(*gzip.Writer)
 			w.Reset(c.Response().Writer())
+			gw.ResponseWriter = c.Response().Writer()
 
 			defer func() {
+
+				if !gw.sniffComplete {
+					// We have to reset response to it's pristine state when
+					// nothing is written to body.
+					c.Response().Header().Del(lars.ContentEncoding)
+					w.Reset(ioutil.Discard)
+				}
+
 				w.Close()
-				pool.Put(w)
+				pool.Put(gw)
 			}()
 
-			gw := gzipWriter{Writer: w, ResponseWriter: c.Response().Writer()}
 			c.Response().Header().Set(lars.ContentEncoding, lars.Gzip)
 			c.Response().SetWriter(gw)
 		}

@@ -33,49 +33,7 @@ func TestGzip(t *testing.T) {
 	l.Get("/test", func(c lars.Context) {
 		c.Response().Write([]byte("test"))
 	})
-
-	server := httptest.NewServer(l.Serve())
-	defer server.Close()
-
-	req, _ := http.NewRequest(lars.GET, server.URL+"/test", nil)
-
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
-	Equal(t, err, nil)
-	Equal(t, resp.StatusCode, http.StatusOK)
-
-	b, err := ioutil.ReadAll(resp.Body)
-	Equal(t, err, nil)
-	Equal(t, string(b), "test")
-
-	req, _ = http.NewRequest(lars.GET, server.URL+"/test", nil)
-	req.Header.Set(lars.AcceptEncoding, "gzip")
-
-	resp, err = client.Do(req)
-	Equal(t, err, nil)
-	Equal(t, resp.StatusCode, http.StatusOK)
-	Equal(t, resp.Header.Get(lars.ContentEncoding), lars.Gzip)
-	Equal(t, resp.Header.Get(lars.ContentType), lars.TextPlainCharsetUTF8)
-
-	r, err := gzip.NewReader(resp.Body)
-	Equal(t, err, nil)
-	defer r.Close()
-
-	b, err = ioutil.ReadAll(r)
-	Equal(t, err, nil)
-	Equal(t, string(b), "test")
-}
-
-func TestGzipLevel(t *testing.T) {
-
-	// bad gzip level
-	PanicMatches(t, func() { GzipLevel(999) }, "gzip: invalid compression level: 999")
-
-	l := lars.New()
-	l.Use(GzipLevel(flate.BestCompression))
-	l.Get("/test", func(c lars.Context) {
-		c.Response().Write([]byte("test"))
+	l.Get("/empty", func(c lars.Context) {
 	})
 
 	server := httptest.NewServer(l.Serve())
@@ -109,6 +67,64 @@ func TestGzipLevel(t *testing.T) {
 	b, err = ioutil.ReadAll(r)
 	Equal(t, err, nil)
 	Equal(t, string(b), "test")
+
+	req, _ = http.NewRequest(http.MethodGet, server.URL+"/empty", nil)
+
+	resp, err = client.Do(req)
+	Equal(t, err, nil)
+	Equal(t, resp.StatusCode, http.StatusOK)
+}
+
+func TestGzipLevel(t *testing.T) {
+
+	// bad gzip level
+	PanicMatches(t, func() { GzipLevel(999) }, "gzip: invalid compression level: 999")
+
+	l := lars.New()
+	l.Use(GzipLevel(flate.BestCompression))
+	l.Get("/test", func(c lars.Context) {
+		c.Response().Write([]byte("test"))
+	})
+	l.Get("/empty", func(c lars.Context) {
+	})
+
+	server := httptest.NewServer(l.Serve())
+	defer server.Close()
+
+	req, _ := http.NewRequest(lars.GET, server.URL+"/test", nil)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	Equal(t, err, nil)
+	Equal(t, resp.StatusCode, http.StatusOK)
+
+	b, err := ioutil.ReadAll(resp.Body)
+	Equal(t, err, nil)
+	Equal(t, string(b), "test")
+
+	req, _ = http.NewRequest(lars.GET, server.URL+"/test", nil)
+	req.Header.Set(lars.AcceptEncoding, "gzip")
+
+	resp, err = client.Do(req)
+	Equal(t, err, nil)
+	Equal(t, resp.StatusCode, http.StatusOK)
+	Equal(t, resp.Header.Get(lars.ContentEncoding), lars.Gzip)
+	Equal(t, resp.Header.Get(lars.ContentType), lars.TextPlainCharsetUTF8)
+
+	r, err := gzip.NewReader(resp.Body)
+	Equal(t, err, nil)
+	defer r.Close()
+
+	b, err = ioutil.ReadAll(r)
+	Equal(t, err, nil)
+	Equal(t, string(b), "test")
+
+	req, _ = http.NewRequest(http.MethodGet, server.URL+"/empty", nil)
+
+	resp, err = client.Do(req)
+	Equal(t, err, nil)
+	Equal(t, resp.StatusCode, http.StatusOK)
 }
 
 func TestGzipFlush(t *testing.T) {
