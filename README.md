@@ -74,7 +74,7 @@ l.Get("/user/:id", UserHandler)
 
 // serve css, js etc.. c.Param(lars.WildcardParam) will return the remaining path if 
 // you need to use it in a custom handler...
-l.Get("/static/*", http.FileServer(http.Dir("static/"))) 
+l.Get("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static")))) 
 
 ...
 ```
