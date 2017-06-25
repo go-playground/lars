@@ -107,17 +107,17 @@ func TestGrouplogic(t *testing.T) {
 		c.Next()
 	})
 
-	a := l.Group("/a", aM)
+	a := l.GroupWithMore("/a", aM)
 	a.Get("/test", func(c Context) {
 		c.JSON(http.StatusOK, "a-ok")
 	})
 
-	b := a.Group("/b", bM)
+	b := a.GroupWithMore("/b", bM)
 	b.Get("/test", func(c Context) {
 		c.JSON(http.StatusOK, "b-ok")
 	})
 
-	c := b.Group("/c", cM)
+	c := b.GroupWithMore("/c", cM)
 	c.Get("/test", func(c Context) {
 		c.JSON(http.StatusOK, "c-ok")
 	})
