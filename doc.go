@@ -73,10 +73,10 @@ example group definitions
 
 	// creates a group for others + inherits all middleware registered using l.Use() +
 	// adds OtherHandler to middleware
-	others := l.Group("/others", OtherHandler)
+	others := l.GroupWithMore("/others", OtherHandler)
 
 	// creates a group for admin WITH NO MIDDLEWARE... more can be added using admin.Use()
-	admin := l.Group("/admin",nil)
+	admin := l.GroupWithNone("/admin")
 	admin.Use(SomeAdminSecurityMiddleware)
 	...
 
