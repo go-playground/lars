@@ -187,7 +187,7 @@ func (g *routeGroup) Group(prefix string, middleware ...Handler) IRouteGroup {
 	}
 
 	if len(middleware) == 0 {
-		rg.middleware = make(HandlersChain, len(g.middleware)+len(middleware))
+		rg.middleware = make(HandlersChain, len(g.middleware))
 		copy(rg.middleware, g.middleware)
 
 		return rg
@@ -198,8 +198,8 @@ func (g *routeGroup) Group(prefix string, middleware ...Handler) IRouteGroup {
 		return rg
 	}
 
-	rg.middleware = make(HandlersChain, len(g.lars.middleware))
-	copy(rg.middleware, g.lars.middleware)
+	rg.middleware = make(HandlersChain, len(g.middleware))
+	copy(rg.middleware, g.middleware)
 	rg.Use(middleware...)
 
 	return rg

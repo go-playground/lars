@@ -81,3 +81,65 @@ func TestWebsockets(t *testing.T) {
 	Equal(t, wsBad, nil)
 	Equal(t, res.StatusCode, http.StatusForbidden)
 }
+
+func TestGrouplogic(t *testing.T) {
+
+	var aa, bb, cc, tl int
+
+	aM := func(c Context) {
+		aa++
+		c.Next()
+	}
+
+	bM := func(c Context) {
+		bb++
+		c.Next()
+	}
+
+	cM := func(c Context) {
+		cc++
+		c.Next()
+	}
+
+	l := New()
+	l.Use(func(c Context) {
+		tl++
+		c.Next()
+	})
+
+	a := l.Group("/a", aM)
+	a.Get("/test", func(c Context) {
+		c.JSON(http.StatusOK, "a-ok")
+	})
+
+	b := a.Group("/b", bM)
+	b.Get("/test", func(c Context) {
+		c.JSON(http.StatusOK, "b-ok")
+	})
+
+	c := b.Group("/c", cM)
+	c.Get("/test", func(c Context) {
+		c.JSON(http.StatusOK, "c-ok")
+	})
+
+	code, body := request(GET, "/a/test", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "\"a-ok\"")
+	Equal(t, tl, 1)
+	Equal(t, aa, 1)
+
+	code, body = request(GET, "/a/b/test", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "\"b-ok\"")
+	Equal(t, tl, 2)
+	Equal(t, aa, 2)
+	Equal(t, bb, 1)
+
+	code, body = request(GET, "/a/b/c/test", l)
+	Equal(t, code, http.StatusOK)
+	Equal(t, body, "\"c-ok\"")
+	Equal(t, tl, 3)
+	Equal(t, aa, 3)
+	Equal(t, bb, 2)
+	Equal(t, cc, 1)
+}
