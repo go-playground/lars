@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/go-playground/lars"
-	"github.com/go-playground/lars/examples/middleware/logging-recovery"
+	"github.com/go-playground/lars/_examples/middleware/logging-recovery"
 	"github.com/gorilla/websocket"
 )
 

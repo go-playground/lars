@@ -4,7 +4,7 @@ Package lars - Library Access/Retrieval System, is a fast radix-tree based, zero
 
 Usage
 
-Below is a simple example, for a full example see here https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go
+Below is a simple example, for a full example see here https://github.com/go-playground/lars/blob/master/_examples/all-in-one/main.go
 
 	package main
 
@@ -12,7 +12,7 @@ Below is a simple example, for a full example see here https://github.com/go-pla
 		"net/http"
 
 		"github.com/go-playground/lars"
-		mw "github.com/go-playground/lars/examples/middleware/logging-recovery"
+		mw "github.com/go-playground/lars/_examples/middleware/logging-recovery"
 	)
 
 	func main() {
@@ -154,7 +154,7 @@ example context + custom handlers
 
 Decoding Body
 
-For full example see https://github.com/go-playground/lars/blob/master/examples/decode/main.go
+For full example see https://github.com/go-playground/lars/blob/master/_examples/decode/main.go
 currently JSON, XML, FORM + Multipart Form's are support out of the box.
 
 	// first argument denotes yes or no I would like URL query parameter fields
