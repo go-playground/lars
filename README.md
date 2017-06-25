@@ -1,5 +1,5 @@
 ## LARS
-<img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/examples/README/test.gif">![Project status](https://img.shields.io/badge/version-3.7.0-green.svg)
+<img align="right" src="https://raw.githubusercontent.com/go-playground/lars/master/_examples/README/test.gif">![Project status](https://img.shields.io/badge/version-4.0.0-green.svg)
 [![Build Status](https://semaphoreci.com/api/v1/projects/4351aa2d-2f94-40be-a6ef-85c248490378/679708/badge.svg)](https://semaphoreci.com/joeybloggs/lars)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/lars/badge.svg?branch=master)](https://coveralls.io/github/go-playground/lars?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/go-playground/lars)](https://goreportcard.com/report/go-playground/lars)
@@ -7,19 +7,19 @@
 ![License](https://img.shields.io/dub/l/vibe-d.svg)
 [![Gitter](https://badges.gitter.im/go-playground/lars.svg)](https://gitter.im/go-playground/lars?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view examples](https://github.com/go-playground/lars/tree/master/examples). If looking for a more pure Go solution, be sure to check out [pure](https://github.com/go-playground/pure) which is essentially a pure version of lars
+LARS is a fast radix-tree based, zero allocation, HTTP router for Go.  [ view examples](https://github.com/go-playground/lars/tree/master/_examples). If looking for a more pure Go solution, be sure to check out [pure](https://github.com/go-playground/pure) which is essentially a pure version of lars
 
 Why Another HTTP Router?
 ------------------------
-Have you ever been painted into a corner by a framework, **ya me too!** and I've noticed that allot of routers out there, IMHO, are adding so much functionality that they are turning into Web Frameworks, (which is fine, frameworks are important) however, not at the expense of flexibility and configurability. So with no further ado, introducing LARS an HTTP router that can be your launching pad in creating a framework for your needs. How? Context is an interface [see example here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go), where you can add as little or much as you want or need and most importantly...**under your control**.
+Have you ever been painted into a corner by a framework, **ya me too!** and I've noticed that allot of routers out there, IMHO, are adding so much functionality that they are turning into Web Frameworks, (which is fine, frameworks are important) however, not at the expense of flexibility and configurability. So with no further ado, introducing LARS an HTTP router that can be your launching pad in creating a framework for your needs. How? Context is an interface [see example here](https://github.com/go-playground/lars/blob/master/_examples/all-in-one/main.go), where you can add as little or much as you want or need and most importantly...**under your control**.
 
 Key & Unique Features 
 --------------
-- [x] **Context is an interface** - this allows passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
+- [x] **Context is an interface** - this allows passing of framework/globals/application specific variables. [example](https://github.com/go-playground/lars/blob/master/_examples/all-in-one/main.go)
 - [x] **Smart Route Logic** - helpful logic to help prevent adding bad routes, keeping your url's consistent. i.e. /user/:id and /user/:user_id - the second one will fail to add letting you know that :user_id should be :id
 - [x] **Uber simple middleware + handlers** - middleware and handlers actually have the exact same definition!
 - [x] **Custom Handlers** - can register custom handlers for making other middleware + handler patterns usable with this router; the best part about this is can register one for your custom context and not have to do type casting everywhere [see here](https://github.com/go-playground/lars/blob/master/examples/custom-handler/main.go)
-- [x] **Diverse handler support** - Full support for standard/native http Handler + HandlerFunc + some others [see here](https://github.com/go-playground/lars/blob/master/examples/native/main.go)
+- [x] **Diverse handler support** - Full support for standard/native http Handler + HandlerFunc + some others [see here](https://github.com/go-playground/lars/blob/master/_examples/native/main.go)
   * When Parsing a form call Context's ParseForm amd ParseMulipartForm functions and the URL params will be added into the Form object, just like query parameters are, so no extra work
 - [x] **Fast & Efficient** - lars uses a custom version of [httprouter](https://github.com/julienschmidt/httprouter) so incredibly fast and efficient.
 
@@ -32,7 +32,7 @@ go get -u github.com/go-playground/lars
 
 Usage
 ------
-Below is a simple example, for a full example [see here](https://github.com/go-playground/lars/blob/master/examples/all-in-one/main.go)
+Below is a simple example, for a full example [see here](https://github.com/go-playground/lars/blob/master/_examples/all-in-one/main.go)
 ```go
 package main
 
@@ -41,7 +41,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/lars"
-	mw "github.com/go-playground/lars/examples/middleware/logging-recovery"
+	mw "github.com/go-playground/lars/_examples/middleware/logging-recovery"
 )
 
 func main() {
@@ -100,10 +100,10 @@ contactinfo.Delete("/delete", ...)
 
 // creates a group for others + inherits all middleware registered using l.Use() + adds 
 // OtherHandler to middleware
-others := l.Group("/others", OtherHandler)
+others := l.GroupWithMore("/others", OtherHandler)
 
 // creates a group for admin WITH NO MIDDLEWARE... more can be added using admin.Use()
-admin := l.Group("/admin",nil)
+admin := l.GroupWithNone("/admin")
 admin.Use(SomeAdminSecurityMiddleware)
 ...
 ```
@@ -174,7 +174,7 @@ func Home(c *MyContext) {
 
 Decoding Body
 -------------
-For full example see [here](https://github.com/go-playground/lars/blob/master/examples/decode/main.go).
+For full example see [here](https://github.com/go-playground/lars/blob/master/_examples/decode/main.go).
 currently JSON, XML, FORM + Multipart Form's are support out of the box.
 ```go
 	// first argument denotes yes or no I would like URL query parameter fields
@@ -253,8 +253,8 @@ comply with the following rule(s):
 
 * Are completely reusable by the community without modification
 
-Other middleware will be listed under the examples/middleware/... folder for a quick copy/paste modify. as an example a logging or
-recovery middleware are very application dependent and therefore will be listed under the examples/middleware/...
+Other middleware will be listed under the _examples/middleware/... folder for a quick copy/paste modify. as an example a logging or
+recovery middleware are very application dependent and therefore will be listed under the _examples/middleware/...
 
 Benchmarks
 -----------

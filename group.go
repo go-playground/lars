@@ -10,7 +10,9 @@ import (
 // IRouteGroup interface for router group
 type IRouteGroup interface {
 	IRoutes
-	Group(prefix string, middleware ...Handler) IRouteGroup
+	GroupWithNone(prefix string) IRouteGroup
+	GroupWithMore(prefix string, middleware ...Handler) IRouteGroup
+	Group(prefix string) IRouteGroup
 }
 
 // IRoutes interface for routes
@@ -176,31 +178,34 @@ func (g *routeGroup) WebSocket(upgrader websocket.Upgrader, path string, h Handl
 	}, handler)
 }
 
-// Group creates a new sub router with prefix. It inherits all properties from
-// the parent. Passing middleware overrides parent middleware but still keeps
-// the root level middleware intact.
-func (g *routeGroup) Group(prefix string, middleware ...Handler) IRouteGroup {
+// GroupWithNone creates a new sub router with specified prefix and no middleware attached.
+func (g *routeGroup) GroupWithNone(prefix string) IRouteGroup {
+	return &routeGroup{
+		prefix:     g.prefix + prefix,
+		lars:       g.lars,
+		middleware: make(HandlersChain, 0),
+	}
+}
 
+// GroupWithMore creates a new sub router with specified prefix, retains existing middleware and adds new middleware.
+func (g *routeGroup) GroupWithMore(prefix string, middleware ...Handler) IRouteGroup {
 	rg := &routeGroup{
-		prefix: g.prefix + prefix,
-		lars:   g.lars,
+		prefix:     g.prefix + prefix,
+		lars:       g.lars,
+		middleware: make(HandlersChain, len(g.middleware)),
 	}
-
-	if len(middleware) == 0 {
-		rg.middleware = make(HandlersChain, len(g.middleware)+len(middleware))
-		copy(rg.middleware, g.middleware)
-
-		return rg
-	}
-
-	if middleware[0] == nil {
-		rg.middleware = make(HandlersChain, 0)
-		return rg
-	}
-
-	rg.middleware = make(HandlersChain, len(g.lars.middleware))
-	copy(rg.middleware, g.lars.middleware)
+	copy(rg.middleware, g.middleware)
 	rg.Use(middleware...)
+	return rg
+}
 
+// Group creates a new sub router with specified prefix and retains existing middleware.
+func (g *routeGroup) Group(prefix string) IRouteGroup {
+	rg := &routeGroup{
+		prefix:     g.prefix + prefix,
+		lars:       g.lars,
+		middleware: make(HandlersChain, len(g.middleware)),
+	}
+	copy(rg.middleware, g.middleware)
 	return rg
 }
