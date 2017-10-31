@@ -80,14 +80,14 @@ func (c *Ctx) RequestStart(w http.ResponseWriter, r *http.Request) {
 }
 
 // Set is used to store a new key/value pair using the
-// golang.org/x/net/context contained on this Context.
+// context contained on this Ctx.
 // It is a shortcut for context.WithValue(..., ...)
 func (c *Ctx) Set(key interface{}, value interface{}) {
-	c.request = c.request.WithContext(context.WithValue(c.request.Context(), key, value)) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(context.WithValue(c.request.Context(), key, value))
 }
 
 // Get returns the value for the given key and is a shortcut
-// for the golang.org/x/net/context context.Value(...) ... but it
+// for context.Value(...) ... but it
 // also returns if the value was found or not.
 func (c *Ctx) Get(key interface{}) (value interface{}, exists bool) {
 	value = c.request.Context().Value(key)
@@ -95,7 +95,7 @@ func (c *Ctx) Get(key interface{}) (value interface{}, exists bool) {
 	return
 }
 
-// golang.org/x/net/context functions to comply with context.Context interface and keep context update on lars.Context object
+// context functions to comply with context.Context interface and keep context update on lars.Context object
 
 // Context returns the request's context. To change the context, use
 // WithContext.
@@ -108,47 +108,47 @@ func (c *Ctx) Context() context.Context {
 // WithContext updates the underlying request's context with to ctx
 // The provided ctx must be non-nil.
 func (c *Ctx) WithContext(ctx context.Context) {
-	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(ctx)
 }
 
-// Deadline calls the underlying golang.org/x/net/context Deadline()
+// Deadline calls the underlying context.Deadline()
 func (c *Ctx) Deadline() (deadline time.Time, ok bool) {
 	return c.request.Context().Deadline()
 }
 
-// Done calls the underlying golang.org/x/net/context Done()
+// Done calls the underlying context.Done()
 func (c *Ctx) Done() <-chan struct{} {
 	return c.request.Context().Done()
 }
 
-// Err calls the underlying golang.org/x/net/context Err()
+// Err calls the underlying context.Err()
 func (c *Ctx) Err() error {
 	return c.request.Context().Err()
 }
 
-// Value calls the underlying golang.org/x/net/context Value()
+// Value calls the underlying context.Value()
 func (c *Ctx) Value(key interface{}) interface{} {
 	return c.request.Context().Value(key)
 }
 
-// WithCancel calls golang.org/x/net/context WithCancel and automatically
-// updates context on the containing las.Context object.
+// WithCancel calls context.WithCancel and automatically
+// updates context on the containing lars.Ctx object.
 func (c *Ctx) WithCancel() context.CancelFunc {
 	ctx, cf := context.WithCancel(c.request.Context())
-	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(ctx)
 	return cf
 }
 
-// WithDeadline calls golang.org/x/net/context WithDeadline and automatically
-// updates context on the containing las.Context object.
+// WithDeadline calls context.WithDeadline and automatically
+// updates context on the containing lars.Ctx object.
 func (c *Ctx) WithDeadline(deadline time.Time) context.CancelFunc {
 	ctx, cf := context.WithDeadline(c.request.Context(), deadline)
-	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
+	c.request = c.request.WithContext(ctx)
 	return cf
 }
 
-// WithTimeout calls golang.org/x/net/context WithTimeout and automatically
-// updates context on the containing las.Context object.
+// WithTimeout calls context.WithTimeout and automatically
+// updates context on the containing lars.Ctx object.
 func (c *Ctx) WithTimeout(timeout time.Duration) context.CancelFunc {
 	ctx, cf := context.WithTimeout(c.request.Context(), timeout)
 	c.request = c.request.WithContext(ctx) // temporarily shallow copying to avoid problems with external libraries
@@ -156,8 +156,8 @@ func (c *Ctx) WithTimeout(timeout time.Duration) context.CancelFunc {
 }
 
 // WithValue calls golang.org/x/net/context WithValue and automatically
-// updates context on the containing las.Context object.
-// Can also use Set() function on Context object (Recommended)
+// updates context on the containing lars.Ctx object.
+// Can also use Set() function on Ctx object (Recommended)
 func (c *Ctx) WithValue(key interface{}, val interface{}) {
 	c.request = c.request.WithContext(context.WithValue(c.request.Context(), key, val)) // temporarily shallow copying to avoid problems with external libraries
 }

@@ -22,20 +22,6 @@ type ApplicationGlobals struct {
 	// .......
 }
 
-// Reset gets called just before a new HTTP request starts calling
-// middleware + handlers
-func (g *ApplicationGlobals) Reset() {
-	// DB = new database connection or reset....
-	//
-	// We don't touch translator + log as they don't change per request
-}
-
-// Done gets called after the HTTP request has completed right before
-// Context gets put back into the pool
-func (g *ApplicationGlobals) Done() {
-	// DB.Close()
-}
-
 func newGlobals() *ApplicationGlobals {
 
 	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -55,23 +41,8 @@ func newGlobals() *ApplicationGlobals {
 
 // MyContext is a custom context
 type MyContext struct {
-	*lars.Ctx  // a little dash of Duck Typing....
+	*lars.Ctx  // a little embedding
 	AppContext *ApplicationGlobals
-}
-
-// RequestStart overriding
-func (mc *MyContext) RequestStart(w http.ResponseWriter, r *http.Request) {
-
-	// call lars context reset, must be done
-
-	mc.Ctx.RequestStart(w, r) // MUST be called!
-	mc.AppContext.Reset()
-}
-
-// RequestEnd overriding
-func (mc *MyContext) RequestEnd() {
-	mc.AppContext.Done()
-	mc.Ctx.RequestEnd() // MUST be called!
 }
 
 func newContext(l *lars.LARS) lars.Context {

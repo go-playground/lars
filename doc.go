@@ -92,21 +92,6 @@ example context + custom handlers
 		*lars.Ctx  // a little dash of Duck Typing....
 	}
 
-	// RequestStart overriding
-	func (mc *MyContext) RequestStart(w http.ResponseWriter, r *http.Request) {
-		mc.Ctx.RequestStart(w, r) // MUST be called!
-
-		// do whatever you need to on request start, db connections, variable init...
-	}
-
-	// RequestEnd overriding
-	func (mc *MyContext) RequestEnd() {
-
-		// do whatever you need on request finish, reset variables, db connections...
-
-		mc.Ctx.RequestEnd() // MUST be called!
-	}
-
 	// CustomContextFunction is a function that is specific to your applications
 	// needs that you added
 	func (mc *MyContext) CustomContextFunction() {
