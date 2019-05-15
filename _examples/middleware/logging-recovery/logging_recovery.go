@@ -30,27 +30,26 @@ func LoggingAndRecovery(c lars.Context) {
 			HandlePanic(c, trace[:n])
 			return
 		}
+		color := status
+	        res := c.Response()
+	        req := c.Request()
+	        code := res.Status()
+
+	        switch {
+	            case code >= http.StatusInternalServerError:
+		        color = status500
+	            case code >= http.StatusBadRequest:
+		        color = status400
+	            case code >= http.StatusMultipleChoices:
+		        color = status300
+	        }
+
+	        t2 := time.Now()
+
+	        log.Printf("%s %d %s[%s%s%s] %q %v %d\n", color, code, ansi.Reset, color, req.Method, ansi.Reset, req.URL, t2.Sub(t1), res.Size())
 	}()
 
-	c.Next()
-
-	color := status
-	res := c.Response()
-	req := c.Request()
-	code := res.Status()
-
-	switch {
-	case code >= http.StatusInternalServerError:
-		color = status500
-	case code >= http.StatusBadRequest:
-		color = status400
-	case code >= http.StatusMultipleChoices:
-		color = status300
-	}
-
-	t2 := time.Now()
-
-	log.Printf("%s %d %s[%s%s%s] %q %v %d\n", color, code, ansi.Reset, color, req.Method, ansi.Reset, req.URL, t2.Sub(t1), res.Size())
+	c.Next()	
 }
 
 // HandlePanic handles graceful panic by redirecting to friendly error page or rendering a friendly error page.
